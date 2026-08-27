@@ -12,7 +12,7 @@
 - Product thesis: the model proposes; the portal deterministically enforces source support, conflict handling, readiness, and human-controlled submission
 - Committed demo wedge: one fictional scholarship portal; exactly eight fields, one guardian branch, two synthetic packets with three runtime-parsed PDFs each, six once-registered semantic WebMCP tools, one structured income conflict, human-only declaration/resolution/submission, complete manual fallback, and one matching immutable session receipt
 - Scope discipline: three user pages, at most eight authored API families, six product tables, five PostgreSQL race families, no hackathon stretch features, and no application code before replacement G3–G4 pass
-- Current progress: replacement G1 scope and G2 PRD are locked after independent exact-hash review; G3 technical specification is active next
+- Current progress: replacement G1/G2/G3 are locked; G3's eighth content candidate passed all three lanes after seven correct rejections and all three lanes reproduced it through the final status-only metadata proof; G4 checklist and live capacity review are active
 - Requirements discipline learned at G2: applicant-facing consent must be comprehensible and tool-scoped; human conflict decisions must remain inference-resistant in agent outputs; native abort and transport throttling need exact observable ordering without protocol growth
 
 ## Technical Experience

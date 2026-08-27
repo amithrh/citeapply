@@ -8,13 +8,13 @@ Quality means complete behavior, proportionate security, accessibility, real-cli
 
 ## Current Gate
 
-- G3 failed because the prior 75,417-word technical candidate could not be implemented and verified inside the quality window.
-- Replacement G1 passed after unanimous product/UX, engineering/security/test, and judge recheck. `docs/hackathon-build/scope.md` is the locked bounded contract.
-- Replacement G2 passed after five exact-content review cycles plus unanimous final content and metadata-hash proof. `docs/hackathon-build/prd.md` is the locked behavioral contract.
-- G3 is active next: regenerate a clean technical specification from locked G1/G2; do not patch the historical oversized specification into compliance.
-- The prior oversized `spec.md` content and `reviews/03-spec.md` are historical design/review evidence, not implementation contracts.
-- Do not scaffold or implement application code until replacement G3 and G4 each pass their independent review gates.
-- If a later artifact exceeds a replacement scope cap, reopens a named cut, or contradicts the approved product boundary, stop and reopen capacity review.
+- Replacement G1 is locked at scope SHA-256 `989a8ab2573512f60ae0609ea1fee9dc74b2a0823c432006ca77915e97b2f94f`.
+- Replacement G2 passed final errata review and metadata proof; the behavioral contract is PRD SHA-256 `1fc13ede1edec072f1776d35b88a4c688bfc5a6e33ddda9d554226b9fe37f0f9`.
+- G3 passed after seven bounded exact-hash candidates were correctly rejected, the eighth content hash passed all three lanes with zero findings, and all three lanes independently completed the status-only metadata proof.
+- The locked `spec.md` is SHA-256 `9baf6bab2e779cd6b014dac982dde1a547802fd77c634074d0662b729c03830a`, 1,169 lines / 14,831 words / 121,951 bytes; restoring only its candidate status line reproduces passed content hash `1c189ddc…aa2a2`.
+- G4 is active. It must sequence the complete build, rebase the capacity inequality against the live clock, and receive three independent exact-artifact passes before application implementation begins.
+- The prior 75,417-word design and `reviews/03-spec.md` are historical evidence, never implementation contracts.
+- Do not scaffold or implement application code until replacement G3 and G4 each pass. Any cap breach, reopened cut, or product contradiction stops progression for capacity review.
 
 ## Sources Of Truth
 

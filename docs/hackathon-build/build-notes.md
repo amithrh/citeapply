@@ -218,3 +218,48 @@
 - The final PRD is 1,036 lines / 14,664 words / 105,055 bytes. `git diff --check` passes and all 40 story identifiers are unique.
 - `reviews/02b-prd.md` records every failed cycle, disposition, exact hash, and final proof. The guided state, status, learner profile, agent contract, and review index now point to `build-spec` / replacement G3.
 - No application code has begun. G3 must fit every story into the locked three-page/six-API/five-table/four-race witness and stay below 15,000 words; G4 still blocks implementation afterward.
+
+## 2026-08-27 — Replacement G2 final errata and lock
+
+- Two narrow reviewed corrections closed the pre-consent recovery action and externally triggered Review-focus behavior without changing scope. `reviews/02c-prd-erratum.md` and `02d-prd-errata.md` record the exact review and metadata proof.
+- The actual final locked PRD is SHA-256 `1fc13ede1edec072f1776d35b88a4c688bfc5a6e33ddda9d554226b9fe37f0f9`, 1,038 lines / 14,835 words / 106,255 bytes. Earlier `f9fb37…` status references are superseded.
+- Scope remains SHA-256 `989a8ab2573512f60ae0609ea1fee9dc74b2a0823c432006ca77915e97b2f94f`; no application code or external mutation occurred.
+
+## 2026-08-27 — Bounded G3 exact-hash review cycles
+
+- The clean replacement specification retained exactly three pages, six APIs, five tables, four PostgreSQL race families, six tools, and all 40 stories. Application implementation stayed prohibited throughout.
+- First bounded candidate `c544182…` failed all lanes; `reviews/03b-spec.md` records one P0 plus complete contract, concurrency, dependency, parser, accessibility, client-proof, release, and impact corrections.
+- Second candidate `6f278091…` passed the judge lane but failed product and engineering on the rate-cap mutex, close reserve, prepare/edit gate, submit recovery, human DTO closure, parser scan scope, focus erratum, accessibility states, and registration rollback.
+- Third candidate `73a74cfe6b445dd45a99186a68769ad642042397b325dbd83b6ce0c8d6835279` passed all mechanical limits but all three lanes correctly failed it. The consolidated G3R3 set covers bootstrap authority, private mutation projection/install fencing, historical replay, exact Review/Receipt relations, submit precedence, route establishment, cookie validity, no-op Revoke reserve behavior, focus, safe support references, countdown/Return copy, deterministic validation dirty handling, Receipt-acceptance gating, and finite anti-hardcoding proof.
+
+## 2026-08-27 — G3 fourth candidate frozen
+
+- Fourth candidate SHA-256 is `47c5379832890c561765e01388df56ea81cb284830768818c3d2920b7c8fa21e`, 1,158 lines / 14,567 words / 119,160 bytes, bound to final G1/G2 hashes.
+- Local preflight passes `git diff --check`, balanced 26 fences, exact 3/6/5/4/6 surfaces, and 40 unique story rows. The candidate remains below 15,000 words without deleting genuine-client proof, release obligations, causal demo requirements, manual parity, or impact honesty.
+- All three lanes reread the unchanged fourth hash. The judge/WebMCP/rules lane passed, but product/accessibility and engineering/security found twelve consolidated P1/P2 defects. The fourth candidate was rejected; no application code started.
+
+## 2026-08-27 — G3 fifth candidate frozen
+
+- Fifth candidate SHA-256 is `a7ae079f23bf163a3179f29f1faff9bac6c52916ec4bbdedd6194a4f7599a335`, 1,164 lines / 14,537 words / 119,362 bytes, bound to the unchanged final G1/G2 hashes.
+- It normatively disposes G3R4-01 through G3R4-12: independent Start nonce/request uniqueness, direct fresh no-change DTOs, unavailable-income replay, non-redisclosing prepare replay, closed Submitted retry, BFCache challenge/takeover, truthful Review origin, cross-equal submission clocks, value-free establishment failure, dormant callback fencing, unknown-submit expiry copy, and route-specific recovery actions.
+- Local preflight passed `git diff --check`, 26 balanced fences, exact 3/6/5/4/6 surfaces, and 40 unique story mappings. All three lanes reread the unchanged hash; judge/rules passed, but product and engineering independently found three P1 regressions and engineering one P2 lock-model ambiguity. The fifth candidate was rejected and no application code started.
+
+## 2026-08-27 — G3 sixth candidate frozen
+
+- Sixth candidate SHA-256 is `c6faa55a7d45d6fe2fd39cf4be36b2439284c389dc4d7ddbf792aa6dc159e459`, 1,165 lines / 14,732 words / 121,092 bytes, bound to unchanged final G1/G2 hashes.
+- It preserves Submitted new-ID `stale_state` while restoring Return-first `review_invalidated`; adds a truthful zero-dispatch bridge lifecycle result; makes Review/Receipt assistance activity path-specific; and re-resolves income evidence under the existing Application row lock. Registration rollback is now stated as abort, all settlements, zero CiteApply names, and no retry.
+- Local preflight remained clean with the exact 3/6/5/4/6/40 witness and 26 balanced fences. All three lanes reread the unchanged hash; judge/rules passed, while product and engineering found two P1 and two P2 contract defects. The sixth candidate was rejected and no application code started.
+
+## 2026-08-27 — G3 seventh candidate frozen
+
+- Seventh candidate SHA-256 is `d5193ae74029e4634a333435e1c57e20f55ce4d4ab671bc849e8c79a016c453e`, 1,169 lines / 14,816 words / 121,809 bytes, bound to unchanged final G1/G2 hashes.
+- It never rewrites server-authorized validation with later dirty state; splits the four string fields into inhabitable Review-diff discriminants; restores protected state's static safe action; and creates/passes one identical registration-lifetime AbortController signal to all six tool calls with rollback proof.
+- Local preflight remained clean with the exact 3/6/5/4/6/40 witness and 26 balanced fences. All three lanes rejected the missing validation callback terminal; engineering also proved `webmcp-types@0.1.3` incompatible with the required callback and registration signals. The seventh candidate was rejected and no application code started.
+
+## 2026-08-27 — G3 eighth candidate frozen
+
+- Eighth candidate SHA-256 is `1c189ddca3b5184428855e2cec13ebe4b365bdfc305d5954f12ef6986c2aa2a2`, 1,169 lines / 14,826 words / 121,928 bytes, bound to unchanged final G1/G2 hashes.
+- Validation now returns the captured server-final-authorized callback bytes across local drift while reconciling only the human UI; native abort remains the sole ordinary abort terminal. The reviewed declaration pin is `webmcp-types@0.1.5`, with a strict `skipLibCheck:false` signal-signature fixture required.
+- Local preflight remains clean with the exact 3/6/5/4/6/40 witness and 26 balanced fences. Three fresh exact-byte full rereads are required; G3 and implementation remain closed.
+- All three lanes then reread unchanged content SHA-256 `1c189ddca3b5184428855e2cec13ebe4b365bdfc305d5954f12ef6986c2aa2a2` and passed unconditionally with P0/P1/P2 all zero. The status-only lock is SHA-256 `9baf6bab2e779cd6b014dac982dde1a547802fd77c634074d0662b729c03830a`, 1,169 lines / 14,831 words / 121,951 bytes.
+- Product/accessibility, engineering/security/testability, and WebMCP/judge/rules each verified that final hash, restored only the candidate status line in memory, reproduced `1c189ddc…aa2a2`, and made no edit. G3 passed. G4 checklist and live capacity review began; application code remains prohibited until G4 passes.

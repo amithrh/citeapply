@@ -1,6 +1,6 @@
 # CiteApply Product Requirements Document
 
-Status: Approved and locked at replacement G2; changes require G1/G2 and capacity review to reopen
+Status: Approved and locked at replacement G2 with reviewed G2E-01, G2E-02, and G2E-03 errata
 Date: 2026-08-27
 Product: CiteApply (working codename)
 Upstream contract: locked `scope.md`, SHA-256 `989a8ab2573512f60ae0609ea1fee9dc74b2a0823c432006ca77915e97b2f94f`
@@ -401,7 +401,7 @@ Acceptance criteria:
 
 - The visible choices are **Allow assisted access** and **Continue manually**. Neither is preselected, visually hidden, or described as required to finish.
 - Before Allow, protected modes and state-changing operations return a value-free `consent_required` outcome. The result contains no applicant value, evidence value, active-field inference, saved blocker detail, or authority-bearing identifier.
-- Two safe discovery modes are intentionally available before Allow: redacted `get_application_state` may return only access status `consent_required` and safe next actions **Allow assisted access** or **Continue manually**; `get_form_requirements` with mode `all` may return the eight static field names, policy classes, conditional relationship, and accepted document classes. Neither mode returns packet identity, active/inactive status, application or requirements versions, progress, values, claims, handles, blockers, activity, or review metadata.
+- Two safe discovery modes are intentionally available before Allow: redacted `get_application_state` may return only access status `consent_required` and the stage-agnostic safe next action **Use the visible CiteApply application**; the visible Draft application itself continues to offer **Allow assisted access** and **Continue manually**. This machine action stays truthful after Draft because it does not promise that Allow is currently available, and it never varies by protected stage. `get_form_requirements` with mode `all` may return the eight static field names, policy classes, conditional relationship, and accepted document classes. Neither mode returns packet identity, stage, active/inactive status, application or requirements versions, progress, values, claims, handles, blockers, activity, or review metadata.
 - Tool discovery alone does not create consent or reveal protected values.
 - Allow changes the assistance overlay to **Allowed for this page/session** and makes the current authority visible near the application status.
 - Continue manually leaves assistance Off and dismisses the disclosure without harming the manual path. The applicant may choose Allow later while Draft and current.
@@ -506,7 +506,7 @@ As an applicant, I want an agent to help reach a reviewable snapshot without hav
 Acceptance criteria:
 
 - Validation reports a stable, ordered list of current blockers and produces no form change.
-- Review preparation with any blocker returns `not_ready_for_review`, creates no review identity, keeps Draft editable, shows the same grouped error summary in Application, and moves page focus to that summary heading. Its first link moves focus to the first blocker.
+- Review preparation with any blocker returns `not_ready_for_review`, creates no review identity, keeps Draft editable, and shows the same grouped error summary. An external assisted attempt announces that summary once without moving the applicant's current focus; activating its first link moves focus to the first blocker. Applicant-activated **Review application** retains CA-REVIEW-01 focus behavior.
 - Successful preparation creates one immutable current Review from the exact authoritative saved state, returns only a fresh opaque non-content-derived Review identity, readiness, and necessary current-version metadata, closes assisted access, and always enters the normal Review presentation. It returns no canonical content hash or other deterministic digest over declaration or conflict-resolution content. The Review heading receives programmatic focus and its status announces that assistance is Off.
 - The agent receives neither the selected conflicting source, resolution reason text/category, conflict history, complete diff, exact evidence excerpts, declaration details, confirmation control, nor receipt. Where needed, it may learn only that the field is ready after applicant action.
 - No later agent call can confirm or submit. The only acceptance action is the applicant-visible **Confirm and submit this review**.
@@ -741,6 +741,7 @@ Acceptance criteria:
 - Public session creation is admission controlled. A refused start shows Landing-only **At capacity**, creates no application, and supplies a safe retry time.
 - The product accepts only the two fixed packets, their six allowlisted bounded PDFs, eight known fields, bounded reason choices, bounded request bodies, and bounded result/activity summaries.
 - Oversized, excessive, cross-session, or non-allowlisted requests fail closed without partial state, applicant values in errors, or a claim that work was saved.
+- When the bounded synthetic-session ledger cannot admit a non-closing change without consuming the remaining manual closing path, `demo_change_limit` saves nothing, consumes no request identity, exposes no number, and directs the participant to finish in the visible application or start a new synthetic demo. It is not a stage, quota display, or retry promise.
 - Exact replay and response-loss recovery preserve the normal idempotency contract; throttling cannot convert one accepted action into a duplicate or contradictory outcome.
 - Request throttling is a public value-free transport preflight outside protected-operation authority precedence. It performs no application, session, page, consent, request-replay, or domain lookup and may therefore return **Please wait before trying again** before any authority outcome. It changes nothing, supplies only a bounded `Retry-After`, and clears the local busy indicator. After the delay, a fresh admitted request follows `session_expired` → `stale_page` → `consent_required` → request/version → domain precedence; a state-changing client rereads rather than blindly resending uncertain work. G3 may choose counters and thresholds, but not this visible ordering or add workflow meaning.
 - The ordinary manual and assisted journeys remain usable without numerical call/change/review counters becoming applicant workflow states.
@@ -787,7 +788,8 @@ The contract separates machine/domain outcomes, nested readiness blockers, and h
 | `evidence_unavailable` | A claim/source is absent, inactive, or no longer accepted | Entire request applies nothing | Inspect current accepted evidence and choose again |
 | `conflict_requires_human` | Assisted access attempts disputed income resolution | Entire request applies nothing | Applicant resolves through the visible comparison |
 | `not_ready_for_review` | One or more current readiness blockers remain | No Review exists | Return the ordered nested blockers; complete them in Draft |
-| `review_invalidated` | Return/edit/staleness made a Review non-current | No submission | Prepare and inspect a fresh current Review |
+| `review_invalidated` | Visible Return invalidated the named Review, or the supplied Review is no longer current | No submission | Prepare and inspect a fresh current Review |
+| `demo_change_limit` | Another non-closing change would consume the bounded demo's remaining manual closing path | No operation, request reservation, or saved change | Finish the remaining visible steps with a fresh request identity, or start a new synthetic demo |
 
 Current authority precedes request/version and domain detail. For otherwise well-formed protected calls, precedence is `session_expired`, `stale_page`, `consent_required`, request/version errors, then domain-policy outcomes. Exact authorized replay produces no second effect, but current authority may refuse redisclosure.
 
@@ -829,7 +831,7 @@ CiteApply is not complete if a keyboard or screen-reader participant can only wa
 - Fields have persistent text labels, descriptions, error association, and status text. Color and icons may reinforce but never carry the only distinction among ready, missing, conflict, unsaved, declared, and inactive.
 - All actions are keyboard reachable in a logical order. Visible focus is never hidden by sticky content, dialogs trap and restore focus correctly, and no flow requires drag, hover, or timing-sensitive input.
 - Dynamic changes such as branch reveal, saved batch, conflict refusal, blocker count, stale takeover, review creation, and submission are announced once with concise live-region text. Routine countdown changes do not create announcement spam.
-- On failed Review, focus moves to the grouped error summary and the summary links to the first blocker. On field save failure, focus stays at the affected context. On dialog close, focus returns to the opener.
+- On applicant-activated failed Review, focus moves to the grouped error summary and the summary links to the first blocker. An external assisted refusal updates and announces that summary without moving the applicant's focus. On field save failure, focus stays at the affected context. On dialog close, focus returns to the opener.
 - At 320 CSS pixels, the entire journey works without missing information or horizontal page scrolling, except that an inert exact source line may wrap. At 200% browser zoom, content reflows and controls remain available.
 - Reduced-motion preference removes nonessential transitions and preserves state-change clarity. There is no auto-advancing content, flashing content, or motion required to understand an agent action.
 - Text and interactive contrast meet applicable WCAG 2.2 Level A/AA requirements. Touch targets and spacing avoid accidental adjacent activation.
