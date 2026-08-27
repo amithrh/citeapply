@@ -8,11 +8,11 @@ Build and verify a winning-quality CiteApply WebMCP product with stage-gated imp
 
 ## Current Position
 
-- Active stage: Stage 2 — product requirements
+- Active stage: Stage 3 — architecture, WebMCP contract, privacy, and threat model
 - Gate status: In progress
-- Active artifact: `docs/hackathon-build/prd.md`
+- Active artifact: `docs/hackathon-build/spec.md`
 - Application code: Not started by design
-- Repository: Git initialized on `main`; planning baseline commit pending
+- Repository: Git initialized on `main`; G0/G1 planning baseline committed at `ecc9f9d`
 - Deployment: Not started; not yet authorized
 - Devpost submission: Not started; not authorized
 
@@ -28,8 +28,8 @@ Build and verify a winning-quality CiteApply WebMCP product with stage-gated imp
 |---|---|---|---|
 | G0 | Workspace, decision, rules, and operating-contract audit | Passed | `AGENTS.md`, `learner-profile.md`, `build-notes.md`, `reviews/00-scope-audit.md` |
 | G1 | Focused product scope | Passed | `scope.md`, `reviews/01-scope.md`; three independent rechecks passed |
-| G2 | Product requirements and acceptance criteria | In progress | `prd.md`, PRD reviews |
-| G3 | Architecture, WebMCP contract, privacy and threat model | Pending | `spec.md`, technical/security reviews |
+| G2 | Product requirements and acceptance criteria | Passed | `prd.md`, `reviews/02-prd.md`; three independent rechecks passed |
+| G3 | Architecture, WebMCP contract, privacy and threat model | In progress | `spec.md`, technical/security reviews |
 | G4 | Sequenced build and verification contract | Pending | `checklist.md`, checklist reviews |
 | G5 | Foundation and primary form experience | Pending | Tests, browser evidence, implementation review |
 | G6 | Evidence, provenance, conflict and branching core | Pending | Unit/integration/E2E evidence and reviews |
@@ -40,10 +40,11 @@ Build and verify a winning-quality CiteApply WebMCP product with stage-gated imp
 ## Current Blockers And Risks
 
 - The working name CiteApply still requires Amit's ratification and formal clearance before public launch.
-- The project has no planning commit, license, dependency lockfile, CI, or application foundation yet.
+- The initial Git commit used the machine's auto-generated local committer email; set the intended repository-local identity and amend before any public push.
+- The project has no license, dependency lockfile, CI, or application foundation yet.
 - CiteApply's document and form data model is privacy-sensitive even with synthetic demo fixtures; threat modeling must precede ingestion code.
 - WebMCP is experimental and must have a normal human UI path while remaining central to the collaboration flow.
 
 ## Next Action
 
-Translate the locked scope into observable product requirements and acceptance criteria, complete independent G2 reviews, and remediate all material findings before producing the technical spec. Application code remains prohibited.
+Translate the locked scope/PRD into a version-specific implementation architecture, prove dependency and WebMCP assumptions from primary documentation, define the complete threat/privacy/data model, and pass independent G3 reviews. Application code remains prohibited.

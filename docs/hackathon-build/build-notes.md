@@ -93,3 +93,24 @@
 - Git was initialized on `main`; no application code exists. The planning baseline commit will be created after the gate documents and state are validated.
 - Guided-build state now records CiteApply, the scope path, completed onboarding, and `build-prd` as the next stage.
 - G2 product requirements started immediately under Amit's autonomous goal-mode instruction. No redundant confirmation was requested.
+
+## 2026-08-27 — G2 PRD drafted and remediated
+
+- The PRD locks ten possible fields, one guardian-dependency branch, two three-PDF synthetic packets, the exact supported/conflict/manual/blocked journeys, visible statuses, five information-architecture stages, and measurable black-box acceptance criteria.
+- Three parallel preparation passes and three formal reviews were used. The prior conversation supplied the mandatory beats; one deepening round focused on field policy, consent, declarations, races, recovery, accessibility, buyer/community value, and demo proof.
+- Product review caught a P0 policy gap: income was initially conditional, so an independent applicant could avoid financial evidence. Income is now always required; guardian name and household size alone form the branch.
+- Security review caught a P0 disclosure gap: consent now gates every value-bearing WebMCP output, not merely the evidence index. Always-available metadata contains no applicant values; exact source snippets and the complete review diff are human-UI-only.
+- Consent copy no longer claims control over privileged browser/page access. It governs only CiteApply's structured WebMCP disclosure and cannot retract information already returned.
+- Manual edits remove mismatched bindings/declarations and invalidate review; populated branch closure requires visible confirmation and clears inactive values; equal normalized claims use deterministic primary binding without a false conflict.
+- Recovery is explicit for revocation/cancellation/reset races, stale versions, expired/wrong confirmation, unknown submission outcomes, refresh during every commitment state, receipt failure, and submitted-state locking.
+- Judge review separated the minimum feasibility spike from the final non-trivial composed WebMCP trace and separated the two-minute video proof from repository regression proof.
+- Bulk draft removal and starting/deleting another submitted demo were cut from v1 to protect the locked deadline slice.
+- G2 remains open until product, security/test, and judge reviewers recheck the remediated PRD.
+
+## 2026-08-27 — G2 passed
+
+- Product/UX/accessibility, security/privacy/testability, and Devpost-judge reviewers independently rechecked the remediated PRD and each returned **PASS** with no remaining material blocker.
+- `docs/hackathon-build/prd.md` is locked. It is the observable product contract for G3; material changes reopen G2.
+- The saved guided-build state now records completed scope, current PRD, and `build-spec` as the next stage.
+- The initial planning baseline commit is `ecc9f9d`. Its automatically generated local committer email must be replaced with Amit's chosen repository-local identity before any public push; no public repository action has occurred.
+- G3 technical specification and threat modeling started immediately under the authorized autonomous workflow. No application code has begun.
