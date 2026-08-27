@@ -1,0 +1,26 @@
+# Local secrets
+.env
+.env.*
+!.env.example
+
+# Dependencies and generated application output
+node_modules/
+.next/
+dist/
+build/
+.turbo/
+.cache/
+
+# Test and coverage output
+coverage/
+playwright-report/
+test-results/
+
+# Hosting and local tooling
+.vercel/
+*.log
+
+# Operating-system and editor noise
+.DS_Store
+*.swp
+*~

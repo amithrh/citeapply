@@ -1,0 +1,42 @@
+{
+  "plugin": "devpost-hackathon",
+  "version": 2,
+  "hackathon": {
+    "slug": "webmcp",
+    "name": "The WebMCP Challenge",
+    "url": "https://webmcp.devpost.com",
+    "selected": true,
+    "source": "known"
+  },
+  "participant": {
+    "name": "",
+    "display_name": "amit mishra"
+  },
+  "project": {
+    "name": "CiteApply",
+    "summary": "A WebMCP-native education-aid portal where the site enforces source-linked drafts, conflict handling, and human-controlled submission.",
+    "ai_usage": "",
+    "codex_usage": ""
+  },
+  "current_stage": "resources",
+  "completed_stages": [
+    "start-hackathon",
+    "review",
+    "resources"
+  ],
+  "rules_acknowledged": true,
+  "learning": {
+    "status": "active",
+    "current_step": "scope",
+    "completed_steps": [
+      "onboard"
+    ],
+    "plan_file": "docs/hackathon-build/scope.md",
+    "checklist_file": ""
+  },
+  "submission": {
+    "draft_file": "devpost-submission.md",
+    "status": "not-started"
+  },
+  "next_command": "build-prd"
+}
