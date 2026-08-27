@@ -10,7 +10,10 @@
 
 - Selected direction: CiteApply (working codename) — a site-enforced, source-linked education-aid application workflow on a participating WebMCP-enabled website
 - Product thesis: the model proposes; the portal deterministically enforces source support, conflict handling, readiness, and human-controlled submission
-- Initial demo wedge: one scholarship or fee-assistance application that maps every suggested answer to synthetic source evidence, stops on conflicts, keeps submission human-controlled, and issues a provenance receipt
+- Committed demo wedge: one fictional scholarship portal; exactly eight fields, one guardian branch, two synthetic packets with three runtime-parsed PDFs each, six once-registered semantic WebMCP tools, one structured income conflict, human-only declaration/resolution/submission, complete manual fallback, and one matching immutable session receipt
+- Scope discipline: three user pages, at most eight authored API families, six product tables, five PostgreSQL race families, no hackathon stretch features, and no application code before replacement G3–G4 pass
+- Current progress: replacement G1 scope and G2 PRD are locked after independent exact-hash review; G3 technical specification is active next
+- Requirements discipline learned at G2: applicant-facing consent must be comprehensible and tool-scoped; human conflict decisions must remain inference-resistant in agent outputs; native abort and transport throttling need exact observable ordering without protocol growth
 
 ## Technical Experience
 
@@ -23,7 +26,7 @@
 
 - Preferred pace: Direct and decisive; avoid process jargon and premature commitment
 - Likely support needs: End-to-end product strategy, validation, planning, implementation, verification, and submission
-- Build mode: Autonomous goal-driven execution after the plan is locked
+- Build mode: Autonomous goal-driven execution after the plan is locked; external/public mutations still require explicit authorization
 - Quality policy: No shortcuts, hacks, fake integrations, unverified claims, skipped tests, or premature progression
 - Review policy: Independent multi-agent product, engineering, security, and judge review at every stage; material findings must be remediated before the next stage
 - Verification policy: Test the complete applicable user flow at each gate, including happy path, failure path, accessibility, privacy, and regression coverage

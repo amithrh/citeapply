@@ -14,7 +14,7 @@
   },
   "project": {
     "name": "CiteApply",
-    "summary": "A WebMCP-native education-aid portal where the site enforces source-linked drafts, conflict handling, and human-controlled submission.",
+    "summary": "A WebMCP scholarship portal where runtime-parsed synthetic evidence drives site-enforced source bindings, conflict refusal, and visible human-only submission.",
     "ai_usage": "",
     "codex_usage": ""
   },
@@ -30,7 +30,8 @@
     "current_step": "prd",
     "completed_steps": [
       "onboard",
-      "scope"
+      "scope",
+      "prd"
     ],
     "plan_file": "docs/hackathon-build/scope.md",
     "checklist_file": ""

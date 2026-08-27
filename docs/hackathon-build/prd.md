@@ -1,419 +1,1036 @@
-# Product Requirements Document
+# CiteApply Product Requirements Document
 
-Status: Approved and locked at G2; changes require the gate to reopen  
-Date: 2026-08-27  
+Status: Approved and locked at replacement G2; changes require G1/G2 and capacity review to reopen
+Date: 2026-08-27
 Product: CiteApply (working codename)
+Upstream contract: locked `scope.md`, SHA-256 `989a8ab2573512f60ae0609ea1fee9dc74b2a0823c432006ca77915e97b2f94f`
 
 ## Product Summary
 
-CiteApply is an owned, WebMCP-enabled portal for a synthetic need-based scholarship application. It lets an external browser agent read the live application rules, inspect consented structured evidence claims, and draft answers in the same form the student sees. The portal—not the agent—decides whether each field has a policy-allowed source binding, whether evidence conflicts, and whether the application is ready for review.
+CiteApply is the fictional **Horizon Education Aid — Need-Based Scholarship** portal. A student may complete its document-backed application manually or let an external browser agent help through six WebMCP tools. In both paths, CiteApply—not the agent—decides which parsed synthetic source claims may support each answer, whether accepted sources conflict, and whether the exact application is ready to review.
 
-The memorable behavior is refusal, not autofill speed: when two accepted documents disagree about a required value, the site leaves that field unresolved, returns a structured conflict, and requires a visible applicant resolution. No WebMCP tool or agent-facing API can submit. The normal UI requires a version-bound review confirmation and final Submit action, then produces a persisted provenance receipt.
+The memorable product behavior is **fast visible assistance followed by principled refusal**. The agent links supported identity and household claims, which visibly reveals the guardian branch. When two accepted income sources disagree, the portal applies no income value, returns `conflict_requires_human`, and requires the applicant to inspect both sources. The agent may propose a synthetic contact email, but only the applicant can declare it. The agent may prepare review metadata after those human decisions; it never receives a declaration, conflict-resolution, confirmation, submission, or export capability.
 
-This prototype proves a trustworthy interaction pattern on one participating site using conspicuously synthetic data. It does not authenticate documents, decide eligibility, prove a browser actor is human, support arbitrary sites, or claim production adoption or ROI.
-
-## Target User
-
-### Primary user
-
-A first-time student completing a document-backed, need-based scholarship application who is unsure which evidence supports each answer. A guardian may help, but the student is the applicant and final approver.
-
-### Hypothesized buyer
-
-The scholarship foundation or university aid team operating the program. The value hypothesis is fewer incomplete submissions, clarification loops, and manual source-matching steps. These outcomes and willingness to pay remain unvalidated until measured with a design partner.
-
-### Community user
-
-Nonprofit form operators and browser-agent developers who can reuse the open evidence-policy schema, synthetic fixtures, compatibility tests, and reference portal.
-
-### Commercial and community boundary
-
-Applicant use has no fee or paywall. The commercial hypothesis is an operator-hosted or managed B2B deployment priced per active aid program, with usage tiers based on completed applications; billing is not built in v1. Operator value comes from the enforced submission boundary and provenance record, not from a back-office dashboard. The v1 community deliverables are the open schema, fixtures/goldens, compatibility tests, reference portal, setup instructions, and license. Willingness to pay and hosted nonprofit pricing remain unvalidated.
+The final commitment is one visible **Confirm and submit this review** action in the normal UI. A successful action creates one immutable, session-bounded receipt. Its screen, JSON, and print views are semantically equal projections of the exact accepted review.
 
 ## Product Goals
 
-1. Make the current application's requirements and branch state understandable to both the student and an external WebMCP client.
-2. Ensure every submission-ready value has a binding allowed by that field's versioned policy.
-3. Make source support, uncertainty, and conflict visible and inspectable in the live form.
-4. Let the agent handle structured drafting while preserving visible applicant control over declarations, conflict resolution, review, and submission.
-5. Demonstrate a genuine, non-hardcoded WebMCP flow that produces different behavior from the happy and contradictory evidence packets.
-6. Leave a receipt that exactly describes the accepted application version, field bindings, resolutions, and controlled commitment.
+1. Help a student understand which active questions require which source class.
+2. Make every accepted evidence answer inspectably source-linked.
+3. Let an external agent perform meaningful multi-step drafting in the live visible form without receiving an answer map.
+4. Refuse automatic resolution when two accepted sources disagree.
+5. Preserve visible applicant authority over the email declaration, evidence-conflict choice, review decision, and submission.
+6. Make the complete application usable without WebMCP and subject to identical policy.
+7. Recover honestly from refresh, stale pages, aborted callbacks, retries, response loss, export failure, and session expiry.
+8. Produce a coherent, accessible, testable product that demonstrates WebMCP value without overclaiming real-world validation or production readiness.
 
-## Non-Goals
+## Product Non-Claims
 
-- Scholarship discovery, recommendations, essay generation, eligibility scoring, award decisions, fraud detection, identity verification, or document-authenticity claims.
-- Generic cross-site autofill, DOM scraping, coordinate clicking, browser-extension support for unmodified sites, or agent-controlled submission.
-- Real applicant records, arbitrary uploads, image OCR, model-based extraction, production retention, enterprise administration, billing, or caseworker tooling.
-- A second portal, second industry, or second conditional branch in the submission build.
-- Proof that the visible UI was actuated by a biological person rather than privileged browser automation.
+CiteApply does not:
+
+- authenticate a document, identity, applicant, or browser actor;
+- decide scholarship eligibility, approve funding, or submit to a real institution;
+- support real personal data, arbitrary uploads, image PDFs, OCR, model extraction, or general documents;
+- support unmodified third-party sites, browser scraping, generic cross-site autofill, or a second portal/client claim;
+- let an agent declare, resolve a conflict, confirm, submit, download, or print;
+- claim that Revoke retracts returned or already-final-authorized information;
+- claim that post-dispatch browser abort rolls back an operation;
+- promise collaborative tabs, offline work, BFCache recovery, unsaved-input transfer, session renewal, or physical deletion at expiry; or
+- claim adoption, customer validation, production readiness, time savings, accuracy improvement, willingness to pay, or ROI without evidence.
+
+## Target Users And Stakeholders
+
+### Primary user
+
+A first-time student completing a need-based scholarship application who is unsure which document supports each answer. A guardian may assist, but the student remains the applicant and owns every human-only decision and the final action.
+
+### Hypothesized buyer
+
+A scholarship foundation or university aid team operating a document-backed program. The future value hypothesis is fewer incomplete applications, fewer clarification contacts, less reviewer source-matching time, and higher applicant completion. These are future pilot measures, not hackathon outcome claims.
+
+### Community user
+
+A nonprofit program or agent developer that wants a reusable example of site-owned evidence policy, informed WebMCP disclosure, deterministic refusal, accessible human fallback, and receipt reconciliation. The public repository will expose the schema, synthetic fixtures, goldens, contract tests, and reference portal under an Amit-approved open-source license.
 
 ## Experience Principles
 
-- **The site enforces trust.** Prompts may request caution, but readiness comes from deterministic portal policy.
-- **Visible collaboration.** Every accepted agent mutation appears in the normal form immediately; no hidden parallel application exists.
-- **Fail closed, explain clearly.** Missing, conflicting, invalid, or policy-disallowed evidence and stale operations never become silently ready or overwrite newer work.
-- **Source before confidence.** A confidence label is an extraction signal, not a truth score. The user can inspect exact source text.
-- **Human commitment.** Only the normal UI creates declarations, resolves conflicts, confirms the review snapshot, and exposes final submission.
-- **Least disclosure.** Every value-bearing WebMCP output is consent-gated. Tools expose bounded structured values and opaque handles where required, never document bodies or exact source snippets.
-- **Honest demo.** Synthetic data is unmistakable; genuine WebMCP calls and production handlers are shown; waiting may be edited but behavior is never simulated.
-- **Human UI always works.** WebMCP enhances the application but does not replace accessible semantic form controls.
+- **Synthetic by construction.** Every route and artifact states that the program and data are fictional. No control asks for real information.
+- **The site owns readiness.** The portal evaluates source policy and conflicts independently of the chosen agent.
+- **Evidence, not plausible text.** Evidence-required fields accept policy-allowed parsed claims, never free-typed values or declarations.
+- **Visible collaboration.** Accepted and refused agent operations produce immediate, understandable form and activity changes.
+- **Informed, least-disclosure assistance.** The applicant sees categories, actions, exclusions, scope, and in-flight limitations before Allow.
+- **Human decisions stay human.** Declaration, conflict resolution, return/edit, commitment, and submission exist only in the normal UI.
+- **Manual parity.** Declining or lacking WebMCP never disables or weakens the application.
+- **Honest recovery.** The product distinguishes saved state, unsaved local text, uncertain network outcome, stale page, and expired session without inventing success.
+- **One clear next action.** Every blocked or exceptional state explains what happened, what was preserved, whether anything was submitted, and one safe recovery.
 
-## Demo Program And Data
+## Demo Program And Fixture Contract
 
-### Program
+### Program identity
 
-The single demo program is **Horizon Education Aid — Need-Based Scholarship**. Every screen and document includes a visible “Synthetic demo — not a real application” label.
+- Program: **Horizon Education Aid — Need-Based Scholarship**
+- Persistent badge: **Fictional demo · Synthetic data only**
+- Persistent warning: **Do not enter real personal or financial information. This does not submit a real scholarship application.**
+- Document watermark: **SYNTHETIC — NOT VALID**
+- Session length: exactly 60 minutes from successful demo creation; activity never extends it.
 
-### Application fields
+### Exact application fields
 
-| Field | Required | Allowed binding and evidence class | Validation | Visibility |
-|---|---:|---|---|---|
-| Full legal name | Yes | Source claim; `student_verification` | Trimmed text, 2–80 characters | Initial |
-| Date of birth | Yes | Source claim; `student_verification` | Valid ISO date earlier than today and not before 1900; no eligibility inference | Initial |
-| Student ID | Yes | Source claim; `student_verification` | 4–24 uppercase letters, digits, or hyphens | Initial |
-| Institution | Yes | Source claim; `enrollment_record` | Trimmed text, 2–120 characters | Initial |
-| Course or program | Yes | Source claim; `enrollment_record` | Trimmed text, 2–120 characters | Initial |
-| Preferred contact email | Yes | Human declaration allowed | Valid email shape, maximum 254 characters | Initial |
-| Financially dependent on guardian | Yes | Source claim; `household_record` | Boolean `yes`/`no`; controls the only branch | Initial |
-| Annual household income | Yes | Source claim; `income_record` or portal-accepted income claim in `household_record` | Whole INR amount from 0–100,000,000 | Initial; deliberate conflict field |
-| Guardian full name | When dependent | Source claim; `household_record` | Trimmed text, 2–80 characters | Conditional |
-| Household size | When dependent | Source claim; `household_record` | Integer from 1–20 | Conditional |
+| Field | Initial visibility | Readiness rule | Human interaction |
+|---|---|---|---|
+| Full legal name | Visible | Must bind the enrollment-record name claim | Choose, inspect, change, or clear allowed source |
+| Student ID | Visible | Must bind the enrollment-record student-ID claim | Choose, inspect, change, or clear allowed source |
+| Institution | Visible | Must bind the enrollment-record institution claim | Choose, inspect, change, or clear allowed source |
+| Preferred contact email | Visible | Exact saved `.test` value must be visibly declared by applicant | Type/save/discard/declare; inspect declaration |
+| Financially dependent on a guardian | Visible | Must bind the household dependency claim | Choose, inspect, change, or clear allowed source |
+| Annual household income | Visible | Supported requires canonical plus corroborating agreement; Conflict requires human source resolution | Inspect both; human selects source and reason when conflicting |
+| Guardian full name | Hidden until dependency `Yes` | Must bind household guardian-name claim while active | Choose, inspect, change, or clear allowed source |
+| Household size | Hidden until dependency `Yes` | Must bind household-size claim while active | Choose, inspect, change, or clear allowed source |
 
-The exact displayed labels and help text may be polished, but field IDs, policies, and branch meaning stay stable after G2.
+Both committed packets contain dependency `Yes`, so every primary journey reveals guardian full name and household size. Clearing the saved dependency binding closes the branch and clears/excludes both conditional answers after a visible applicant confirmation. Inactive fields never affect readiness, review, agent output, receipt, or progress counts.
 
-### Evidence packets
+### Exact synthetic values
 
-Both packets describe a conspicuously fictional applicant and contain three versioned text PDFs. The same deterministic parser and application handlers process both.
+Both packets describe the same fictional applicant so that one income disagreement is the only material behavioral difference:
 
-- **Student verification/enrollment letter:** full legal name, date of birth, student ID, institution, and program.
-- **Household composition certificate:** dependency status, guardian name, household size, and an accepted income claim.
-- **Income certificate:** a second accepted annual-income claim.
+| Item | Committed value |
+|---|---|
+| Full legal name | `Anaya Rao` |
+| Student ID | `HZN-2026-0142` |
+| Institution | `Northstar Community College` |
+| Prompt-supplied contact email | `anaya.rao@example.test` |
+| Financially dependent on guardian | `Yes` |
+| Guardian full name | `Meera Rao` |
+| Household size | `4` |
+| Household-statement annual income | `INR 480,000` |
+| Supported income-statement value | `INR 480,000` |
+| Conflict income-statement value | `INR 540,000` |
 
-- **Supported packet:** the household and income certificates agree; all required claims can become ready after the student confirms the declaration-allowed contact email.
-- **Conflict packet:** the household and income certificates disagree about annual household income. Other claims remain usable so the conflict is isolated and understandable.
+The recorded external-client prompt includes the exact `.test` email. If the current instruction does not explicitly provide that exact value, the agent leaves email missing rather than deriving or inventing it.
 
-For the declaration demonstration, the recorded synthetic user prompt explicitly supplies `anaya.rao@example.test` as the preferred contact email. The agent may propose only that exact prompt-supplied value. If no email is supplied in the current user instruction, the field stays missing; the agent must not invent one.
+### Exactly three PDFs per packet
 
-Each document is visibly watermarked `SYNTHETIC — NOT VALID`. Reviewed golden data records its content hash, page, exact authored text span, normalized claim, evidence class, and expected extraction result. There is no demo-only answer map.
+1. **Synthetic Enrollment Record** — legal name, student ID, institution.
+2. **Synthetic Household Statement** — dependency, guardian name, household size, one accepted income claim.
+3. **Synthetic Income Statement** — the second accepted income claim.
+
+Each packet therefore yields exactly eight normalized source claims: three enrollment claims, four household claims, and one additional income claim. Production behavior derives these claims from the six committed PDF byte streams. No tool result or production fixture supplies a field-to-answer assignment.
+
+For Supported, the income statement is the canonical displayed binding and the equal household claim remains inspectable corroboration. For Conflict, both income claims remain unresolved; neither evidence class automatically wins.
 
 ## Information Architecture
 
-The product has five user-visible stages within one application:
+Only three user pages exist.
 
-1. **Choose evidence** — select the supported or conflict packet and see what synthetic documents it contains.
-2. **Authorize collaboration** — review the categories that the current page session may expose through WebMCP; allow or revoke access.
-3. **Complete application** — view the live form, source/status chips, conditional fields, evidence drawer, and bounded agent activity.
-4. **Review and confirm** — inspect the exact diff, bindings, declarations, conflict history, warnings, and data disclosure summary.
-5. **Submitted receipt** — view the persisted accepted snapshot, which is locked against further editing through the product, and export JSON or print its semantic HTML representation.
+| Page | Required regions and modes |
+|---|---|
+| Landing | Program/synthetic explanation, two packet choices, 60-minute boundary, Start, parsing, capacity error, parse failure |
+| Application | Synthetic/session header, readiness summary, assistance panel, eight-field form, source viewer, conflict resolver, activity summary, Draft mode, Review mode, stale/read-only mode, expired state |
+| Receipt | Safe loading state, accepted receipt, JSON/print controls, export failure, session-expired state |
 
-On desktop, the form is primary and the evidence/status rail is secondary. On narrow screens, the same content becomes a single logical reading order; no core action requires side-by-side layout.
+Review is a mode of Application, not a fourth page. Source inspection and conflict resolution are focused overlays within Application. There is no account, dashboard, upload area, operator interface, analytics view, or separate confirmation page.
 
-## User-Visible Application States
+## User-Visible State Model
 
-Evidence access is an independent on/off permission; it never implies readiness or confirmation.
+### Primary stages
 
-| Application state | What the student sees | Allowed next actions |
-|---|---|---|
-| Draft — incomplete | Specific missing, conflicting, low-confidence, invalid, or declaration-needed items | Edit manually, bind a source, authorize/revoke assisted access, ask the agent to retry, switch packet, or reset |
-| Parsing | Per-document progress and any deterministic extraction failure | Wait, retry a failed packet setup, or reset; no ready claims are invented |
-| Draft — ready | Every active required field satisfies its current policy | Edit or prepare review |
-| Review prepared | Frozen version/hash, exact diff, bindings, declarations, conflict history, disclosures, and warnings | Return to edit or confirm |
-| Confirmed | Confirmation tied to the displayed review; Submit available | Submit or cancel confirmation; any content change returns to Draft |
-| Review invalidated or confirmation expired | Existing application data is preserved and the reason is announced | Return to the same review, re-prepare if data changed, and confirm again |
-| Submission checking | Outcome is temporarily unknown; duplicate action is disabled while the existing request is reconciled | Wait or safely recheck status; never submit blindly |
-| Submission rejected | No submission was created; the exact rejection and preserved review state are shown | Correct the stated issue or safely confirm/retry the same version |
-| Submitted | Locked success state and matching receipt | View, export JSON, or print |
-| Receipt unavailable | Submission identity is preserved but the receipt could not be fetched/exported | Retry receipt lookup/export or use Print; never resubmit |
+1. **Packet selection** — no application exists.
+2. **Parsing** — the chosen packet is being checked; no partial form exists.
+3. **Draft** — saved application answers may be changed; Review may be requested.
+4. **Review** — one immutable current review is visible; answers are read-only until Return.
+5. **Submitted** — one accepted receipt exists; application is read-only.
+6. **Session expired** — application and receipt access have ended.
 
-## Core User Journey
+### Bounded exceptional presentations
 
-### Supported path
+- **Parse failed** — no application exists.
+- **Stale page** — saved content may remain visible but is read-only because a newer page is authoritative.
+- **Checking latest state** — bounded reconciliation after abort, response loss, or uncertain submit; when authority can be reached it resolves to Draft, Review, Submitted, Stale page, or Session expired.
+- **Connection unavailable** — automatic reconciliation stopped without learning the authoritative state; no state-changing action is enabled.
+- **Checking receipt** — the value-free Receipt shell has not yet established an authenticated Submitted record and makes no acceptance claim.
+- **Receipt unavailable** — Submitted is authoritative, but the canonical receipt could not currently be loaded.
+- **Receipt export failed** — Submitted remains authoritative.
+- **At capacity** — no application exists and the user may retry at the displayed time.
 
-1. The student lands in a fresh synthetic session and sees the program, privacy boundary, and two packet choices.
-2. They choose the supported packet. The page shows the included PDFs and successful extraction state without pretending the files are real records. They may instead choose a complete-manually path that uses the same field policy and source picker.
-3. They review a short disclosure summary and choose **Allow value-bearing WebMCP access for this page session**.
-4. The consent-gated capabilities become available. The external agent reads requirements and the evidence index, then applies claim-bound answers using the current application version.
-5. The page visibly fills supported fields. Binding chips identify source document/page; activating a chip opens the exact synthetic excerpt.
-6. Binding `financially dependent on guardian = yes` reveals guardian full name and household size. Annual household income is already required for every applicant. The agent re-reads live state and fills the new branch fields from allowed claims.
-7. The agent may propose a contact email, but the field remains `Needs your declaration`. The student reviews the exact value and confirms it through the normal UI.
-8. The agent prepares review. The student inspects the final diff, evidence/declaration groups, disclosures, and readiness summary.
-9. The student selects **Confirm this review**. The exact review version becomes confirmed and Submit is enabled.
-10. The student selects **Submit application**. A success screen and matching provenance receipt appear.
+There is no persistent Confirmed, Approved, Cancelled, Submission pending, recovery-token, page-lineage, or renewed-session stage.
 
-### Conflict path
+### Assistance overlay
 
-1. The student chooses the conflict packet and authorizes the same bounded evidence access.
-2. The external agent invokes the same production tools and handlers as the supported path.
-3. Supported fields fill, the conditional branch opens, and annual household income remains unresolved.
-4. The page and tool result identify a structured conflict without choosing a convenient value.
-5. The student opens the comparison, sees both synthetic source excerpts, selects the current policy-supported source, and records a short resolution reason.
-6. The original conflict remains in history; the resolution does not authenticate either document or erase disagreement.
-7. The agent re-reads validation and prepares review only after all other requirements are satisfied.
-8. Review, visible confirmation, submission, and receipt follow the same path as the supported packet.
+Assistance never changes the primary workflow. Its only visible modes are:
 
-### Blocked path
+- **Off** — initial, declined, revoked, refreshed/taken over, review prepared, or expired.
+- **Allowed for this page/session** — protected operations may be finally authorized while this page and session remain current.
+- **Unavailable** — WebMCP is unsupported; every manual control remains usable.
 
-If no claim satisfies an evidence-required field, the application stays not ready. The UI explains which evidence class is required. Because arbitrary upload is outside the committed slice, the synthetic demo offers **Reset and choose another packet**, not a fake corrected-document upload.
+### Canonical field status language
 
-### Manual path
-
-If WebMCP is unavailable, denied, revoked, or fails, the student can complete the same semantic form manually. They select an allowed source claim from the visible evidence drawer for evidence-required fields and use the visible declaration flow for declaration-allowed fields. There is no non-agent “fill everything” button, hidden answer map, or weaker readiness policy.
-
-## Status Language
-
-Every active field exposes a text label and icon; color is supplemental.
-
-| Status | Meaning | Can be submission-ready? |
+| Visible status | Meaning | Ready? |
 |---|---|---:|
-| Source linked | Value is bound to an allowed claim and current policy/version | Yes, if all other rules pass |
-| User declared | Visible UI recorded a declaration for a declaration-allowed field | Yes |
-| Needs your declaration | Agent proposed an unbound value for a declaration-allowed field | No |
-| Missing | No value or permitted binding exists | No |
-| Conflicting | Multiple accepted claims disagree and no valid resolution is recorded | No |
-| Low confidence | Parser flagged the source extraction below that field's accepted threshold | No unless field policy explicitly permits a human correction path; committed required-evidence fields do not |
-| Invalid | Value fails the field's format or business rule | No |
+| **Missing — choose a source** | Active evidence-required field has no saved binding | No |
+| **Source linked** | One allowed source claim supports the saved value | Yes |
+| **Corroborated by 2 sources** | Canonical income claim agrees with the second accepted source | Yes |
+| **Conflict — your choice required** | Accepted sources disagree and no human resolution exists | No |
+| **Source linked · Resolved by you** | Applicant committed one accepted conflicting source and one bounded reason | Yes |
+| **Needs your declaration** | Saved email exists but applicant has not declared that exact value | No |
+| **Declared by you** | Applicant declared the exact saved `.test` email | Yes |
+| **Unsaved — not in your application** | Local email input differs from saved state | No; Review blocked |
+| **Not required** | Conditional field is inactive and excluded | Not counted |
 
-`Stale` is an operation error caused by an outdated application version, not a permanent evidence status. The UI keeps newer data and offers a refresh/retry path; it never overwrites silently.
+Agent-attributed fields also show **Updated through assisted access** without using attribution as a readiness status.
+
+For an unresolved income conflict, **Conflict — your choice required** remains the primary status while an incomplete local source/reason choice shows secondary text **Selection not saved**. A local edit to a previously committed resolution leaves **Source linked · Resolved by you** authoritative, shows **Selection not saved**, and blocks Review until the applicant saves or discards that edit.
+
+### Readiness summary
+
+The Application header shows active progress such as **4 of 8 active answers ready** and a text list of blockers. Before dependency is saved as `Yes`, there are six active fields; afterward there are eight. Progress never counts inactive fields, local unsaved text, a proposed-but-undeclared email, or unresolved conflicting income.
+
+When a committed income resolution is ready but the applicant starts an unsaved replacement, the prior authoritative **n of the current active-field total saved answers ready** count remains unchanged and a separate warning says **1 unsaved change blocks Review**. Before the guardian branch opens the denominator may be six; afterward it is eight. The canonical otherwise-ready example is **8 of 8 saved answers ready · 1 unsaved change blocks Review**; incomplete examples include **5 of 6** or **7 of 8** with the same separate warning. The local selection is not counted as another answer and cannot be reviewed or submitted until saved or discarded.
+
+## Core User Journeys
+
+### Canonical Conflict journey
+
+1. The student chooses Conflict and starts a 60-minute synthetic demo.
+2. CiteApply checks the three PDFs and opens Draft with six active requirements.
+3. The external client discovers all six tools. A protected pre-consent call returns value-free `consent_required`.
+4. The student reads the complete assisted-access disclosure and selects **Allow assisted access**.
+5. The agent separately reads application state, requirements, and normalized evidence claims.
+6. The first atomic batch binds legal name, student ID, institution, and dependency. The visible form changes; dependency `Yes` reveals and announces two new questions.
+7. The agent re-reads current state/active requirements. A second atomic batch binds guardian name and household size and proposes `anaya.rao@example.test`; email remains **Needs your declaration**.
+8. The agent attempts the disputed income binding separately. CiteApply returns `conflict_requires_human`, applies nothing, and shows **Income was refused; no value changed.**
+9. Validation and premature review preparation identify exactly two blockers: income conflict and email declaration. No review is created.
+10. The student opens both exact income excerpts, selects one accepted source, chooses a bounded reason, and activates **Use selected income source**.
+11. The student reviews the exact email value and activates **Declare this email**.
+12. Validation reaches zero blockers. The agent prepares review metadata; assisted access turns Off and the complete review appears only in Application.
+13. The student may Return, edit, and prepare again. In the canonical demo they select **Confirm and submit this review**.
+14. Submitted opens the canonical receipt. Screen, JSON, and print show semantically equal accepted information.
+
+### Supported assisted journey
+
+The same tools, ordering, prompts, and policies run against Supported. Equal income becomes the canonical income-statement binding plus household corroboration. Immediately before declaration, email is the only blocker. After applicant declaration, agent review preparation succeeds and the same human-only submission/receipt path completes.
+
+### Complete manual journey
+
+The student declines or lacks WebMCP, uses visible source selectors for every evidence-required field, resolves any conflict through the same human comparison, saves and declares the `.test` email, selects **Review application**, and submits through the same Review and Receipt. For identical authoritative application content, manual and assisted preparation produce identical field values, bindings, declaration, resolution, readiness, submitted application content, and canonical application-content hash. Both use the same Receipt schema and projection rules; truthful assisted attribution and activity counts may differ by journey.
+
+### Review-return journey
+
+The student prepares Review, notices an error, and selects **Return to application**. CiteApply invalidates that review, preserves valid saved answers/resolution, returns to Draft, and leaves assistance Off. The student edits, re-declares if needed, and prepares a new current review. Re-preparing unchanged content may reproduce the same canonical content hash but creates a new review identity; only the current review may submit.
+
+### Interruption journey
+
+Refresh/newer-page takeover restores saved Draft, Review, or Submitted state but clears assistance and open confirmation presentation. An interrupted assisted draft request may say **The assistant stopped waiting. This action may have completed. Checking the latest application.** Human-submit uncertainty instead says **We couldn't confirm the response. Checking whether your application was submitted. Do not submit again.** The user sees either unchanged state or one complete committed effect—never a partial change, duplicate receipt, or optimistic success. If authoritative state remains unreachable after bounded automatic checks, CiteApply stops and presents Connection unavailable with no enabled mutation or submit action.
 
 ## Epics And User Stories
 
-### Epic 1: Understand and start a synthetic application
+The story identifiers below are stable references for the replacement specification, checklist, tests, reviews, and demo evidence. Acceptance criteria describe externally observable behavior. They do not prescribe implementation structure.
 
-As a student, I want to understand the program and select a safe demo evidence packet so that I can explore the workflow without exposing real personal information.
+### Epic 1 — Start a truthful, bounded synthetic application
 
-Acceptance criteria:
+#### CA-START-01 — Understand the demonstration before starting
 
-- **E1-AC1:** A first visit clearly names the fictional program, identifies the experience as synthetic, and states that it is not an eligibility or authenticity check.
-- **E1-AC2:** Exactly two packet choices are available: supported and conflict. Each lists its synthetic PDFs and a plain-language scenario description.
-- **E1-AC2a:** A keyboard-reachable **Complete manually** path is available and uses the same source-binding, declaration, conflict, readiness, review, and submission rules.
-- **E1-AC3:** Selecting a packet creates or resets a demo-scoped application and shows extraction progress, success, or a specific failure per document.
-- **E1-AC4:** Both packet choices travel through the same product parser and handlers. The page exposes no “demo success” bypass.
-- **E1-AC5:** Switching packet or resetting after work exists requires destructive confirmation and explains that claim handles, drafts, conflicts/resolutions, prepared review/confirmation state, and consent will be cleared. On confirmation, no data or handle from the prior packet remains available and focus returns to packet selection.
-- **E1-AC6:** A parser failure marks affected claims missing/low-confidence, preserves unaffected claims, and prevents any affected required field from becoming ready.
-
-### Epic 2: Control evidence disclosure to the page's WebMCP session
-
-As a student, I want to control when this page exposes structured applicant/evidence data through WebMCP so that no value-bearing tool result is available before I consent.
+As a student or judge, I want to know that the scholarship and records are fictional so that I do not mistake the demonstration for a real aid application or enter personal information.
 
 Acceptance criteria:
 
-- **E2-AC1:** Before authorization, always-available results are limited to form requirements, field identifiers, accepted evidence classes, and coarse progress with no applicant values, source/conflict/declaration metadata, branch answers, or value-bearing validation details.
-- **E2-AC2:** The authorization screen lists data categories, purpose, session scope, and how to revoke; it does not imply CiteApply can authenticate the external agent's identity. It states that consent governs CiteApply's structured WebMCP disclosure, not a privileged client's separate ability to observe information already rendered in the page.
-- **E2-AC3:** A visible student action enables consent-gated capabilities for the current page/application session.
-- **E2-AC4:** Consent is required for every tool output containing field values, claim values/handles, declaration values, conflict values/source metadata, branch answers, or value-bearing validation details. Exact source snippets/document content and the complete review diff are human-UI-only. Agent review preparation returns readiness and review identifiers/metadata, not the exact diff.
-- **E2-AC5:** Revocation blocks future consent-gated tool reads/mutations. Values already applied remain visible and attributed so the student may edit them individually; manual work is preserved. Bulk removal is post-v1.
-- **E2-AC6:** Refresh restores authoritative application state with evidence access off. The student must visibly authorize sensitive capabilities again for the new page session.
-- **E2-AC7:** Wrong-session, wrong-packet, forged-handle, cross-application, pre-consent, and post-revocation calls to every registered read/review/mutation capability make no mutation and return no protected value.
-- **E2-AC8:** A consent-gated call that has not returned/committed when access is revoked returns no protected data and produces no later mutation. If a whole mutation committed first, it remains visibly applied with an activity time. Revocation cannot retract information already returned, revoke separate browser/extension permissions, or be followed by a surprise delayed update.
-- **E2-AC9:** A black-box test manually enters and declares values before consent, invokes every registered read/review tool, and observes no value-bearing output; granting consent exposes only scoped values, and revocation redacts/denies every value-bearing output again.
+- Landing visibly names **Horizon Education Aid** and places **Fictional demo · Synthetic data only** beside the main heading rather than in footer-only fine print.
+- The page explains in plain language that CiteApply demonstrates source-backed form completion, that all included records are synthetic, and that nothing is sent to a real scholarship provider.
+- A prominent notice tells the visitor not to enter personal or confidential data. No control requests a real email, identity, payment, authentication secret, or uploaded document.
+- Both packet cards label every document **SYNTHETIC — NOT VALID** and summarize the intended difference: Supported has agreeing income sources; Conflict has disagreeing income sources.
+- The only primary start action is **Start 60-minute demo** after one packet is selected. Start is unavailable until the visitor makes that visible choice.
+- Starting one packet cannot accidentally create two visible applications when the button is double-activated, the response is delayed, or the page is refreshed during start.
 
-### Epic 3: Collaborate through the live WebMCP application contract
+#### CA-START-02 — See a real parse boundary
 
-As a student using an external browser agent, I want the agent to read live requirements and visibly draft the same form I see so that collaboration is reliable and inspectable.
+As a judge, I want the selected PDFs to be checked at runtime so that the product demonstrates actual document grounding rather than a prefilled answer map.
 
 Acceptance criteria:
 
-- **E3-AC1:** The blocking feasibility spike proves that the primary tested external client discovers real imperative WebMCP tools on the running product and can invoke one read, one version-checked mutation, and cancellation. This minimum spike is not sufficient for final WebMCP acceptance.
-- **E3-AC2:** Every successful mutation updates the normal semantic form and status summary immediately; there is no hidden agent-only draft.
-- **E3-AC3:** The supported and conflict packets use identical registered tools and production handlers but return state-derived differences.
-- **E3-AC3a:** Final external-client acceptance shows the client reading requirements and consented evidence, independently composing multiple claim-to-field bindings from those results, applying them with the current version, re-reading after the conditional branch appears, and changing its next action after a structured conflict or stale result. No tool returns a precomputed field-to-answer assignment.
-- **E3-AC4:** Applying the dependency claim reveals guardian name and household size; annual household income remains required in either branch. A subsequent state read reports the new branch and requirements.
-- **E3-AC5:** A batch is atomic from the user's perspective: rejected or cancelled mutations do not leave a partial mix of old and new field values.
-- **E3-AC6:** A request using an old application version is rejected as stale, preserves the newer application, and tells the client/user to refresh state.
-- **E3-AC7:** Unknown fields, malformed values, disallowed evidence classes, invalid claim IDs, hash mismatches, and wrong-session handles produce specific errors and no unauthorized mutation.
-- **E3-AC8:** Cancellation before commitment leaves no changes and returns cancelled. If the full atomic mutation committed first, the visible result/activity says it completed; the product never reports cancelled and then applies a surprise update.
-- **E3-AC9:** Repeating an accepted request with the same request ID and payload does not duplicate changes; reusing that ID with a different payload fails visibly.
-- **E3-AC10:** The visible activity summary shows tool name, state, time, and affected field count without logging document text, source snippets, or synthetic PII values.
-- **E3-AC11:** Without WebMCP assistance, the student can manually select allowed claims for evidence-required fields and reach the same readiness/review flow; no manual action bypasses policy.
-- **E3-AC12:** Reset invalidates all in-flight operations, claim handles, request IDs, reviews, and confirmations for the deleted draft. A late result cannot disclose data or recreate the application.
+- After Start, the visible stage is **Parsing** and explicitly says that the three selected synthetic PDFs are being checked. It does not show a partially filled application.
+- Successful parsing opens exactly one Draft whose claim inventory corresponds to the selected packet.
+- Every displayed evidence excerpt can later be traced to its document name and one-based page number; no excerpt is invented from an answer value.
+- In test only, an independently reviewed mutated PDF may be admitted under its own test allowlist entry through the same production parser/extractor. Changing its source text must change the corresponding normalized value or exact anchor; invoking a parser while ignoring its output fails this requirement.
+- Separately, changing any committed production PDF byte while presenting its original allowlisted hash must fail before application creation.
+- A static production import/bundle check must prove that production cannot import test goldens, precomputed claims, a production claim manifest, or a hardcoded field-to-answer map.
+- If any required document is missing, altered, too large, too long, unreadable, or lacks an exact required anchor, parsing fails closed. No application or partial evidence index is created.
+- Parse failure explains which synthetic document could not be accepted without exposing stack traces, storage paths, parser internals, or secret values. The only recovery action is **Return to packet selection**.
+- Retrying after a parse failure starts a fresh attempt. The failed attempt cannot be reopened as a Draft.
 
-### Epic 4: Inspect source support and handle uncertainty
+#### CA-START-03 — Enter a fixed 60-minute session
 
-As a student, I want to see why each value was accepted or blocked so that I can correct the application rather than trusting a plausible guess.
+As a participant, I want clear time boundaries so that I understand how long the synthetic application and receipt remain accessible.
 
 Acceptance criteria:
 
-- **E4-AC1:** Every source-linked field has a keyboard-operable source chip with document title, page, evidence class, and status.
-- **E4-AC2:** Opening a source chip shows the exact authored synthetic text span and enough surrounding context to understand it; this view is delivered through the human UI, not the evidence-index tool.
-- **E4-AC3:** Extraction confidence is labeled as a parser signal and never described as truth, authenticity, or eligibility confidence.
-- **E4-AC4:** Missing, invalid, low-confidence, and conflicting states use distinct text, icons, help, and remediation. None relies on color alone.
-- **E4-AC5:** Conflict comparison displays both values and source excerpts, accepted evidence classes, date/version metadata, and a warning that selecting a source does not authenticate it.
-- **E4-AC6:** The student can select a current policy-supported source and must record a resolution reason. The original conflict and both source handles remain in history.
-- **E4-AC7:** If neither source is policy-valid, no resolution control can force readiness; the blocked-path explanation and reset option remain available.
-- **E4-AC8:** Hostile or instruction-like document text is displayed as quoted evidence data and never changes the UI instructions, tool policy, or application rules.
-- **E4-AC9:** Editing the displayed value of a source-linked field immediately removes its prior claim binding and `Source linked` status, increments application state, records the change in activity/history, and invalidates review/confirmation. An evidence-required field remains not ready until the student explicitly selects an allowed claim again; typing the same visible string does not recreate provenance. Editing a declared value also invalidates that declaration, and no receipt may pair a value with a mismatching claim.
-- **E4-AC10:** Inactive guardian fields cannot be mutated and never affect readiness/tool output/review/receipt. If closing a populated dependency branch would discard guardian name or household size, an agent request returns `requires_user_action` and the visible UI warns what will be cleared. Human confirmation clears those values/bindings, closes the branch, increments version, and invalidates review/confirmation. Reopening starts both fields empty/missing.
-- **E4-AC11:** Two allowed claims whose normalized values are equal do not create a conflict. Portal policy selects `income_record` as the displayed primary binding over `household_record`, while both sources remain inspectable/corroborating in provenance.
+- A successful start communicates that the application is available for 60 minutes and shows an understandable remaining-time presentation in Application and Receipt.
+- At minute 50, a non-modal warning announces that ten minutes remain and offers no misleading extension or renewal action. If a background browser throttles timers, it appears and announces immediately at the next foreground/focus opportunity after minute 50.
+- At minute 60, no new application or receipt request can be authorized. The visible destination is **Session expired** with **Start a new synthetic demo**. An operation whose final authorization won before the deadline may still complete or deliver its already-authorized bounded result; the page does not reopen access or enable another action.
+- A refresh cannot renew the session, create a replacement authority silently, or extend the original deadline.
+- A JSON receipt already downloaded by the participant remains a local file outside CiteApply; the product does not imply it can retract that file.
+- Product copy makes no promise that database rows, host backups, or logs are physically erased at the access deadline.
 
-### Epic 5: Keep declarations human-visible and policy-limited
+#### CA-START-04 — Handle capacity without pretending an application exists
 
-As a student, I want to explicitly declare only values that the form allows me to declare so that an agent cannot impersonate my attestation.
+As a visitor, I want an honest capacity response so that I know whether to retry rather than waiting inside a broken application.
 
 Acceptance criteria:
 
-- **E5-AC1:** An agent may propose the preferred contact email only when the current user instruction explicitly supplies that exact value. It may not infer or invent an email from documents or names. The field remains `Needs your declaration` and blocks review readiness until the student acts.
-- **E5-AC2:** The declaration action exists only in the normal visible UI, restates the exact field/value, and requires affirmative user activation.
-- **E5-AC3:** Evidence-required fields never display a declaration action and cannot become ready through an unbound note or proposed value.
-- **E5-AC4:** A declaration is tied to the exact field, value, application version, declaration-policy version, demo session, and time.
-- **E5-AC5:** Editing the value invalidates its prior declaration and returns the field to `Needs your declaration`.
-- **E5-AC6:** Agent/API attempts to mark a value declared, reuse a declaration for another field/value/version, or forge the declaration actor fail without changing readiness.
-- **E5-AC7:** Product wording promises that WebMCP and agent-facing APIs cannot create declarations; it does not claim that privileged browser automation can never actuate visible controls.
+- When the bounded public demo cannot admit another session, Landing shows **At capacity**, a safe retry time, and no application identifier or partial form.
+- Capacity refusal does not parse documents, allocate a usable application, or claim that data was saved.
+- Repeated activation during the same refusal window does not create hidden applications.
+- The presentation remains keyboard accessible and retains the packet choice so the visitor can retry deliberately.
 
-### Epic 6: Prepare, confirm, submit, and receive an exact record
+### Epic 2 — Complete the source-backed form manually
 
-As a student, I want to review the exact application version and retain a matching receipt so that I know what I chose to submit.
+#### CA-FORM-01 — Understand active requirements and progress
 
-Acceptance criteria:
-
-- **E6-AC1:** Review cannot be prepared while any active required field is missing, invalid, low-confidence, conflicting, or waiting for a declaration, or while the latest operation requires a state refresh.
-- **E6-AC2:** The review screen groups source-linked and user-declared values; shows conditional branch state, conflict/resolution history, warnings, and data disclosed to tools; and provides the exact diff from the initial application.
-- **E6-AC3:** Preparing review creates a visibly identified snapshot/version. No WebMCP tool or agent-facing API can confirm or submit it.
-- **E6-AC4:** **Confirm this review** is available only in the normal UI and enables submission for that exact snapshot.
-- **E6-AC5:** Any field edit, declaration change, branch change, evidence resolution, policy/application-version change, or reset invalidates confirmation, disables Submit, and returns the user to draft/review preparation.
-- **E6-AC6:** Missing confirmation keeps the current review unconfirmed. Expired or explicitly cancelled confirmation transitions to **Review prepared**, disables Submit, and offers confirmation again without data re-entry. Wrong-version or mismatched-review confirmation returns the legitimate application to current **Draft** with a new-review requirement. A wrong-session request does not alter the legitimate session.
-- **E6-AC6a:** A used confirmation tied to a successful submission resolves to the existing **Submitted** state and receipt. No rejection state leaves Submit enabled in a permanent failure loop.
-- **E6-AC7:** Repeating the accepted submission request returns the same success/receipt rather than creating a second submission; a different payload cannot reuse the approval.
-- **E6-AC7a:** If a network failure leaves submission outcome unknown, the UI enters **Checking submission status**, disables duplicate submission, and queries the existing request. It resolves to the original receipt if accepted or returns to the same still-valid confirmed review only if the server establishes that submission did not occur.
-- **E6-AC8:** Successful submission shows the application ID, submitted time, accepted version/hash, active submitted fields, binding metadata/anchor references, declaration record, conflict resolution history, relevant policy versions, and bounded WebMCP activity summary. It excludes inactive branch values, document bodies/full source snippets, approval secrets, and internal diagnostics.
-- **E6-AC9:** On-screen receipt, JSON export, and print contain the same substantive active record and exactly match the confirmed review. Each is visibly synthetic, warns that the export contains displayed synthetic application values, and never claims authenticity, eligibility, or cryptographic certification.
-- **E6-AC10:** Refreshing a submitted session returns to the same receipt rather than an editable draft.
-
-### Epic 7: Recover safely from interruption and failure
-
-As a student, I want clear recovery when the browser, client, or application state changes so that I do not lose work or submit stale data.
+As an applicant, I want to see which questions currently apply and why so that I can complete the form without an agent.
 
 Acceptance criteria:
 
-- **E7-AC1:** Refresh restores the latest authoritative Draft/conflicts/declarations/branch. A still-current prepared review may be reconstructed; visible confirmation never silently survives a new page session and returns to **Review prepared** with Submit disabled. Refresh during **Submission checking** resumes reconciliation without exposing a second Submit action. Accepted submission restores only the locked receipt. A changed application/policy version discards the old review and returns to Draft with an explanation.
-- **E7-AC2:** If WebMCP is unavailable, the page says so without blocking the normal human form path or implying arbitrary-browser compatibility.
-- **E7-AC3:** Network/server failures preserve the latest authoritative persisted state, show a safe retry/recheck action, and do not optimistically claim a mutation or submission succeeded.
-- **E7-AC4:** Each state family—packet processing, consent, agent action, field readiness, review/confirmation, and submission/receipt—shows what happened, what was preserved, whether submission occurred or remains unknown, and one safe next action.
-- **E7-AC5:** An unexpected error exposes a safe reference ID, not document text, source excerpts, field values, stack traces, or approval secrets.
-- **E7-AC6:** **Reset draft** is available only before submission. After destructive confirmation it deletes the unsubmitted application, claims, consent, review, and confirmation according to the G3 retention contract; every old handle/approval fails afterward. The visible copy states the automatic synthetic-session retention period.
-- **E7-AC7:** A submitted application cannot be packet-switched, reset, or edited. V1 offers only receipt view, JSON export, and print until automatic expiry; starting another demo and an explicit delete-demo-data action are post-v1.
-- **E7-AC8:** Receipt export failure leaves the existing receipt and submission untouched and offers **Retry export** and **Print**. It never triggers or repeats submission.
+- Draft initially shows six active fields. Before dependency `Yes`, guardian name and household size controls are absent from the editable form; a collapsed **Not currently required** summary names both with status **Not required**, so the eight-field program remains understandable without exposing unusable controls.
+- Each active evidence-required field identifies the allowed source document or documents and begins as **Missing — choose a source** unless a valid source binding is already saved.
+- Saving dependency `Yes` reveals guardian name and household size, moves the count to eight active fields, and announces the change to assistive technology without moving focus unexpectedly.
+- Progress counts only ready active fields. It never counts inactive fields, unsaved local text, a proposed email without declaration, or unresolved income.
+- The blocker summary uses the same terms as the affected fields and links or moves focus to the first relevant control.
+- A returning current page reconstructs the authoritative saved answers and statuses instead of relying on stale visual state.
 
-### Epic 8: Make the complete path accessible and demo-verifiable
+#### CA-FORM-02 — Bind evidence-required answers through visible sources
 
-As a student using keyboard, zoom, reduced motion, or assistive technology, I want the same evidence, conflict, review, and submission capability without losing context.
+As an applicant, I want to choose a permitted source claim rather than type an unsupported value so that each required answer remains auditable.
 
 Acceptance criteria:
 
-- **E8-AC1:** The entire supported and conflict journeys are operable by keyboard with visible focus and logical order, including packet selection, consent, source inspection, conflict resolution, declaration, confirmation, submission, and receipt export.
-- **E8-AC2:** Inputs have programmatic labels/instructions; status changes and validation summaries are announced without stealing focus; errors link to affected controls.
-- **E8-AC3:** Dialogs/drawers manage focus predictably, Escape behavior is safe, and focus returns to the invoking control.
-- **E8-AC4:** Text and controls meet the chosen WCAG 2.2 AA contrast target, content reflows at 200% zoom and a 320 CSS-pixel viewport, and meaning never depends on color, position, animation, hover, or pointer precision alone. All essential pointer targets meet a 24×24 CSS-pixel minimum or an allowed documented exception.
-- **E8-AC5:** Reduced-motion preference removes nonessential animation. Expiration never loses application data or permanently blocks the task; an expired confirmation returns to the same review and can be reconfirmed without re-entry. Where practical, impending expiry is announced without interrupting the user.
-- **E8-AC6:** Combined automated and manual checks report no known WCAG 2.2 A/AA violations on each named stage: Choose evidence, Authorize collaboration, Complete application, Review and confirm, and Submitted receipt. Scanner limitations are supplemented by full keyboard and named screen-reader/browser checks for both packet flows. Any known A/AA failure blocks the gate.
-- **E8-AC7:** The recorded demo shows a genuine external-client invocation and resulting visible mutation by second 10, preserves the complete real call/result relationship, and does not substitute a simulated animation or testing harness.
-- **E8-AC8:** The external-client trace, visible mutations, review snapshot, and receipt reconcile for the recorded session.
-- **E8-AC9:** Failed review or submit validation moves focus to a linked error summary. Source evidence is available as selectable semantic text with document name and page; a PDF canvas or visual preview is never the only accessible representation.
+- Legal name, student ID, institution, dependency, guardian name, household size, and household income cannot be satisfied through arbitrary free-text entry or applicant declaration.
+- An allowed choice displays the normalized candidate value, source document, page number, and an action to inspect the exact excerpt before saving.
+- Saving a source choice changes the field to **Source linked**, or **Corroborated by 2 sources** only when the accepted income sources agree under the product rules.
+- Re-selecting the same source is idempotent from the applicant's perspective: it does not create duplicate attribution, duplicate activity, or a phantom revision.
+- Choosing another allowed source deliberately replaces the binding and makes any affected prepared review invalid before a new review can be submitted.
+- If the source claim is no longer part of the current parsed packet, the save is refused as **Evidence unavailable** and no answer changes.
 
-## Global Acceptance Rules
+#### CA-FORM-03 — Inspect exact evidence in context
 
-These apply to every epic:
+As an applicant, I want to inspect the exact text behind a candidate so that I can judge whether the source supports the displayed answer.
 
-- A “pass” requires observable behavior in the running product plus the applicable automated/manual evidence; screenshots alone do not satisfy state or security requirements.
-- All public fixtures, screenshots, test artifacts, logs, and demo recordings use conspicuously synthetic data.
-- The normal UI and WebMCP handlers apply the same versioned field/evidence/readiness policy.
-- Tool schemas and client-side validation improve guidance but never replace authoritative policy and session checks.
-- Claims that both packets use the same parser/handlers and no bypass require behavioral evidence from both packets, parser-failure/modified-hash tests, and public-source inspection; screenshots alone cannot prove them.
-- No document body, evidence excerpt, synthetic PII value, approval secret, or sensitive tool result appears in application logs, analytics, traces, browser console errors, or test-report titles.
-- Compatibility claims name exact tested client/browser versions and required setup. Untested clients are described as unverified.
-- A material change to the locked scope or any acceptance rule reopens the relevant planning gate.
+Acceptance criteria:
 
-## Edge Cases
+- Opening evidence shows the document title, one-based page, normalized value, and exact inert text excerpt together.
+- The evidence view distinguishes normalized value from exact source text and never suggests that normalization changed the source document.
+- Closing the evidence view returns focus to the control that opened it. Escape, close button, and keyboard navigation work without trapping focus.
+- Exact source text is rendered as text, never interpreted as markup, executable content, a link, or an instruction to an agent.
+- Raw PDF bytes, complete document text, storage locations, and unrelated excerpts are not exposed through assisted access. The human-visible evidence view remains available without WebMCP.
+- At 320 CSS pixels and 200% zoom, the source identity and exact excerpt remain readable without loss of controls or two-dimensional page scrolling.
 
-- A packet is selected while an earlier session is submitted.
-- One PDF parses and another fails or its content hash changes.
-- Two claims normalize to the same value but have different formatting or dates.
-- Two allowed claims conflict, and the student abandons the comparison.
-- A proposed email is changed after it was declared.
-- The dependency answer changes and conditional fields become inactive.
-- An agent retries after the human edited the form and its expected version is stale.
-- Consent is revoked while a tool call is running.
-- A tool call is cancelled after validation but before mutation completion.
-- Review is open in one tab while another tab changes the draft.
-- Confirmation expires before Submit.
-- Submit is double-clicked, retried after a network timeout, or replayed from another session.
-- The user refreshes during parsing, conflict resolution, prepared review, confirmed review, or after submission.
-- A source contains prompt-like language, extremely long values, markup, or schema-shaped text.
-- A source handle belongs to the other synthetic packet or application.
-- WebMCP API is absent, changes, or the external client cannot invoke a registered tool.
-- The viewport is narrow, text is zoomed, reduced motion is active, or a screen reader announces rapid multi-field updates.
+#### CA-FORM-04 — Exercise the dependency branch safely
 
-## Quality And Learning Measures
+As an applicant, I want conditional questions to follow my dependency answer so that the form includes what applies and excludes what does not.
 
-### Product correctness
+Acceptance criteria:
 
-- 100% of ready fields in the committed golden corpus have a policy-allowed claim binding or visible human declaration.
-- 0 tested evidence-required fields reach ready state using only an unbound proposal/declaration.
-- 0 tested stale, forged, cross-session, cancelled, or unauthorized requests produce a partial/unauthorized mutation.
-- Both evidence packets match reviewed extraction/source-anchor goldens.
-- The receipt matches the accepted review snapshot exactly in every E2E run.
+- Saving dependency `Yes` activates guardian name and household size in the same authoritative change and updates requirements before a later action can assume the old branch.
+- Both Supported and Conflict packets take this `Yes` branch in the committed demonstration data.
+- If a human clears the saved dependency binding while either conditional field contains a saved value, CiteApply requires a visible confirmation that the dependency, guardian name, and household size will be cleared and the two conditional fields excluded.
+- Cancelling that confirmation preserves the dependency and both conditional values unchanged.
+- Confirming the change clears both values, excludes them from readiness, review, submission, and receipt, and announces the result.
+- Assisted access cannot silently close a populated conditional branch. An assisted request that would require that destructive confirmation is refused with no changes.
 
-### Prototype learning
+#### CA-FORM-05 — Handle agreeing and disagreeing income sources
 
-- Report completion without unresolved evidence gaps for each observed or automated scenario.
-- Report the count of clarification-required fields per scenario.
-- If at least three representative participants are available, observe synthetic-data sessions, report sample size and findings, and distinguish usability observations from customer validation.
-- If no participants are available, state plainly that no user validation occurred.
-- Do not convert synthetic test results into adoption, accuracy-improvement, time-savings, or ROI claims.
+As an applicant, I want the portal to distinguish corroboration from contradiction so that it never chooses a financially significant value merely because an agent asked.
+
+Acceptance criteria:
+
+- In Supported, both income excerpts display INR 480,000. The Synthetic Income Statement is the canonical binding and the Synthetic Household Statement appears as corroboration.
+- Supported income displays **Corroborated by 2 sources** and does not ask the applicant to manufacture a conflict reason.
+- In Conflict, the household statement displays INR 480,000 and the income statement displays INR 540,000. Neither value is selected automatically.
+- Conflict shows **Income sources disagree**, both exact source excerpts, a single selection between the two accepted values, and these exact ordered reason choices: `more_recent` — **This document is more recent**; `corrected_record` — **This document contains the corrected amount**; and `confirmed_for_application` — **I confirmed this amount for this application**.
+- **Use selected income source** stays unavailable until both a source and reason are selected. Saving records the applicant's resolution and changes the field to a ready, visibly human-resolved state.
+- Before the first commitment, a partial local selection keeps **Conflict — your choice required** and adds **Selection not saved**. After commitment the field shows **Source linked · Resolved by you**, chosen document/page, amount, and visible reason label.
+- Starting a change to a committed resolution preserves the saved resolution, adds **Selection not saved**, and blocks Review. **Discard changes** restores the committed source/reason. **Use selected income source** atomically replaces both. **Clear resolution** requires a deliberate human action, clears income and reason together, and returns the field to **Conflict — your choice required**.
+- The agent can discover that a conflict exists but cannot select the source, choose the reason, or invoke a semantic equivalent of the human resolution.
+- Editing or invalidating a resolved source later clears or updates the resolution as necessary; an obsolete resolution cannot survive into review.
+
+#### CA-FORM-06 — Save and declare the synthetic email
+
+As an applicant, I want to declare the one human-provided contact value myself so that agent assistance cannot assert a personal declaration on my behalf.
+
+Acceptance criteria:
+
+- The only allowed email is a syntactically valid `.test` address. The fixed demonstration value is `anaya.rao@example.test`.
+- An applicant may type and save the email; an agent may propose that exact bounded value. Neither path makes the field ready until the applicant activates **Declare this email** for the exact saved value.
+- Before declaration, the status is **Needs your declaration**. After the visible human action it is **Declared by you**.
+- If local email text differs from the saved value, the field displays **Unsaved — not in your application**, Review is blocked, and the page offers explicit Save and Discard choices.
+- Saving a changed email invalidates the prior declaration. Discard restores the exact saved value and its authoritative declaration state.
+- No WebMCP operation can create, forge, replay, or infer the declaration. A request that includes declaration intent is refused without changing the email or any other batched answer.
+- Email values do not appear in URLs, browser storage, analytics, console output, or diagnostic error text.
+
+#### CA-FORM-07 — Reach readiness manually without WebMCP
+
+As a participant without a compatible agent, I want the entire application to remain complete so that WebMCP is an enhancement rather than a requirement.
+
+Acceptance criteria:
+
+- Selecting **Continue manually**, declining consent, revoking consent, or using an unsupported browser never disables packet parsing, field completion, evidence inspection, conflict resolution, email declaration, Review, Return, submit, or receipt export.
+- Unsupported WebMCP produces one nonblocking explanation and does not repeatedly interrupt the form.
+- For identical authoritative application content, manual and assisted paths display the same field status, blocker count, application-content hash, and submitted application content. They use the same Receipt schema/projection, while the assisted-attribution/activity section truthfully differs when assistance occurred.
+- The manual Conflict journey can progress from packet selection to a matching receipt using visible controls only.
+- No hidden tool invocation, automation-only route, or test harness action is required for manual completion.
+
+### Epic 3 — Give informed, revocable assisted access
+
+#### CA-CONSENT-01 — See exactly what assisted access permits
+
+As an applicant, I want a complete disclosure before protected access so that I understand the categories and actions I am authorizing.
+
+Acceptance criteria:
+
+- Draft presents **Allow assisted access?** before any protected value-bearing tool result can be released.
+- The disclosure identifies this current synthetic application, this current page, and this 60-minute session as the maximum authority boundary.
+- The primary disclosure uses applicant language, not protocol terms, and includes this literal substance: **The assistant may receive your saved form answers—including the preferred contact email—and values extracted from the three synthetic records, including name, student ID, institution, household details and income. It may also receive document names/pages, which questions currently apply and their source rules, current blockers and limited review status. CiteApply's assisted tools may link allowed sources to draft answers and propose the synthetic email.**
+- It then states: **CiteApply's six assisted tools will not receive full PDFs, complete excerpts, your declaration record, conflict choice or reason, full review, confirmation, submission or exports. Those tools cannot choose a packet, make your declaration, resolve the income conflict, return from Review, confirm, submit or export. Because current blockers and limited readiness are included, the assistant may learn that a required human step is complete, but not the private conflict choice or reason.**
+- It also states: **This choice controls only CiteApply's six assisted tools. It does not change permissions you separately grant your browser, extension or assistant.**
+- Its revocation limitation states: **Revoking blocks new access, but an action CiteApply already accepted may still finish, and information already returned cannot be recalled. If a request stops waiting after CiteApply received it, the page checks the saved application instead of promising that the action was cancelled.**
+- A secondary **Technical details** disclosure may explain current-page/session authority and final-authorization ordering, but those terms cannot replace the plain-language text.
+- Visible-copy completeness tests assert every included category, allowed action, exclusion, separate-permissions caveat, and in-flight limit. The disclosure is fully reachable/readable by keyboard, and the canonical Conflict VoiceOver pass verifies heading, scope, choices, and exclusions before Allow.
+
+#### CA-CONSENT-02 — Choose assisted or manual continuation
+
+As an applicant, I want a real choice so that an agent cannot force access by discovering tools.
+
+Acceptance criteria:
+
+- The visible choices are **Allow assisted access** and **Continue manually**. Neither is preselected, visually hidden, or described as required to finish.
+- Before Allow, protected modes and state-changing operations return a value-free `consent_required` outcome. The result contains no applicant value, evidence value, active-field inference, saved blocker detail, or authority-bearing identifier.
+- Two safe discovery modes are intentionally available before Allow: redacted `get_application_state` may return only access status `consent_required` and safe next actions **Allow assisted access** or **Continue manually**; `get_form_requirements` with mode `all` may return the eight static field names, policy classes, conditional relationship, and accepted document classes. Neither mode returns packet identity, active/inactive status, application or requirements versions, progress, values, claims, handles, blockers, activity, or review metadata.
+- Tool discovery alone does not create consent or reveal protected values.
+- Allow changes the assistance overlay to **Allowed for this page/session** and makes the current authority visible near the application status.
+- Continue manually leaves assistance Off and dismisses the disclosure without harming the manual path. The applicant may choose Allow later while Draft and current.
+- If WebMCP is unavailable, the choice is not faked; assistance shows **Unavailable** and manual completion remains intact.
+
+#### CA-CONSENT-03 — Revoke access with honest race semantics
+
+As an applicant, I want to stop future assisted access so that I retain understandable control even when a call is already in flight.
+
+Acceptance criteria:
+
+- While access is allowed, **Revoke access** is visible and keyboard reachable.
+- If Revoke becomes authoritative before a protected operation's final authorization, that operation returns a value-free consent refusal and produces no protected effect.
+- If the operation's final authorization becomes authoritative first, its bounded result or complete atomic effect may arrive after Revoke. CiteApply does not claim to retract it.
+- The application ignores stale-page visual callbacks and rereads current state when an outcome is uncertain.
+- Revoke turns assistance Off without clearing valid saved application answers or applicant decisions.
+- Later protected calls require a fresh visible Allow while the same page remains current. A request identifier from the prior authority cannot bypass the new consent boundary.
+
+#### CA-CONSENT-04 — Clear assistance at every authority boundary
+
+As an applicant, I want temporary authority to end predictably so that consent does not silently survive a context change.
+
+Acceptance criteria:
+
+- Refresh, a newer-page takeover, successful Review preparation, Return from Review, submission, and session expiry all leave assistance Off.
+- A restored page never displays allowed access until the applicant performs a new Allow action on that page.
+- The old page becomes **Stale page**, is read-only, and cannot regain authority through a protected call, browser back navigation, or a delayed callback.
+- Review and Receipt do not offer Allow because assisted mutation is outside those stages.
+- The product does not describe consent as account-wide, device-wide, browser-wide, or reusable across applications.
+
+### Epic 4 — Let an agent compose within portal policy
+
+#### CA-ASSIST-01 — Discover one truthful six-operation capability
+
+As an external client, I want a small semantic contract so that I can collaborate with the visible application without scraping controls or receiving hidden submission power.
+
+Acceptance criteria:
+
+- A compatible client discovers exactly six CiteApply operations for current state, requirements, evidence index, evidence-backed answer application, validation issues, and Review preparation.
+- Their locked names are `get_application_state`, `get_form_requirements`, `get_evidence_index`, `apply_evidence_backed_answers`, `get_validation_issues`, and `prepare_submission_review`.
+- Operations are registered once for the current application experience; navigation or rerendering does not create duplicate names or ghost capabilities.
+- Descriptions accurately distinguish reads, state-changing draft composition, and Review preparation, and explicitly state required consent and human-only exclusions.
+- There is no semantic operation for packet selection, exact source-excerpt retrieval, declaration, conflict resolution, Return, confirmation, submission, receipt access, JSON export, or print.
+- The visible manual interface remains the source of truth for human-only actions; the product never presents a scripted animation as an external invocation.
+
+#### CA-ASSIST-02 — Read state, rules, and evidence separately
+
+As an agent, I want separate bounded views of saved state, current requirements, and normalized claims so that I must compose across the site's semantics instead of receiving a precomputed answer sheet.
+
+Acceptance criteria:
+
+- After Allow, the current-state result identifies the authoritative stage, revision, active field statuses, saved values where allowed, assistance state, and blocker count without embedding requirements or source excerpts. After the applicant resolves Conflict income, every agent-facing state projection exposes only **ready · human action complete** for that field—never the resolved amount, source, reason/category, or history. Before Allow it has only the redacted mode defined in CA-CONSENT-02.
+- The requirements result in protected `active` mode identifies currently active fields, accepted source categories, evidence/declaration/human-resolution policies, and the current requirements version without assigning claims to answers. Its public static `all` mode is packet/application-value independent and has only the fields defined in CA-CONSENT-02.
+- The evidence-index result lists the eight normalized packet claims with bounded document/page/source identifiers and normalized values, but not raw PDFs, complete excerpts, or a portal-authored field-to-claim answer map.
+- Dependency `Yes` changes the active requirements. An agent that read the six-field version must reread before safely composing the two revealed fields.
+- Every protected read applies current session, page, and consent authority before releasing values. A replay request cannot project a prior value-bearing result after authority has ended.
+- Results are bounded and deterministic for the fixed packet; they do not include model-generated explanations or undocumented fields.
+
+#### CA-ASSIST-03 — Apply valid draft changes atomically
+
+As an applicant, I want an agent's proposed batch to be evaluated as one portal-controlled change so that I never receive a half-applied form.
+
+Acceptance criteria:
+
+- A batch names the expected current application and requirements versions and references only claims returned by the current evidence index, plus the bounded email proposal where allowed.
+- All entries are checked against active requirements, source policy, current authority, and human-only boundaries before any entry is committed.
+- If every entry is valid, the complete batch appears as one authoritative application revision and affected fields show **Updated through assisted access**.
+- If any entry is stale, unavailable, conflicting, undeclared-as-human action, destructive branch close, malformed, duplicated inconsistently, or otherwise invalid, no entry in that batch changes.
+- Repeating the exact accepted request does not create a second application change. Reusing its identifier with different content is refused as `request_reuse_mismatch`.
+- An accepted change is visible in the ordinary form without refresh and survives an authoritative refresh. A test-only or agent-only state is not considered accepted.
+
+#### CA-ASSIST-04 — Demonstrate the branch and reread
+
+As a judge, I want to see an agent adapt after a conditional answer so that the demonstration proves live composition rather than one static fill call.
+
+Acceptance criteria:
+
+- The canonical first batch binds Anaya Rao, HZN-2026-0142, Northstar Community College, and dependency `Yes`.
+- The visible application reveals guardian name and household size and changes the current requirements version.
+- A second batch based on the earlier six-field requirements is refused as stale rather than silently applying against newly active fields.
+- After a fresh state/requirements read, the canonical second batch binds Meera Rao and household size 4 and proposes `anaya.rao@example.test`.
+- The resulting email is visibly **Needs your declaration** and cannot be reported as complete merely because the agent supplied its text.
+- The trace and visible application establish the causal order: first batch, branch reveal, reread, second batch.
+
+#### CA-ASSIST-05 — Refuse disputed income without collateral changes
+
+As an applicant, I want the portal to refuse an agent's attempt to choose between contradictory sources so that the safety boundary is enforced by the website.
+
+Acceptance criteria:
+
+- Against Conflict, an assisted request to bind either income claim returns `conflict_requires_human`.
+- The response identifies household income as requiring applicant action but does not select a value, forge a reason, expose the full excerpts, or alter another field.
+- The application shows **Income was refused; no value changed.** and preserves the prior revision.
+- Immediately before applicant action, validation and premature Review preparation report exactly two blockers: income conflict and email declaration.
+- Against Supported, the same income policy accepts the canonical income-statement claim and records the household claim only as corroboration; there is no human conflict step.
+- The distinction is driven by the parsed packet values, not by a special demo route or client-selected mode flag after application creation.
+
+#### CA-ASSIST-06 — Prepare but never submit Review
+
+As an applicant, I want an agent to help reach a reviewable snapshot without having submission authority so that I personally control the irreversible step.
+
+Acceptance criteria:
+
+- Validation reports a stable, ordered list of current blockers and produces no form change.
+- Review preparation with any blocker returns `not_ready_for_review`, creates no review identity, keeps Draft editable, shows the same grouped error summary in Application, and moves page focus to that summary heading. Its first link moves focus to the first blocker.
+- Successful preparation creates one immutable current Review from the exact authoritative saved state, returns only a fresh opaque non-content-derived Review identity, readiness, and necessary current-version metadata, closes assisted access, and always enters the normal Review presentation. It returns no canonical content hash or other deterministic digest over declaration or conflict-resolution content. The Review heading receives programmatic focus and its status announces that assistance is Off.
+- The agent receives neither the selected conflicting source, resolution reason text/category, conflict history, complete diff, exact evidence excerpts, declaration details, confirmation control, nor receipt. Where needed, it may learn only that the field is ready after applicant action.
+- No later agent call can confirm or submit. The only acceptance action is the applicant-visible **Confirm and submit this review**.
+- Manual **Review application** and assisted preparation apply the same readiness rules and produce the same canonical content hash for identical state.
+
+### Epic 5 — Preserve applicant judgment and authorship
+
+#### CA-HUMAN-01 — Keep declaration visibly human-only
+
+As an applicant, I want the product to distinguish a proposed email from my declaration so that the final record does not misattribute an agent action to me.
+
+Acceptance criteria:
+
+- A proposed or saved email never receives **Declared by you** until the applicant activates the visible declaration control on the current page.
+- The declaration presentation repeats the exact saved email and explains that the applicant is asserting it as the preferred contact for this synthetic application.
+- The declaration action cannot be bundled with another manual save, assisted apply, Review preparation, or submission.
+- Changing the saved email removes the previous declaration immediately and blocks Review until the new exact value is declared.
+- Returning from Review preserves a still-matching declaration; changing the email afterward invalidates it.
+- Activity and Review attribute the declaration to the applicant-facing action, not to assisted access.
+
+#### CA-HUMAN-02 — Keep conflict resolution visibly human-only
+
+As an applicant, I want to compare both accepted income sources and record my bounded reason so that the portal preserves a meaningful judgment rather than hiding a model guess.
+
+Acceptance criteria:
+
+- The comparison is available in the normal UI even when no external client is connected.
+- Both choices include document name, page, normalized amount, and exact excerpt; neither choice receives visual priority based on packet order or agent preference.
+- The bounded reason choices are understandable and do not invite free-form personal data. The selected reason is shown again in Review and Receipt.
+- One deliberate **Use selected income source** action saves the source, value, and reason together. Partial local selections do not count as a resolution.
+- Agent requests, URL parameters, browser storage, delayed callbacks, or replayed request identifiers cannot invoke or manufacture the resolution.
+- If the underlying selected claim is unavailable or the packet identity changes, the resolution is rejected or invalidated; it cannot be silently reassigned to the other amount.
+
+#### CA-HUMAN-03 — Make every assisted effect legible
+
+As an applicant, I want to know what assistance changed so that I can inspect rather than blindly trust the draft.
+
+Acceptance criteria:
+
+- Every value originating in an accepted assisted batch shows **Updated through assisted access** for the lifetime of that saved value, including Draft and Review, until the applicant manually replaces or clears it; this label never substitutes for source status.
+- A bounded activity presentation identifies allowed/revoked events, accepted assisted batches, refusals, and successful Review preparation without displaying secrets or full source excerpts.
+- An atomic batch appears as one event with the affected field names; it does not imply that refused entries succeeded.
+- Refusal messages explicitly say **no value changed** when the batch is rejected.
+- The product never claims an AI checked truth, approved eligibility, or verified identity. It says the portal enforced its declared evidence rules.
+- The Review diff makes agent-attributed changes inspectable alongside human changes without ranking either as inherently correct.
+
+#### CA-HUMAN-04 — Avoid false personhood or browser-security claims
+
+As a judge or operator, I want precise claims about control so that the demonstration is credible.
+
+Acceptance criteria:
+
+- Product and submission copy say that declaration, conflict resolution, Return, confirmation, submission, and export are absent from the semantic assisted contract and require visible UI actions.
+- Copy does not claim cryptographic proof that a physical person clicked, immunity from privileged browser automation, prevention of all malicious extensions, legal consent, identity verification, or regulatory compliance.
+- The product does claim and prove that its own WebMCP operations cannot perform those human-only domain actions.
+- Security evidence distinguishes website-enforced authorization from client-side button visibility.
+- Any future stronger assurance is described as future work, not as a completed hackathon capability.
+
+### Epic 6 — Review, return, and prepare a fresh snapshot
+
+#### CA-REVIEW-01 — Attempt Review from every Draft
+
+As an applicant, I want a consistent Review entry point so that I can discover remaining work without an agent.
+
+Acceptance criteria:
+
+- Draft always exposes **Review application**, including when blockers remain.
+- Activating it while blocked creates no review, shows the same ordered blockers as validation, and moves focus to the grouped error-summary heading. Activating the summary's first link then moves focus to the first affected field or action.
+- In canonical Conflict immediately before the two human actions, the summary contains exactly income conflict and email declaration—no stale or duplicate blocker.
+- Unsaved local email or reason input is a blocker and is clearly distinguished from a saved-but-incomplete value.
+- Activating Review while ready creates an immutable current Review and turns assistance Off through the same behavior as assisted preparation.
+- Repeated activation while a creation response is uncertain resolves to one current Review, not multiple visible reviews.
+
+#### CA-REVIEW-02 — Inspect the complete immutable review
+
+As an applicant, I want one coherent snapshot so that I know exactly what confirmation will submit.
+
+Acceptance criteria:
+
+- Review is read-only and shows all eight active fields in a fixed understandable order. Every field shows its initial-to-current change, final value, readiness and origin attribution, source document/page for evidence-required values, and an exact accessible excerpt or mandatory **View exact excerpt** control.
+- It includes the applicant's exact declared email and declaration attribution. When a conflict existed, it shows both source claims and exact excerpts, the committed source and amount, the exact visible reason label, and **Resolved by you**.
+- It includes the complete field-level diff, consent/activity summary, warnings, canonical application-content hash, and distinct current review identity. Preparation mechanism and path-specific activity are excluded from the canonical application-content hash; field values, active-field set, evidence bindings, declaration, and conflict resolution are included.
+- Hashes and review identities appear under expandable **Technical details** with short plain-language references in the primary content; the applicant never needs to interpret a raw identifier to understand or act.
+- The review identity is new on every successful preparation. Identical content may have the same canonical content hash without reusing the prior review identity.
+- The only primary actions are **Return to application** and **Confirm and submit this review**. Review offers no editable fields or assisted-access control.
+
+#### CA-REVIEW-03 — Return safely to Draft
+
+As an applicant, I want to correct a review without losing valid work so that I can submit a fresh snapshot.
+
+Acceptance criteria:
+
+- **Return to application** invalidates the current review before Draft becomes editable, preserves valid saved answers/resolutions/declaration, and leaves assistance Off.
+- A delayed or duplicate submit using the invalidated review returns `review_invalidated` and creates no submission.
+- The returned Draft clearly says that the previous review can no longer be submitted and that changes require a new Review.
+- Editing any review-covered value or decision keeps the old review invalid. Browser back cannot reactivate it.
+- A new successful preparation creates a new review identity. If content is unchanged, the canonical content hash remains equal; if content changed, the hash changes.
+- Only the single current valid review can reach submission.
+
+#### CA-REVIEW-04 — Block stale or mismatched review confirmation
+
+As an applicant, I want confirmation bound to the review I can see so that an old page cannot submit another snapshot.
+
+Acceptance criteria:
+
+- The exact confirmation is: **Submit this fictional application?** followed by **This submits Review `[short identifier]` exactly as shown. You cannot edit it afterward.** Its controls are **Cancel** and **Confirm and submit this review**.
+- This confirmation is transient, contains exactly one commitment activation, and creates no durable confirmation, approval, or pending state.
+- If the application revision, current review identity, canonical hash, session, or page authority no longer matches, confirmation is refused without creating a receipt.
+- A stale page remains read-only and offers Reload rather than an enabled confirmation.
+- A second tab taking authority clears the first tab's open confirmation presentation.
+- Failed stale confirmation does not consume or invalidate the still-current review on the authoritative page.
+
+### Epic 7 — Submit once and preserve one canonical receipt
+
+#### CA-SUBMIT-01 — Require deliberate visible confirmation
+
+As an applicant, I want a final explicit action so that reaching Review cannot itself submit the application.
+
+Acceptance criteria:
+
+- Review preparation, page navigation, external-client activity, Enter on an unrelated control, and refresh never submit.
+- **Confirm and submit this review** uses a deliberate confirmation presentation that identifies the irreversible synthetic-demo action.
+- While confirmation is being resolved, the control is not multiply enabled and the page does not announce success optimistically.
+- Cancelling leaves the same current Review valid and produces no submission event.
+- Successful confirmation creates one Submitted state and one receipt; the application is thereafter read-only.
+- There is no persistent Confirmed, Approved, or Submission pending state before the accepted transaction.
+
+#### CA-SUBMIT-02 — Recover honestly from an uncertain response
+
+As an applicant, I want response loss to resolve against authoritative state so that I do not submit twice or see a false failure.
+
+Acceptance criteria:
+
+- If the visible human submission response is lost, the page says **We couldn't confirm the response. Checking whether your application was submitted. Do not submit again.** Assisted draft interruption uses the separate assistant wording in the Interruption journey and never appears as authorship of submission.
+- While authority is reachable, **Checking latest state** resolves to Submitted with the existing receipt, the unchanged current Review ready for deliberate confirmation again, Stale page, or Session expired.
+- CiteApply makes at most three automatic reconciliation attempts within ten seconds. If it still cannot retrieve current authority, it stops the busy presentation and shows **We couldn't load the latest application state. No new action is enabled until the current state is known.** The only control is **Reload current application**.
+- An exact retry after a committed submission returns the existing canonical receipt rather than creating another submission.
+- A changed or mismatched retry is refused and cannot project the prior receipt to an unauthorized page.
+- If expiry finalizes first, submission returns `session_expired` and creates nothing. If submission final authorization wins first, one submission may commit even if its response arrives later; no new request is accepted after expiry and receipt access remains bounded by the original session deadline.
+- If the access deadline passes while outcome remains unknown because connectivity is unavailable, Session expired says that CiteApply could not confirm whether the earlier action completed before expiry. It does not claim acceptance, enable resubmission, or introduce an out-of-band recovery token.
+- The product never asks the applicant to reconcile encrypted tokens, approve a hidden phase, or reason about internal transaction states.
+
+#### CA-SUBMIT-03 — Show one canonical receipt in three projections
+
+As an applicant or judge, I want screen, JSON, and print to agree so that the submitted proof is internally consistent.
+
+Acceptance criteria:
+
+- The Receipt route begins with value-free **Checking receipt**. It claims neither Submitted nor failure until authenticated current application state establishes an accepted submission and its canonical receipt.
+- Once authoritative, Receipt shows the accepted active fields, source bindings, email declaration, preserved conflict resolution when applicable, review content hash, accepted application revision, bounded assisted-activity summary, submission timestamp, and one receipt identifier.
+- Screen, downloaded JSON, and printed semantic content derive from the same accepted receipt record. Formatting, ordering for presentation, and print pagination may differ, but values and identifiers may not.
+- Inactive conditional fields never appear as submitted answers. Both committed packets include the active guardian branch.
+- JSON download is a deliberate human-visible action and the only CiteApply-generated download containing receipt values. Browser printing, including **Save as PDF**, may create a user-controlled local copy outside CiteApply.
+- Print uses the semantic Receipt page; it is not a separately generated PDF with divergent content.
+- Refresh during the accessible session returns the same receipt. No later Draft or Review can be created for that application.
+
+#### CA-SUBMIT-04 — Treat export failure as an export problem
+
+As an applicant, I want a failed download or print attempt not to undermine the accepted application.
+
+Acceptance criteria:
+
+- If product-detectable JSON creation/delivery or print-view preparation fails, the primary stage stays Submitted and the screen receipt stays available.
+- The page shows **Receipt export failed**, explains that submission remains accepted, and offers a bounded retry while the session is valid.
+- Retrying export cannot create or modify a submission and cannot change the receipt identifier or content.
+- Cancelling the browser print dialog, choosing Save as PDF, or encountering a local printer failure has no canonical CiteApply outcome and is never reported as application failure.
+- After session expiry, CiteApply does not promise a new export; an already downloaded file remains the participant's responsibility.
+
+#### CA-SUBMIT-05 — Load an accepted receipt without guessing
+
+As an applicant, I want receipt loading to distinguish an unknown submission outcome from a temporarily unavailable accepted record so that I never receive unsafe resubmission advice.
+
+Acceptance criteria:
+
+- A value-free Receipt shell that has not established Submitted remains **Checking receipt**, exposes no receipt value, and never offers Submit.
+- If current authority says Draft or Review, the page returns to that authoritative Application state; it does not label the earlier action failed or create a second confirmation automatically.
+- If current authority establishes Submitted but receipt retrieval temporarily fails, show **We couldn't load your receipt. Your submission remains accepted.** with **Try loading receipt again**. No Submit control is present.
+- If neither current state nor receipt can be reached after the bounded three-attempt/ten-second reconciliation, show Connection unavailable with **Reload current application** and no acceptance claim.
+- Expiry overrides Receipt loading. Unauthenticated or cross-session shell access remains value-free and cannot reveal whether a receipt identifier exists.
+- Refresh, response loss, temporary receipt unavailability, unauthenticated shell access, and expiry each have browser coverage.
+
+### Epic 8 — Remain safe and understandable under interruption
+
+#### CA-RECOVER-01 — Make newer-page takeover explicit
+
+As an applicant with two tabs, I want one authoritative page so that delayed actions cannot overwrite newer work.
+
+Acceptance criteria:
+
+- When a newer page becomes authoritative, the older page changes to **Stale page** with **Reload** and turns every state-changing control read-only.
+- Stale presentation may show previously rendered values but says they may be out of date. It does not fetch or reveal new protected values.
+- A protected operation whose final authority check loses to takeover returns `stale_page` without a state change or value-bearing result.
+- An operation whose final authority wins first may complete; the stale page reconciles without applying a delayed optimistic callback.
+- Reload fetches saved state and becomes the sole authoritative page if the session remains valid; it does not create collaborative authority. Draft requires a fresh assisted-access Allow.
+- Page takeover never duplicates the application, review, submission, or receipt.
+
+#### CA-RECOVER-02 — Resolve stale versions and request reuse
+
+As an agent or applicant, I want stale work rejected predictably so that a delayed request cannot overwrite newer state.
+
+Acceptance criteria:
+
+- A well-formed state-changing request based on an old application or requirements version returns `stale_state` and applies nothing.
+- The result supplies only bounded current version metadata needed to reread; it does not leak protected values after authority loss.
+- Exact request replay under current authority returns the already committed bounded result without another effect.
+- Reusing a request identifier with different canonical content returns `request_reuse_mismatch` and applies nothing.
+- Human edits and assisted batches follow the same lost-update protection from the applicant's perspective.
+- The recovery instruction is to reread current state and requirements, never to force the old change.
+
+#### CA-RECOVER-03 — Apply deterministic authority precedence
+
+As a security reviewer, I want concurrent losses of authority to produce stable outcomes so that error ordering cannot leak data or bypass policy.
+
+Acceptance criteria:
+
+- For otherwise well-formed protected operations, final outcomes use this visible precedence: `session_expired`, then `stale_page`, then `consent_required`, then request/version errors, then domain-policy errors.
+- An expired call cannot reveal whether consent existed, which field conflicted, or whether a request identifier was previously used.
+- A stale page cannot use a prior consent to obtain current values or replay an earlier value-bearing result.
+- A revoked current page receives value-free consent refusal before domain details.
+- Malformed public envelopes may receive bounded input errors without inspecting protected application state; test evidence distinguishes that validation boundary from the protected precedence above.
+- Every raced outcome is one complete effect or no effect. Partial batches, half-created reviews, and duplicate receipts are prohibited.
+- For protected reads, apply, Review preparation, submit, receipt fetch, and export: expiry-first returns `session_expired` with no new protected result/effect; final-authorization-first may complete and its response may arrive after the deadline, but no new request is accepted after expiry.
+- Read, apply, and Review preparation are tested in both final-authorization-first and authority-loss-first order across Revoke, successful Review close, newer-page takeover, and expiry.
+- If Review preparation commits before response loss, exactly one Review exists, assistance is Off, and the normal UI reveals it after reconciliation. A replay after Review closed cannot redisclose protected preparation metadata.
+
+#### CA-RECOVER-04 — Bound the public synthetic demo without workflow growth
+
+As an operator and legitimate participant, I want the fixed demo to reject oversized or excessive public use safely without adding user-visible workflow machinery.
+
+Acceptance criteria:
+
+- Public session creation is admission controlled. A refused start shows Landing-only **At capacity**, creates no application, and supplies a safe retry time.
+- The product accepts only the two fixed packets, their six allowlisted bounded PDFs, eight known fields, bounded reason choices, bounded request bodies, and bounded result/activity summaries.
+- Oversized, excessive, cross-session, or non-allowlisted requests fail closed without partial state, applicant values in errors, or a claim that work was saved.
+- Exact replay and response-loss recovery preserve the normal idempotency contract; throttling cannot convert one accepted action into a duplicate or contradictory outcome.
+- Request throttling is a public value-free transport preflight outside protected-operation authority precedence. It performs no application, session, page, consent, request-replay, or domain lookup and may therefore return **Please wait before trying again** before any authority outcome. It changes nothing, supplies only a bounded `Retry-After`, and clears the local busy indicator. After the delay, a fresh admitted request follows `session_expired` → `stale_page` → `consent_required` → request/version → domain precedence; a state-changing client rereads rather than blindly resending uncertain work. G3 may choose counters and thresholds, but not this visible ordering or add workflow meaning.
+- The ordinary manual and assisted journeys remain usable without numerical call/change/review counters becoming applicant workflow states.
+- Detailed rate, payload, output, and admission thresholds belong to the security/technical specification and must fit the locked `rate_buckets` admission path, existing page/API/table/race caps, and public-demo load evidence. They cannot add a new persistent application stage or hackathon feature.
+
+#### CA-RECOVER-05 — Keep sensitive values out of ambient surfaces
+
+As an applicant, I want application values confined to the authenticated experience so that routine navigation and diagnostics do not spread them.
+
+Acceptance criteria:
+
+- Applicant values, normalized claims, exact excerpts, session secrets, review identifiers capable of authority, and receipt content do not appear in URLs or referrers.
+- Browser local/session storage, caches intended for offline reuse, analytics payloads, console messages, server diagnostic messages, and public error pages contain no application values or exact excerpts.
+- Error outcomes use bounded codes and safe copy. They do not echo submitted payloads.
+- Exact excerpts are inert and only shown inside the current human evidence/review experience; assisted evidence results expose normalized bounded metadata only.
+- The JSON receipt is an explicit applicant-initiated exception and is labelled as containing the synthetic submitted record.
+- Synthetic status reduces real-person risk but does not relax these handling requirements.
+
+#### CA-RECOVER-06 — Treat native abort as stopped waiting, not rollback
+
+As an applicant, I want an interrupted assisted request reconciled honestly so that stopping the client wait does not create a false cancellation or a blind duplicate.
+
+Acceptance criteria:
+
+- If the client signal is already aborted or aborts before dispatch, no request reaches CiteApply, no activity entry is created, and no application effect occurs.
+- If abort happens after server acceptance, the client reports only **The assistant stopped waiting. This action may have completed.** A protected read may yield no result or one already-final-authorized bounded result; a state-changing operation may have no effect or exactly one complete atomic effect. There is never a partial batch, duplicate effect, rollback claim, or guaranteed cancellation.
+- The interrupted action's retry control remains disabled. CiteApply uses the existing three-attempt/ten-second authoritative reconciliation before permitting any newly computed action.
+- Deterministic browser/contract barriers prove both pre-dispatch and post-server-acceptance cases for protected read, apply, and Review preparation, including response loss after a committed effect.
+- This behavior reuses the existing operations and authority/replay race family. It must not introduce a server cancellation request, tombstone, durable cancellation state, rollback protocol, page stage, API family, table, or additional PostgreSQL concurrency-proof family.
+
+## Observable Failure And Recovery Contract
+
+The contract separates machine/domain outcomes, nested readiness blockers, and human/browser presentations. Protocol-level schema failures may use the selected WebMCP client's standard bounded validation presentation, but they must not inspect or echo protected state. New domain meanings or persistent states require G2 reopening rather than ad hoc strings during implementation.
+
+### Machine and shared domain outcomes
+
+| Outcome | When it is observable | Effect | Required recovery |
+|---|---|---|---|
+| `consent_required` | A protected final authorization finds no current Allow | No protected value and no protected effect | Applicant may Allow visibly in current Draft or continue manually |
+| `stale_page` | A newer page owns authority | No new protected value/effect from the losing operation | Reload current state; Allow again if desired |
+| `session_expired` | The 60-minute boundary wins final authorization | No new protected result/effect | Start a new synthetic demo |
+| `stale_state` | Expected application or requirements version is no longer current | Entire request applies nothing | Reread state and requirements, then recompute |
+| `request_reuse_mismatch` | One request identity is reused with different canonical intent | Applies nothing | Use a fresh identity after rereading; never force the mismatch |
+| `evidence_unavailable` | A claim/source is absent, inactive, or no longer accepted | Entire request applies nothing | Inspect current accepted evidence and choose again |
+| `conflict_requires_human` | Assisted access attempts disputed income resolution | Entire request applies nothing | Applicant resolves through the visible comparison |
+| `not_ready_for_review` | One or more current readiness blockers remain | No Review exists | Return the ordered nested blockers; complete them in Draft |
+| `review_invalidated` | Return/edit/staleness made a Review non-current | No submission | Prepare and inspect a fresh current Review |
+
+Current authority precedes request/version and domain detail. For otherwise well-formed protected calls, precedence is `session_expired`, `stale_page`, `consent_required`, request/version errors, then domain-policy outcomes. Exact authorized replay produces no second effect, but current authority may refuse redisclosure.
+
+### Nested readiness blocker codes
+
+`not_ready_for_review` contains an ordered list drawn only from `missing_evidence`, `conflict_requires_human`, `declaration_required`, `invalid_email`, and `unsaved_changes`. In the canonical Conflict journey immediately before human action, the list is exactly `conflict_requires_human` for annual household income followed by `declaration_required` for preferred contact email. A nested blocker is not a separate Review-preparation result.
+
+### Human and browser presentations
+
+| Presentation | Claim and recovery |
+|---|---|
+| **Parse failed** | No application exists; **Return to packet selection** |
+| **WebMCP unavailable** | No assisted capability is claimed; **Continue manually** |
+| **At capacity** | Landing-only admission refusal; no application exists; retry at displayed time |
+| **Checking latest state** | Bounded, non-authoritative reconciliation; all mutation/submit controls disabled |
+| **Connection unavailable** | Latest authority is unknown after three attempts/ten seconds; **Reload current application** |
+| **Checking receipt** | Value-free Receipt shell; no Submitted claim until authenticated state is known |
+| **Receipt unavailable** | Submitted is already authoritative; **Try loading receipt again** |
+| **Receipt export failed** | Only product-detectable JSON delivery or print-view preparation failed; receipt is unchanged; retry export |
+| **Stale page** | Rendered values may be old and controls are read-only; **Reload** |
+| **Session expired** | New application/receipt access is closed; **Start a new synthetic demo** |
+
+Additional copy and behavior rules:
+
+- A refusal never uses success styling, never increments ready progress, and never applies optimistic values that later disappear.
+- When a whole batch is rejected, the visible message says **no value changed**. It does not imply that earlier entries succeeded.
+- A safe refusal contains field names only when current authority permits that detail. Authority-loss outcomes are value-free and precede domain detail.
+- Recovery actions are specific: Reload current application, Return to packet selection, Continue manually, Allow assisted access, inspect the named blocker, try loading the already-accepted receipt, retry export, or Start a new synthetic demo. Generic **Try again** is insufficient when it could duplicate an effect.
+- Machine/domain codes are available to relevant clients and tests. Technical identifiers/codes are secondary details; primary human copy explains meaning and recovery without requiring protocol knowledge.
+- Unknown internal failures show safe generic copy, one support-safe correlation reference, no stack trace/payload, and a context-safe recovery control. They cannot be relabelled as a known success/failure unless that outcome is authoritative.
+
+## Cross-Cutting Product Requirements
+
+### Accessibility and inclusive interaction
+
+CiteApply is not complete if a keyboard or screen-reader participant can only watch the assisted path. All authoritative human actions must remain operable and understandable without pointer precision, color perception, animation, or WebMCP.
+
+- Every Landing, Parsing, Parse failed, Draft, consent, evidence, conflict, declaration, stale-page, Review, confirmation, Submitted, Receipt export failed, and Session expired presentation has one programmatically identifiable page heading and a meaningful document title.
+- Fields have persistent text labels, descriptions, error association, and status text. Color and icons may reinforce but never carry the only distinction among ready, missing, conflict, unsaved, declared, and inactive.
+- All actions are keyboard reachable in a logical order. Visible focus is never hidden by sticky content, dialogs trap and restore focus correctly, and no flow requires drag, hover, or timing-sensitive input.
+- Dynamic changes such as branch reveal, saved batch, conflict refusal, blocker count, stale takeover, review creation, and submission are announced once with concise live-region text. Routine countdown changes do not create announcement spam.
+- On failed Review, focus moves to the grouped error summary and the summary links to the first blocker. On field save failure, focus stays at the affected context. On dialog close, focus returns to the opener.
+- At 320 CSS pixels, the entire journey works without missing information or horizontal page scrolling, except that an inert exact source line may wrap. At 200% browser zoom, content reflows and controls remain available.
+- Reduced-motion preference removes nonessential transitions and preserves state-change clarity. There is no auto-advancing content, flashing content, or motion required to understand an agent action.
+- Text and interactive contrast meet applicable WCAG 2.2 Level A/AA requirements. Touch targets and spacing avoid accidental adjacent activation.
+- Full keyboard/focus/semantic coverage and automated A/AA checks cover every primary and exceptional presentation. One complete VoiceOver pass covers the canonical Conflict journey through consent, assisted mutation/refusal, human resolution/declaration, Review, submission, and Receipt; one manual/no-WebMCP fallback smoke confirms source selection, Review entry, and focus/error behavior.
+- Any known material WCAG A/AA defect blocks the relevant stage and public release. Accessibility evidence records tool versions, manual checks, defects, and remediation rather than only a score.
+
+### Responsive and visual quality
+
+- The three-page experience has one coherent visual system for type, spacing, focus, source cards, statuses, warnings, and primary/secondary actions.
+- Synthetic/demo context remains visible without overwhelming the task. Safety boundaries read as product language, not as raw protocol or legal boilerplate.
+- Long identifiers and exact excerpts wrap without covering actions. Currency is displayed consistently as INR with unambiguous separators and an accessible full-text label.
+- Busy states preserve context and identify the operation. Parsing, saving, preparing Review, submitting, and checking latest state never show an unexplained blank page.
+- Skeletons or animation cannot display fabricated applicant values. Authoritative values appear only after the corresponding state is known.
+- Desktop judge presentation is polished at the recorded viewport, while mobile-width behavior remains fully functional.
+
+### Performance and feedback
+
+- A pointer or keyboard activation receives visible acknowledgement within 100 milliseconds unless navigation replaces the view immediately.
+- When an ordinary save, validation, review preparation, submission, or receipt retrieval exceeds one second, the affected action shows a named busy state and prevents ambiguous duplicate activation.
+- Parsing may take longer than an ordinary save, but the page continuously names the three-document check and gives a safe failure rather than partial results.
+- Three consecutive unedited primary-client runs of state, requirements, evidence, first apply, branch reread, second apply, issues, conflict refusal, and Review-preparation attempt each complete within 120 seconds under the release environment. Waiting may be compressed in the narrated video only when labelled; the raw trace is not edited.
+- Performance tests cannot depend on precomputed production claims, production goldens, a hardcoded answer map, or a bypass path.
+- Public-release verification records meaningful page and operation timings. The product makes no universal production SLA claim from hackathon measurements.
+
+### Data integrity and consistency
+
+- The visible page, assisted results, Review, accepted submission, Receipt screen, JSON, and print never disagree about the authoritative saved value or current stage.
+- Evidence-required values always retain an accepted current source. Human resolution and declaration retain their distinct attribution.
+- One accepted action advances state completely or leaves it unchanged. There are no partial batches, editable Reviews, multiple current Reviews, duplicate submissions, or divergent receipts.
+- The canonical application-content hash includes the active-field set, final field values, evidence bindings and corroboration, applicant declaration, and conflict resolution. It excludes application/requirements revisions, preparation mechanism, assisted-origin attribution, consent/activity history, display-only ordering, review identity, and timestamps. Semantically identical application content therefore hashes equally across manual and assisted preparation; every preparation still receives a new review identity. This hash appears only in the human Review/Receipt and their human-initiated projections, never in an assisted result.
+- Time, currency, identifiers, document/page labels, and statuses use one user-facing convention across all three pages and artifacts.
+- Test fixtures may contain independently reviewed expected claims, but production behavior and the filmed demonstration must use the runtime parser and current saved state.
+
+### Security and privacy behavior
+
+- All protected disclosures and effects require current session, page, and consent authority at final authorization, with the precedence defined above.
+- Human-only actions are absent from the assisted semantic surface and rejected if smuggled into an allowed action.
+- Source text is treated as untrusted inert content. It cannot alter tool descriptions, application rules, or visible controls.
+- Cross-site or unauthenticated requests cannot read or mutate application state. A copied value-free shell URL is not sufficient to retrieve a receipt.
+- Public demo inputs are fixed or tightly bounded. No arbitrary upload, free-form personal narrative, executable document, external URL fetch, or general-purpose prompt is accepted.
+- Rate/capacity refusals and session expiry fail closed without revealing another session's existence or data.
+- Security claims are accompanied by negative tests for pre-consent, post-revoke, stale page, expiry, replay, mismatched replay, forged declaration/resolution, stale Review, duplicated submit, excerpt injection, and ambient-data leakage.
+
+### Browser and external-client compatibility
+
+- The manual journey works in the supported current desktop browser even when WebMCP discovery is absent or disabled.
+- The exact primary external client, browser/runtime version, feature settings, discovery steps, and verification date are named in the release evidence and judge instructions.
+- A compatible external client must discover the actual six operations, observe the real value-free pre-consent refusal, receive protected results only after visible Allow, and cause a genuine visible persisted Draft change in the same application.
+- The exact primary external client must also complete at least one Supported run through canonical corroborated income, applicant email declaration, Review, visible submission, and matching Receipt. A harness cannot satisfy this proof.
+- A product-owned harness may supplement deterministic contract tests but cannot be the only integration evidence and cannot appear in the video as the external client.
+- If the exact primary client cannot complete the required sequence reliably, the stage fails and capacity/scope is reopened; a simulated invocation is not an acceptable fallback.
+
+## Required Edge And Adversarial Scenarios
+
+The specification and checklist must map each scenario below to deterministic automated coverage where feasible and to manual/external-client evidence where the boundary is inherently interactive.
+
+1. Supported and Conflict parse successfully from all six committed PDF byte streams with independently reviewed exact anchors.
+2. One changed production byte under the original hash, missing file, extra page, excessive bytes/text, unreadable content, and missing exact anchor each fail before application creation.
+3. A test-only mutated PDF admitted under its own test hash through the same production parser/extractor produces the changed normalized value or exact anchor, while a static import/bundle assertion rejects production imports of goldens, precomputed claims, a claim manifest, or a hardcoded answer map.
+4. Double Start and response loss during Start yield at most one visible application or an honest no-application retry.
+5. One complete manual Conflict journey reaches Receipt without any hidden tool action; Supported manual behavior receives targeted source/corroboration and Review regression coverage.
+6. Before Allow, redacted state and static `all` requirements expose only their locked public fields; every protected mode/action discloses nothing protected.
+7. Allow then Revoke works visibly; later calls refuse, while final-authorization-first read may deliver its bounded result without a false retraction claim.
+8. Read/apply/prepare each exercise both final-authorization-first and authority-loss-first against Revoke, Review close, takeover, and expiry; committed effects occur once and losing operations disclose nothing protected.
+9. Response loss after a committed apply or Review preparation is reconciled by normal state; exact replay does not duplicate, changed replay is rejected, and closed authority cannot redisclose protected metadata.
+10. Pre-dispatch/already-aborted barriers produce no request, activity, or effect. Post-server-acceptance abort produces no effect or one complete effect, disables blind retry, and enters bounded reconciliation without cancellation/rollback machinery.
+11. Across all two-source × three-reason Conflict resolutions, agent-visible current state and assisted-preparation payloads are indistinguishable after normalizing current revisions and fresh opaque identities; no value, source, reason/history, canonical hash, or deterministic digest leaks the choice.
+12. Dependency `Yes` reveals the two conditional fields and makes an old-requirements batch stale. Human branch clearing with populated values requires confirmation; agent branch clearing is refused.
+13. Supported equal income becomes one canonical source plus corroboration. Conflict unequal income refuses assisted choice and preserves exactly two pre-human blockers.
+14. Forged, replayed, assisted, or mismatched email declaration is rejected. Saving a changed email invalidates the prior declaration; Discard restores authoritative content.
+15. Conflict source without reason, reason without source, unavailable source, local edit/discard, clear, Return/edit, and agent resolution produce the exact locked statuses/effects.
+16. Review while blocked creates no identity; ready manual and assisted preparations from identical application content produce equal canonical hashes and distinct preparation identities.
+17. Return invalidates the Review, preserves valid Draft work, closes assistance, and makes stale Review submission fail.
+18. Two tabs race edit, Review preparation, Return, and confirmation; one page remains authoritative and the loser becomes read-only.
+19. Double confirmation, exact retry, changed retry, response loss, and refresh create at most one submission and one canonical receipt.
+20. Expiry exercises both orderings for protected reads, apply, Review preparation, submission, receipt fetch, and export: expiry-first refuses; final-authorization-first may complete and arrive later, with no new post-expiry request.
+21. Receipt response loss, authenticated Submitted-but-temporarily-unavailable fetch, unauthenticated shell, refresh, and expiry produce the specified value-free or authoritative presentations.
+22. Screen, JSON, and print compare semantically equal within each accepted Supported and Conflict submission, including identifiers, review hash, active fields, attribution, and conflict resolution.
+23. Export failure leaves Submitted and the screen receipt unchanged; retry returns the same content.
+24. Public admission refusal and oversized input/output fail closed. Deterministic cases combine the public throttle preflight with expired, stale, and unconsented requests; all receive the same value-free transport refusal with no application lookup/effect, while a fresh admitted post-delay request follows normal authority precedence. No case adds an application workflow state or corrupts replay/submission recovery.
+25. Exact excerpts containing markup-like text, URLs, instructions, Unicode edge cases, or very long allowed lines remain inert, escaped, readable, and excluded from ambient logs.
+26. Full keyboard, automated A/AA, 320-pixel, 200%-zoom, reduced-motion, focus, announcement, and contrast checks cover every presentation; VoiceOver covers canonical Conflict plus one manual-fallback smoke.
+27. URLs, referrers, storage, cache inspection, analytics, console, error capture, and logs contain no applicant values, claims, exact excerpts, or authority secrets.
 
 ## What We Are Building
 
-### Must ship
+For the hackathon, CiteApply is exactly:
 
-- The complete locked single-application journey above plus its cross-cutting recovery, accessibility, privacy, and verification requirements.
-- Two real synthetic text-PDF packets and deterministic extraction with golden anchors.
-- One conditional dependency branch and one deliberate income conflict.
-- Consent-gated imperative WebMCP collaboration in at least one proven external client.
-- Human-only declarations, policy-valid conflict resolution, version-bound review/confirmation, idempotent submission, and matching receipt.
-- Responsive, accessible normal UI; privacy/security failure behavior; refresh/resume; automated and manual verification evidence.
-- Open schema, fixtures, compatibility tests, setup instructions, visible open-source license, CI, deployable app, and exact compatibility record.
+- one polished fictional Horizon Education Aid portal with Landing, Application, and Receipt pages;
+- two fixed synthetic packets, each containing three runtime-parsed one-page text PDFs and the same eight-claim applicant;
+- eight bounded fields, including one always-exercised dependency branch, one applicant declaration, and one supported-or-conflicting income policy;
+- one complete visible manual journey and one real six-operation WebMCP collaboration over the same authoritative application;
+- informed page/session consent, explicit Revoke, honest in-flight semantics, versioned atomic draft changes, and bounded activity;
+- immutable Review, Return/edit/reprepare, one human-visible confirmation, one accepted submission, and one canonical screen/JSON/print receipt;
+- deterministic domain, parser, integration, race, accessibility, privacy, build, and real-client verification evidence;
+- a truthful public repository and Devpost package only after the explicit release authorization gate.
 
-### May ship only after must-ship gates pass
+## Explicitly Not In This Build
 
-- Additional visual polish that does not change behavior.
-- A second external client if verified without consuming contingency.
+- Real scholarship applications, real applicants, authentication accounts, document upload, OCR, arbitrary PDFs, or production personal data.
+- Multi-program schemas, an admin/program builder, eligibility scoring, award decisions, reviewer workbench, notifications, or integrations with schools, aid systems, email, or identity providers.
+- Shopping, general browser automation, cross-site actions, cloud-incident management, or support for websites that do not expose CiteApply's own semantic tools.
+- A model-generated extraction pipeline, heuristic confidence UI, silent source selection, free-form conflict explanation, or a generalized evidence ontology.
+- More fields, packets, pages, tools, persistent workflow states, API families, storage entities, or concurrency proof families than the locked scope permits.
+- Dynamic tool registration, raw PDF/excerpt delivery to agents, agent packet selection, declaration, conflict resolution, Return, confirmation, submission, receipt access, download, or print.
+- Server-side cancellation tombstones, two-phase confirmation, encrypted recovery tokens, persistent approval/confirmed/pending states, undo after submission, or immediate physical-deletion promises.
+- Generated receipt PDF, pixel-identical screen/JSON/print formatting, universal browser/client compatibility, cryptographic proof of human action, or compliance certification.
+- Claimed customer demand, measured ROI, reduced processing cost, completed user study, production readiness, or real-world adoption without collected evidence.
+- Public deployment, public repository mutation, video upload, Devpost submission, provider provisioning, or external outreach before explicit user authorization.
 
-## What We Would Add With More Time
+## With More Time — Future Hypotheses, Not Stretch Scope
 
-- User-supplied text-PDF upload with safe parsing, limits, quarantine, deletion, and hostile-file handling.
-- Image OCR and region anchors, then model-assisted extraction behind the same deterministic policy boundary.
-- Corrected-evidence replacement within an application.
-- Additional conditional branches and aid-program policy templates.
-- Operator review workflow and design-partner metrics.
-- Tenant isolation, real authentication, retention controls, audit exports, enterprise administration, and managed deployment.
-- A hosted free nonprofit tier and broader open compatibility corpus.
-- Bulk removal of agent-applied values, starting another demo after submission, and an explicit delete-demo-data workflow.
-- Only after separate validation: other high-stakes participating form categories.
+Future work begins only after hackathon submission and fresh validation. Candidate directions are real-program schema onboarding, authenticated applicant accounts, operator evidence-policy configuration, accessible upload/OCR review, reviewer source navigation, multilingual support, and additional receiving-site verticals. Commercial discovery would test whether scholarship operators pay to reduce incomplete applications, clarification contacts, and source-matching time. Community discovery would test whether an open reference implementation helps nonprofits and agent builders add constrained receiving-site automation safely.
 
-## Submission Proof Points
+None of these items may enter the hackathon build as a “small stretch.” Any future experiment needs its own privacy model, threat review, accessible journey, capacity estimate, and evidence. The present product wins by completing one credible closed loop rather than implying a platform it has not built.
 
-### Video proof
+## Judge Narrative And Demonstration Proof
 
-- A real external client discovers tools, reads live requirements and consented evidence, composes multiple bindings, applies a visible version-checked mutation, re-reads the revealed branch, receives a structured conflict, changes course instead of guessing, and prepares review metadata.
-- Both packets use the same production contract and diverge because the actual page/evidence state differs.
-- The student resolves the conflict in the visible UI, reviews the exact diff, visibly confirms/submits, and opens the matching receipt.
-- The first genuine mutation is visible by second 10; edited waiting never breaks the real call/result/UI relationship.
+### One-sentence thesis
 
-### Repository and test evidence
+**CiteApply lets an external agent compose a runtime-parsed synthetic source-backed scholarship draft through the website's own six semantic operations, while the website itself refuses contradictory evidence and reserves declaration, judgment, review, and submission for the visible applicant experience.**
 
-- Reproducible evidence covers stale writes, cancellation races, malformed/forged/cross-session handles, consent absence/revocation, declaration forgery, review invalidation, approval replay/idempotency, hostile evidence, log leakage, receipt reconciliation, and accessibility regression.
-- Public source/tests prove the shared handlers/parser, absence of a demo bypass, and clean-client compatibility. The submission claims only evidence actually linked and reproducible.
+### Why this is materially more than ordinary form filling
 
-### Judge mapping
+- The agent receives state, current rules, and normalized evidence separately and must compose them; it is not handed an answer map.
+- One accepted mutation changes the live persisted form and reveals new requirements, which the agent must reread before continuing.
+- The same operation that can accept corroborated income deterministically refuses conflicting income, leaving the website—not the model—in control of policy.
+- Consent is server-observable: pre-consent and post-revoke calls return value-free refusals, and authority races have bounded honest outcomes.
+- The agent may prepare the exact Review but has no semantic path to declaration, conflict judgment, confirmation, submission, or receipt.
+- A non-agent participant can complete the identical product and reach the same submitted application-content model and Receipt schema; the assisted-activity section remains truthfully path-specific.
 
-- **WebMCP leverage:** multi-step reads, composed bindings, live branch re-read, structured conflict, and shared visible state—not an opaque autofill action.
-- **Execution:** one coherent hosted journey covers packet selection through persisted receipt, backed by failure/recovery, accessibility, and clean-client verification.
-- **Potential impact:** the applicant problem, operator buyer, B2B unit, community deliverables, and validation gaps are named precisely; tested correctness is separated from unvalidated market outcomes.
-- **Creativity and ambition:** trust comes from a receiving-site evidence contract, human-only declarations, structured refusal, and version-bound commitment—not from asking one preferred model to be cautious.
+### Canonical sub-three-minute sequence
+
+| Target time | Visible proof |
+|---:|---|
+| 0:00–0:08 | Labelled same-session cold open: external-client call causes a genuine visible Draft mutation |
+| 0:08–0:22 | Start chronology; choose Conflict; show three real synthetic PDFs passing runtime parsing |
+| 0:22–0:45 | Pre-consent refusal, visible disclosure/Allow, separate state/rules/evidence results |
+| 0:45–1:05 | First batch, dependency branch reveal, reread, second batch, undeclared email |
+| 1:05–1:26 | Separate income attempt refused with no change; validation shows exactly two blockers |
+| 1:26–1:45 | Applicant compares sources, resolves income, and declares exact `.test` email |
+| 1:45–2:08 | Agent prepares Review; access closes; applicant inspects and confirms visibly |
+| 2:08–2:27 | Matching Receipt screen and JSON identifiers/content |
+| 2:27–2:48 | Compact proof panel: manual parity, raw trace, test evidence, honest limitations |
+
+The internal encoded-video maximum is 2:50, leaving at least ten seconds below the official limit for platform duration handling. The 0:00 cold open and later chronology use the same captured session and request; editing may reorder footage but cannot imply a different causal relationship. Any compressed wait is labelled. A complete unedited primary-client trace remains available as release evidence.
+
+### Required proof artifacts
+
+- Runtime-parser evidence for every committed PDF, independently reviewed golden anchors, changed-production-byte failure, a test-only accepted mutation whose parser output/anchor changes, and the production import/bundle anti-hardcoding assertion.
+- Three consecutive unedited exact-primary-client runs under 120 seconds with all six operations discoverable and the required sequence complete.
+- At least one complete Supported journey in the exact primary external client through corroboration, applicant declaration, Review, visible submission, and matching Receipt; a harness cannot satisfy it.
+- Same-session call/result/UI correlation for pre-consent refusal, first persisted apply, branch reread, conflict refusal, Review preparation, and access closure.
+- One complete manual Conflict/no-WebMCP release-evidence journey, plus targeted Supported manual corroboration/Review regression evidence.
+- Deterministic race/replay/submission/receipt suites and a semantic screen/JSON/print comparison.
+- Accessibility matrix with full automated/keyboard/reflow/reduced-motion/contrast evidence, one complete canonical-Conflict VoiceOver pass, and one manual/no-WebMCP fallback smoke.
+- Privacy inspection covering URLs, storage, analytics, console, error capture, and logs.
+- `docs/verification/impact-evidence.md` with observed task results and limitations. If no external user validation occurred, it must say **No user validation occurred** rather than imply a study.
+- Exact release environment, primary client/version/settings/date, public HTTPS URL, public repository/commit, approved OSI license, setup instructions, narrated video URL, and Devpost requirement checklist after authorization.
+
+## Official Release Acceptance
+
+These requirements are normative but do not authorize external mutation. Public release passes only when:
+
+- one usable public HTTPS deployment remains available through the official judging period;
+- one complete public source repository points to the exact release commit, includes reproducible setup/judge instructions, and displays an Amit-approved OSI-compatible open-source license;
+- one public YouTube video has audible narration, an encoded duration strictly below 180 seconds, and an internal target no longer than 2:50;
+- release evidence names the exact tested external client/application, model where applicable, browser/runtime versions, feature settings, and verification date;
+- judge instructions reproduce Supported, Conflict, and the complete manual/no-WebMCP journey without a harness standing in for genuine-client evidence;
+- the Devpost entry includes the working URL, repository, video, tested-client list, WebMCP fit, human-agent collaboration, user-experience value, implementation explanation, limitations, and truthful AI-use disclosure;
+- the complete submission is accepted before `2026-09-03T20:00:00Z` (`2026-09-04 01:30 IST`); and
+- public name/license selection, repository creation or push, provider provisioning, deployment/origin configuration, video upload, Devpost mutation, and external outreach receive explicit user authorization by `2026-08-30T20:00:00Z`. If authorization is absent then, public release is no-go; authorization is never inferred from build permission.
+
+## Success Measures
+
+Hackathon success is demonstrated by evidence, not by forecasts:
+
+- all six real operations are discoverable in the exact primary client, the canonical Conflict trace completes three consecutive times within 120 seconds, and one complete Supported primary-client run reaches a matching Receipt;
+- the first accepted assisted batch visibly persists and reveals the dependency branch in the same application;
+- the disputed income call is refused atomically, with no value changed and exactly two pre-human blockers;
+- applicant-only resolution and declaration remove those blockers; agent or forged equivalents are rejected;
+- assisted and manual preparation from identical state produce the same canonical content hash;
+- Return invalidates the prior review, one visible confirmation produces at most one submission, and all receipt projections agree semantically;
+- Supported, Conflict, complete manual, parser failure, stale-page, response-loss, expiry, public-capacity, connection-loss, receipt-load, and export-failure journeys pass their specified tests;
+- no known material accessibility A/AA defect, privacy leak, fake integration, mismatching receipt, unremediated P0/P1 finding, or unsupported claim remains;
+- the final submission is understandable in under three minutes and all public evidence is reproducible from the documented commit.
+
+Commercial outcomes remain hypotheses. A post-hackathon pilot would measure incomplete-application rate, clarification contacts per application, reviewer source-matching time, applicant completion, and operator willingness to pay. The hackathon artifact may state these proposed measures but may not report improvement without a real study.
 
 ## G2 Exit Criteria
 
-- Product, accessibility/UX, security/abuse, testability, and Devpost-judge reviewers approve the observable requirements.
-- Every P0/P1 finding is resolved or explicitly accepted with rationale.
-- User journey, status semantics, exact fields, packet behavior, consent, declarations, conflict resolution, review, submission, receipt, recovery, and non-goals are internally consistent.
-- The PRD remains non-architectural enough for G3 to choose implementation details, while all user-visible and black-box behavior is testable.
-- State, status, build notes, and review evidence are updated before the technical spec begins.
+This PRD may move from Draft to Approved only when all of the following are true:
+
+- it is consistent with the exact locked G1 scope hash and introduces no additional page, field, packet, tool, human-only action, persistent state, or product promise;
+- every in-scope user journey has stable story identifiers and externally testable acceptance criteria;
+- manual parity, informed consent, authority ordering, branch behavior, conflict refusal, declaration, Review/Return, single submission, receipt equality, expiry, bounded public admission/payloads, accessibility, privacy, and real-client proof are unambiguous;
+- explicit non-goals prevent the historical specification from regrowing;
+- the replacement technical specification can map every story to a bounded design without making new product decisions;
+- independent product/UX, engineering/security/test, and Devpost-judge reviewers inspect the same exact SHA-256 artifact;
+- every P0/P1 finding is remediated and each lane rechecks the final exact hash; P2 findings are either remediated or explicitly accepted with a documented reason;
+- `reviews/02b-prd.md`, `build-notes.md`, `status.md`, `learner-profile.md`, `.devpost-hackathon-state.json`, and `AGENTS.md` identify the same gate result and next command;
+- the final metadata-only status change is hash-checked again so that **Approved** never refers to an unreviewed byte sequence.
+
+Status remains Draft until that review process completes. Approval authorizes only replacement technical specification work; it does not authorize implementation, deployment, external provisioning, publication, outreach, video upload, or Devpost submission.

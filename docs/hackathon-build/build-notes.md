@@ -114,3 +114,107 @@
 - The saved guided-build state now records completed scope, current PRD, and `build-spec` as the next stage.
 - The initial planning baseline commit is `ecc9f9d`. Its automatically generated local committer email must be replaced with Amit's chosen repository-local identity before any public push; no public repository action has occurred.
 - G3 technical specification and threat modeling started immediately under the authorized autonomous workflow. No application code has begun.
+
+## 2026-08-27 — G3 technical specification drafted
+
+- Primary documentation was rechecked for the current WebMCP draft/Chromium contract, Chrome origin trial and security guidance, OpenAI desktop-client support, Next.js/Node, PostgreSQL/Neon/Drizzle, PDF parsing, and test/accessibility tooling.
+- The proposed system is one Next.js 16.3.3/Node 24 modular monolith with a pure TypeScript domain core, thin same-origin Route Handlers, PostgreSQL 17 locally/in CI/in Neon, Drizzle/node-postgres interactive transactions, and no in-product model or unnecessary service.
+- The six-tool WebMCP contract is explicit: two always-registered redacting reads and four consent-gated evidence/draft/validation/review capabilities. There is no declaration, conflict-resolution, confirmation, submission, packet-selection, arbitrary-document, or fill-everything tool.
+- Current registered callbacks return plain JSON-serializable objects. The draft/Chromium mismatch in the in-page `executeTool()` helper is isolated to a test-only adapter and cannot influence production policy.
+- Sensitive disclosure uses a page-memory capability separate from the HttpOnly demo session, synchronizer CSRF token, and page-memory one-use review approval. Refresh/revoke/reset behavior and privileged-extension limitations are stated precisely.
+- A persisted operation ledger plus PostgreSQL row locks/compare-and-swap linearizes stale writes, idempotency, cancellation, revocation, reset, and unknown submission outcomes. Real PostgreSQL controlled-barrier tests—not an in-memory fake—must prove both race winners.
+- The evidence pipeline parses exactly six committed text-native synthetic PDFs through one reviewed adapter, verifies hashes/limits, extracts kind-specific labels, persists exact page/character anchors, and compares real parses to test-only goldens. `pdf-parse` 2.4.5 is only a candidate until local Node 24, Linux, Next production build, and hosted-runtime spikes pass.
+- Exact current candidate versions, data model, state machines, endpoints, security headers, threat matrix, retention, logging allowlist, accessibility/manual matrix, CI lanes, performance budgets, deployment credentials, and under-three-minute proof flow are recorded in `spec.md`.
+- The current host has Docker 29.4.0 but defaults to Node 26.7.0; the project must explicitly select Node 24.20.0. Deployment/database/origin-token/public-repository actions remain unauthorized.
+- The 1,021-line draft passed `git diff --check` and is now under three independent formal reviews. No application code exists.
+
+## 2026-08-27 — G3 first review failed and was remediated
+
+- All three independent lanes correctly blocked G3. The WebMCP/judge lane found the six-tool surface was still prose rather than an exact snapshot-testable contract. The product/feasibility and security lanes found P0 ABA, cancellation, protected-disclosure, and submission-reconciliation races. No implementation work started.
+- The revised specification uses a nonsecret random `draftEpoch` plus rotated `csrfEpoch` on every mutable/authority/parser/snapshot path; late old-page requests and responses cannot reuse a reset version zero.
+- State-changing work now has a durable reservation followed by one short final transaction with a documented global PostgreSQL lock order. Cancel/revoke/reset and commit have reachable linearization points and a mandatory real-PG barrier matrix.
+- Protected reads now reserve a server execution, authorize exact serialized bytes under final grant locks, classify disclosure before revoke completes, and pass a browser grant-epoch check immediately before resolving the native callback.
+- Submission is an acknowledged intent → commit protocol. Intent binds the visible approval but cannot submit; the browser may call commit only after acknowledgement. Status cancels a still-reserved intent or returns the commit-first receipt, and refresh derives the sole pending pointer server-side without browser-stored application data.
+- The parser now has claim/worker/finalize phases, an expiring attempt lease, exact epoch/hash/attempt/version compare-and-swap, one terminal version increment, and a blocking proof that worker termination actually stops timeout work.
+- `WebMCP Contract v1` now records exact closed identifiers, six full strict input schemas, descriptors/descriptions/annotations, result DTOs, errors/actions, cursor bindings, output budgets, atomic registration rollback, cancellation semantics, and the exact ChatGPT/Chrome support matrix.
+- Session start/CSRF bootstrap, exact body/rate/concurrency limits, relational ownership/delete order, canonical review/receipt projections, provider-backup retention wording, one-session demo chronology, release freeze, dependency versions, and G4 capacity no-go rules are explicit.
+- The remediation expanded `spec.md` from 1,021 to roughly 1,700 lines because security and agent contracts are now executable rather than implied. `reviews/03-spec.md` maps every first-pass finding to its disposition. G3 remains closed pending local preflight and unanimous recheck.
+
+## 2026-08-27 — G3 deep recheck remediation continues
+
+- The recheck deliberately remained open after the first large rewrite. Reviewers found additional P0/P1 lifecycle edges in keyed request privacy, operation capacity, cross-tab submission generations, page authority, approval retention, exact expiry semantics, and physical cleanup throughput. No application code was started.
+- Submission reconciliation now uses a randomized AES-256-GCM status-only envelope containing the complete original digest preimage and server binding. Intent, commit, and status authenticate the same outer tuple; status can fence an absent/delayed request after the current review/version changes without persisting a raw digest or reconstructing mutable review data.
+- Page authority is now durable and recoverable: a counted same-origin/no-store GET mints a one-load bootstrap token; POST bootstrap/renew/check-pending advances page generations, renews in-document before 30 minutes, preserves dirty input during soft rebootstrap, and cancels an orphaned different-lineage intent only at authoritative expiry. Retention is capped at 192 page rows without a smaller active-lineage cap.
+- Consent and confirmation retries replace prior same-page authority under locks, so lost responses do not accumulate unreachable live capabilities. Authority/coordination FKs are RESTRICT with live-non-null constraints and explicit terminalize/scrub/null-before-parent cleanup.
+- All expiry-dependent PostgreSQL decisions now use one same-client `SELECT clock_timestamp()` after relevant locks and nontrivial work, immediately before the conditional transition. Transaction-start/process timestamps are forbidden and will be statically plus real-PG boundary tested.
+- Retention admission is now capacity-coupled instead of aspirational: at most 20 new sessions/fixed UTC hour, nominal per-minute authorized cleanup, one unique success marker/minute, automatic new-start shutdown beyond a 20% miss allowance, and a mandatory maximum-child-graph benchmark proving `1,152 >= 1,000` even across the worst rolling-window boundary. Vercel Pro/equivalent cadence and any spend/provisioning remain blocked until Amit explicitly authorizes them.
+- At this checkpoint the specification exposed 20 API route families plus 3 user-facing page routes over 15 tables. `reviews/03-spec.md` recorded 59 findings and their candidate dispositions; deeper review continued after this checkpoint. Product and security reviewers remain in full contradiction/feasibility reread, and the judge lane will be reactivated only after the candidate freezes.
+
+## 2026-08-27 — G3 delivery-feasibility NO-GO and scope reopen
+
+- The deep-remediation candidate ultimately reached 6,720 lines, 75,417 words, and 642,661 bytes, with 23 HTTP/page surfaces, 15 tables, three blocking portability spikes, eight real-PostgreSQL concurrency-proof families, and zero application code.
+- Mechanical checks passed: all TypeScript fences parsed with Node's TypeScript stripper and `git diff --check` was clean. That established document syntax, not delivery feasibility.
+- Independent product/feasibility and repository/security reviewers both returned a hard NO-GO for the seven-day quality window. Even an unrealistically optimistic component-only lower bound consumed 60 hours before UI/domain work, integration, remediation, accessibility, deployment, clean-room proof, video, or the required final 24-hour reserve.
+- Active shaping from Amit remains decisive: “no hacks,” “no shortcuts,” “no laziness,” and test/review every stage. The correct response is therefore to cut breadth before code, not to implement an untestable fraction or relax retained safety promises.
+- G1 and G2 are formally reopened. The long specification and review remain evidence of explored risks, but they are not an approved implementation contract.
+- The replacement scope must keep the judged product loop: owned scholarship portal, real WebMCP discovery/invocation, two fixed synthetic packets, site-enforced source binding, one structured conflict/refusal, visible declaration, exact review, human-only submission, and matching receipt.
+- Candidate cuts under independent review: same-epoch policy migration; parser lease/worker-retry protocol; multi-lineage/page-renewal/three-tab authority graph; acknowledged intent/commit/encrypted reconciliation; production-scale admission/cleanup/WAF arithmetic; server-streamed value-bearing receipt; broad historical replay and retained-row limits. Safety claims shrink with those surfaces rather than being waived.
+- Scope deepening used the complete prior product conversation plus the failed G3 capacity evidence; no repeated user interview was needed because Amit already provided the target user/problem/value/payment/community/WebMCP/demo/quality criteria and authorized autonomous progression.
+
+## 2026-08-27 — Replacement G1 candidate frozen for review
+
+- Three independent clean-sheet rescope passes agreed that the differentiating proof must remain: one owned scholarship portal, two fixed synthetic evidence packets, site-enforced source binding, a real income conflict/refusal, visible applicant declaration/resolution, exact review, human-only submission, and a matching receipt.
+- The candidate locks exactly eight fields, one guardian branch, two packets with three one-page PDFs each, one primary external client, and one complete manual fallback.
+- The WebMCP surface remains six composable tools because state, policy, evidence, mutation, deterministic issues, and review preparation are distinct judge-visible acts. All six register once for experimental-client portability. Server-enforced consent—not descriptor visibility—is the authority boundary; protected calls before Allow and after Revoke return a value-free refusal.
+- Production parses all six committed PDFs at runtime through one hash-pinned, bounded deterministic adapter. Test goldens cannot enter the production import graph. Preprocessed production claims were rejected as incompatible with the product claim and Amit's no-hack instruction.
+- The scope removes dynamic tool lifecycle, arbitrary upload/OCR, multi-page authority graphs, offline/collaborative-tab promises, parser workers/retries, online policy migration, two-phase/encrypted submission reconciliation, persistent approvals, streamed receipts, production-scale retention machinery, extra clients, and all hackathon stretch features.
+- Hard caps are one portal, exactly six tools, three page routes, at most eight API families, six product tables, five real-PostgreSQL race families, and a replacement specification under 15,000 words.
+- Conservative delivery forecast is 65 focused hours P50 and 123 hours P90 including a 21-hour integration/remediation reserve, followed by a protected 24-hour release window. Primary-client and parser portability must pass within 12 post-G4 build hours or the project immediately reopens scope/no-go review.
+- The 4,124-word replacement scope candidate is `eb6130c7abd4cd04d3629a626d5a7b0024e8d0d3b152440baa2df735f72a7c87`. Product/UX, engineering/security/test, and Devpost-judge reviewers are independently reviewing that exact artifact. G1 remains open and no application code has started.
+
+## 2026-08-27 — Replacement G1 first review remained conditional
+
+- All three lanes reviewed the same 4,124-word hash and returned **CONDITIONAL**, with no P0 concept blocker. The judge lane scored the concept 4.25/5 overall but did not pass the gate.
+- Product/UX found two P1s: no manual review-preparation/Return-to-edit lifecycle, and insufficiently informed assisted-access copy.
+- Engineering/security found five P1s: focused-hours versus wall-time capacity math; authority-before-idempotent-replay contradiction; in-flight disclosure/takeover overclaim; a transactional cancellation promise unsupported by native abort; and admission/cleanup/read races hidden outside the numeric caps.
+- Judge review added three P1s: insufficient first-ten-second payoff, official submission obligations not made normative, and no actual-time/external-authorization rebase.
+- The remediated candidate adds the complete Review/Return/re-review lifecycle, explicit consent categories/actions/exclusions/in-flight limits, a same-session cold open with real mutation by second 10, normative release obligations, and an explicit authorization deadline.
+- Current authority now precedes replay projection. Read-first versus authority-loss-first outcomes are precise, and protected reads join the takeover/review-close/revoke race. Native cancellation is deliberately narrowed to graceful best effort with authoritative reconciliation; no durable cancel/rollback protocol is claimed.
+- A concrete cap witness uses five tables, six API families, three pages, and four PostgreSQL race families. A PostgreSQL `rate_buckets` path covers bounded demo admission; there is no cleanup endpoint or immediate physical-deletion claim.
+- Capacity now separates 170 aggregate agent-hours P90, 102 critical-path wall hours, 12 external/user latency hours, and a 20-hour remediation reserve: 134 pre-freeze wall hours P90. G1 and G4 must rebase this against actual remaining time.
+- The remediated 5,681-word candidate is SHA-256 `9be525de0dc769f223ca10592ca233e880b93337a316afb15bc15a152436c0a4`; `reviews/01b-rescope.md` maps every finding to its candidate disposition. Exact-hash recheck is pending; G1 remains open and no application code has started.
+
+## 2026-08-27 — Replacement G1 passed
+
+- Product/UX/accessibility, engineering/security/test, and Devpost-judge reviewers each reread the complete 5,681-word remediated scope and returned **PASS** with no remaining P0/P1.
+- After the status line changed from candidate to approved, all three reviewers independently verified final SHA-256 `989a8ab2573512f60ae0609ea1fee9dc74b2a0823c432006ca77915e97b2f94f`, reproduced the passed content hash by restoring only that line, and confirmed no material change.
+- G1 capacity was rebased at `2026-08-27T12:06:50Z`: 151.89 wall hours remained before feature freeze, P90 pre-freeze demand was 134 hours, and conservative scheduling slack was 17.89 hours. The slack is not a feature budget, and G4 must rebase again.
+- The locked build is now exactly one portal, eight fields, one branch, two packets/six runtime-parsed PDFs, six once-registered tools, informed server-enforced consent, one structured income conflict, complete manual review/return/re-review, human-only declaration/resolution/submit, and one canonical session receipt.
+- The starting architecture witness is five tables, six API families, three pages, and four PostgreSQL race families. Strong transactional cancellation was cut; native abort is best effort with atomic outcome reconciliation.
+- `.devpost-hackathon-state.json`, `AGENTS.md`, `learner-profile.md`, `status.md`, historical PRD/spec banners, and `reviews/01b-rescope.md` now agree. Guided-build state points to `build-prd`.
+- Replacement G2 starts next under the same goal-mode discipline. No application code has begun, and none may begin until replacement G2, G3, and G4 pass.
+
+## 2026-08-27 — Replacement G2 drafted from the locked scope
+
+- The historical PRD was replaced cleanly rather than patched. One nonredundant deepening round used the complete prior conversation plus parallel product/UX/accessibility, engineering/security/testability, and judge/scope lanes.
+- The new PRD locks three pages, six primary/exceptional workflow stages plus bounded presentations, 40 stable user-story identifiers, exact fixture values, eight claims/fields, exact manual and assisted journeys, and observable recovery/error behavior.
+- Exact applicant-facing behavior now includes the three bounded conflict-reason choices, human-resolved status/edit/discard/clear behavior, plain-language assisted-access disclosure, deterministic Review/Return/reprepare, exact final confirmation, value-free Receipt loading, accepted-but-unavailable Receipt, bounded connection reconciliation, and semantic screen/JSON/print equality.
+- The first complete candidate was 12,154 words at SHA-256 `ee1216a010a1d4ed82128f1a0a15e9e246c92bc9a02ba9c29bbd9bd1c796aed0`. All three formal reviewers verified the same bytes and correctly returned FAIL; no application code started.
+
+## 2026-08-27 — Replacement G2 exact-hash remediation cycles
+
+- First-pass P1s removed an unapproved 60-call/100-change/10-Review/latest-20 workflow subsystem, narrowed VoiceOver/manual proof to locked G1, restored full official release/authorization and genuine-client Supported proof, closed initial Receipt/connection recovery, restored parser anti-hardcoding proof, and moved the video ceiling to 2:50.
+- Product behavior was made exact: consent names applicant values/current rules/exclusions in plain language; conflict has exact reasons/statuses; Review always opens with complete diff/excerpt access; failed Review focuses the summary; confirmation and unknown-submit copy are fixed; assisted attribution persists with the value.
+- Engineering review separated machine outcomes, nested blockers, and browser presentations; defined manual/assisted canonical-hash equality without lying about activity differences; closed expiry/read/apply/prepare orderings; restored redacted state/static-`all` pre-consent modes; and removed conflict history from assisted metadata.
+- The first remediated candidate `832cf4885e0d4d299ec658d40f25676fd9e67ccb0bf19441198c6026864313cf` still failed product and engineering recheck because resolved income plus a deterministic Review hash let an agent enumerate the human-only two-source × three-reason choice. It also lacked stable native-abort acceptance and a separate-browser-permission caveat.
+- The next candidate masked human-resolved income to readiness-only in every agent projection, made assisted Review metadata fresh/opaque/non-content-derived with no hash/digest, required six-way agent-output indistinguishability, scoped consent to CiteApply's six tools, and added pre-/post-dispatch native-abort barriers without a tombstone, state, API, table, rollback, or new race family.
+- Candidate `f38ae047c17e570f2d56923630ee9644335f46952621865b8929822b3ba54aaa` still failed product and engineering because throttling order against expiry/stale/consent was deferred to G3. The PRD now makes throttling a public value-free no-lookup preflight that may win first; a fresh admitted request follows normal authority precedence.
+- Candidate `126706dcbd82001b85504dbcc00b09d85d2e1ec8652efedb04de1b165b6b736e` passed every material lane. Engineering and judge then identified one final P2: income can be edited before the guardian branch, so dirty progress must preserve `n` of the current active total, not always `n of 8`. The final wording tests 5/6, 7/8, and 8/8.
+
+## 2026-08-27 — Replacement G2 passed
+
+- Product/UX/accessibility, engineering/security/testability, and Devpost judge/scope each independently passed content SHA-256 `5a315e67169fcb4c1625e943fb4f0ca698179adce4de2277096d21cedde757dc` with no remaining P0/P1/P2.
+- After the status-only change, all three independently verified final locked PRD SHA-256 `f9fb37f38aa9a1b3b62ebdc46d5673dd8609669f1392df8f87a49e20a2ade40f` and reproduced the passed content hash by restoring only the prior Draft line.
+- The final PRD is 1,036 lines / 14,664 words / 105,055 bytes. `git diff --check` passes and all 40 story identifiers are unique.
+- `reviews/02b-prd.md` records every failed cycle, disposition, exact hash, and final proof. The guided state, status, learner profile, agent contract, and review index now point to `build-spec` / replacement G3.
+- No application code has begun. G3 must fit every story into the locked three-page/six-API/five-table/four-race witness and stay below 15,000 words; G4 still blocks implementation afterward.

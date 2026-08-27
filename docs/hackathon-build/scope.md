@@ -1,291 +1,443 @@
-# Project Scope
+# CiteApply Replacement Scope
 
-Status: Approved and locked at G1; changes require the gate to reopen  
-Date: 2026-08-27  
-Working codename: CiteApply (temporary; user ratification and a formal trademark/domain/handle review are required before public launch)
+Status: Approved and locked at reopened G1; changes require G1/G2 and capacity review to reopen
+Date: 2026-08-27
+Working codename: CiteApply
 
-## Project Name
+## Decision Context
 
-- CiteApply — current internal working codename; lowest obvious-collision risk found in an eight-candidate initial screen
-- Final public name — intentionally deferred until Amit's ratification and a formal trademark/domain/handle review
-- ProofFill — retired because an active product uses the name and overlapping positioning
-- TraceApply — rejected because ApplyTrace is active in the application-software market
+The first CiteApply scope produced a technically detailed but undeliverable specification: 6,720 lines, 23 HTTP/page surfaces, 15 tables, three blocking portability spikes, and eight concurrency-proof families. G3 correctly failed. That specification remains design evidence, not an implementation contract.
+
+This replacement keeps the complete judge-visible product proof and removes generalized platform and distributed-systems breadth. It is a clean scope reset, not permission to implement only part of the former design or weaken the safety, accessibility, privacy, and verification requirements of behavior that remains.
+
+## Project Name Candidates
+
+- **CiteApply** — internal working codename and the name used throughout the build artifacts.
+- **Final public name** — deferred until Amit ratifies the name and an appropriate trademark, domain, and handle review is completed.
+- **ProofFill** — retired because an active product uses the name in an overlapping area.
+- **TraceApply** — retired because ApplyTrace is active in the application-software market.
+
+The internal name is not a legal clearance claim.
 
 ## One-Line Summary
 
-An education-aid application portal where WebMCP agents bind answers to source-linked claims or propose unresolved values for human review; only the visible applicant UI can create a declaration where portal policy permits it, required-evidence fields fail closed, and no WebMCP tool can submit.
+CiteApply is a WebMCP-enabled scholarship application portal where an agent can draft answers from runtime-parsed synthetic source-linked claims, while the participating website enforces evidence policy, refuses contradictory evidence, and leaves declaration, conflict resolution, review, and submission under visible applicant control.
 
 ## Product Thesis
 
-An agent should not earn trust merely by producing a plausible answer. The participating website should expose the live application state and enforce what counts as support.
+The difficult part of a document-backed form is not typing. It is deciding which current question applies, which source supports an answer, what to do when sources disagree, and whether the final application faithfully reflects what the applicant reviewed.
 
-The model proposes. The portal's deterministic policy decides whether a draft is source-linked and submission-ready. The applicant sees every change, resolves ambiguity, and owns the irreversible action.
+Generic browser agents and autofill products may propose plausible values. CiteApply adds something the receiving website is uniquely positioned to provide: an explicit, deterministic evidence contract. The model proposes bindings; the portal decides whether each binding is permitted and whether the application is ready.
 
-“Submission-ready” means complete under the portal's declared evidence and declaration rules. It does not mean the documents are authentic, the applicant is eligible, or an award is approved.
-
-Field policy is explicit: evidence-required fields cannot be satisfied by a declaration; declaration-allowed fields must be visibly marked; and resolving an evidence conflict requires selecting a supported current source or supplying corrected evidence. A note alone cannot make an evidence-required field ready. An agent cannot create or impersonate a user declaration: it may only propose an unresolved value that remains blocked until the applicant acts in the normal UI.
-
-### Competitive boundary
-
-CiteApply does not compete on scholarship discovery, essay generation, generic cross-site autofill, or caseworker decisioning. Its wedge is the receiving website's evidence contract: every tested compatible agent receives the same field rules, structured conflicts, version checks, and human commitment gate in the live form. Applicant-side assistants may organize or suggest answers; CiteApply makes the participating portal enforce what can become submission-ready.
+“Ready” means complete under this fictional program's declared source and declaration rules. It does not mean the documents are authentic, the applicant is eligible, or an award is approved.
 
 ## Target User
 
 ### Primary user
 
-A first-time student completing a document-backed, need-based scholarship application who is uncertain which evidence supports each answer. A guardian may assist, but the student remains the applicant and final approver.
+A first-time student completing a document-backed, need-based scholarship application who is uncertain which evidence supports each answer. A guardian may help, but the student remains the applicant and controls the final action.
 
-### Hypothesized economic buyer
+### Hypothesized buyer
 
-The scholarship foundation or university aid team operating that document-backed program. It would evaluate paying for a safer applicant workflow that may reduce incomplete submissions, clarification loops, and manual source matching; those outcomes remain hypotheses until measured with a design partner.
+A scholarship foundation or university aid team operating a document-backed program. Its potential reason to pay is fewer incomplete applications, clarification contacts, and manual source-matching steps. Those outcomes and willingness to pay are hypotheses to validate with design partners; CiteApply will not claim measured ROI, adoption, or customer demand during this hackathon. A future pilot would measure incomplete-application rate, clarification contacts per application, reviewer source-matching time, and applicant completion.
 
-### Community path
+### Community value
 
-The v1 public repository ships the evidence-policy schema, synthetic education-aid fixtures, WebMCP compatibility tests, and reference portal under an open-source license so nonprofits and agent builders can reproduce the safety pattern. Applicant access remains free. A hosted free tier for qualifying nonprofits is a future hypothesis, not a v1 claim.
+Applicant use is free. The public repository will provide the evidence-policy schema, synthetic PDFs, reviewed golden tests, WebMCP contract tests, security test patterns, and reference portal under an open-source license. Nonprofits and agent builders can reuse the receiving-site safety pattern without accepting CiteApply as a hosted vendor.
 
-### Commercial model hypothesis
+### Commercial path
 
-Applicant use remains free. The initial paid product would be an operator-hosted or managed B2B deployment priced per active aid program, with usage tiers based on completed applications rather than applicant fees. A design-partner pilot would validate willingness to pay against completion rate, clarification volume, and reviewer matching time before any public price or ROI claim. Billing and enterprise administration are outside v1.
+The future product hypothesis is a managed or operator-hosted B2B service priced per active aid program or completed application, not an applicant fee. Future integrations could consume claims from an operator's document system or verification provider. Billing, multitenancy, operator administration, and production integrations are outside the hackathon build.
 
 ## Problem
 
-Education-aid applications combine repetitive identity data, document-backed financial/academic claims, conditional questions, unfamiliar terminology, and a high perceived cost of error. Conventional profile autofill is not designed to enforce an institution-specific evidence policy. General assistants may suggest values, but this prototype focuses on a narrower mechanism: the receiving site deterministically validates the permitted binding for each drafted field.
+Education-aid forms combine identity details, household and income evidence, conditional questions, unfamiliar terminology, and a high perceived cost of error. Existing alternatives address only parts of this:
 
-The resulting user problem is not typing alone. It is knowing:
+- browser autofill repeats profile values but does not understand a program's evidence policy;
+- general assistants can suggest answers but cannot make a receiving site accept a source binding;
+- document AI can extract text but does not own the live form's readiness or human-commitment rules; and
+- workflow/form platforms can validate fields but do not necessarily expose a semantic, agent-usable evidence contract in the page.
 
-- which live questions apply;
-- which document supports a value;
-- when two sources disagree;
-- what remains missing or user-declared;
-- what the agent changed; and
-- whether required evidence, declarations, conflicts, and warnings are complete enough for the user's final review.
-
-For form operators, incomplete or inconsistent applications create clarification email, manual matching, rework, and avoidable applicant abandonment. V1 demonstrates the workflow; it does not claim measured savings or real institutional adoption.
+The resulting applicant problems are knowing what applies, which source supports a value, why a value is blocked, what the agent changed, and whether the exact final snapshot is safe to submit. The operator problem is avoidable clarification and review work caused by incomplete or source-mismatched applications.
 
 ## Why WebMCP Is Essential
 
-The browser agent needs a structured contract with the actual participating page and its demo-scoped synthetic, visible, changing session. Through WebMCP it can:
+CiteApply is built for a participating website that intentionally registers tools. Browser support alone does not add WebMCP to Amazon, a cloud console, or any other unmodified third-party site, and CiteApply will never claim arbitrary-site support.
 
-1. read current field requirements and conditional branches;
-2. inspect a least-disclosure index of source-linked claims;
-3. bind field updates to allowed claim identifiers or propose unresolved values that require visible human action;
-4. receive deterministic missing, conflict, validation, and stale-state errors;
-5. update the same form the applicant is reviewing; and
-6. prepare a structured final review without owning submission.
+WebMCP lets an external agent collaborate with the actual visible application through six small semantic operations: state, requirements, evidence, source-backed mutation, validation, and review preparation. The page and the agent share one authoritative form. Conditional requirements can change after a mutation, conflicts return as structured policy results, and the portal—not the model—decides readiness.
 
-A backend-only chatbot could generate suggestions, but it would not demonstrate agent-independent, site-enforced readiness in the live form. Coordinate clicking or DOM scraping would also miss the point: the site intentionally publishes safe semantic actions and preserves visible human control.
+A chatbot beside the form could generate suggestions, and coordinate clicking could manipulate controls, but neither demonstrates this site-owned, agent-independent contract. WebMCP is therefore the collaboration surface; server/domain policy remains the authorization and correctness boundary.
+
+## Exact Committed Product
+
+### One fictional portal
+
+The owned demo site is **Horizon Education Aid — Need-Based Scholarship**. It is conspicuously fictional, uses synthetic data only, and has a complete manual path when WebMCP is unavailable or the applicant declines assistance.
+
+### Exactly eight fields
+
+1. Full legal name — evidence required.
+2. Student ID — evidence required.
+3. Institution — evidence required.
+4. Preferred contact email — a synthetic `.test` address; visible applicant declaration required.
+5. Financially dependent on a guardian — evidence required and controls the one branch.
+6. Annual household income — evidence required and is the deliberate conflict field.
+7. Guardian full name — evidence required only when dependency is `Yes`.
+8. Household size — evidence required only when dependency is `Yes`.
+
+Closing the branch clears and excludes its two inactive values. The rules will not let a declaration satisfy an evidence-required field.
+
+### Exactly two synthetic packets
+
+- **Supported packet:** accepted household and income sources agree.
+- **Conflict packet:** the same source types disagree about annual household income.
+
+Each packet contains exactly three one-page, text-native, visibly synthetic PDFs:
+
+1. an enrollment record for legal name, student ID, and institution;
+2. a household statement for guardian dependency, guardian name, household size, and an income claim; and
+3. an income statement containing the second income claim.
+
+Both packets set guardian dependency to `Yes`, so the one branch is exercised in every committed journey. Both use the same production code path. Packet data alone determines whether income is corroborated or conflicting. When normalized income values agree, the income statement is the canonical binding and the household statement is retained as corroboration. When they disagree, neither source wins automatically; the conflict remains unresolved until the applicant acts.
+
+### Real, bounded parsing
+
+Selecting a packet reads its three committed PDF byte streams at runtime, verifies the allowlisted SHA-256 hash and byte/page/text limits, invokes one pinned deterministic parser/extractor, normalizes claims, and persists exact page/span/hash anchors. The evidence drawer reconstructs the displayed source from those stored anchors.
+
+Reviewed goldens are test-only oracles and must not be imported by production code. There is no production claim manifest, hardcoded field-to-answer map, arbitrary upload, OCR, model extraction, parser worker, retry scheduler, or claim that the parser handles general documents.
+
+A fixed-file parse either commits the complete packet result or fails visibly without creating partial claims. The failure screen explains that no application was created and offers **Return to packet selection**. A parser or runtime portability failure is a scope no-go, not permission to replace parsing with precomputed claims.
+
+### Exact WebMCP contract
+
+All six tools register once when the application page loads:
+
+1. `get_application_state` — version, progress, branch/readiness summary, and safe next actions; redacted before consent.
+2. `get_form_requirements` — static field policies for `all`, plus consent-gated active requirements.
+3. `get_evidence_index` — consent-gated, bounded claim metadata and opaque source handles; never full PDF text or complete snippets.
+4. `apply_evidence_backed_answers` — an expected-version atomic batch of allowed claim bindings or unresolved proposed values; it cannot declare, resolve, confirm, or submit.
+5. `get_validation_issues` — consent-gated missing, conflict, declaration-needed, invalid, and stale results.
+6. `prepare_submission_review` — creates an immutable review only when ready and returns bounded metadata, not the full diff or source excerpts.
+
+Registration visibility is not permission. A protected operation whose final server authorization occurs without current consent returns the same value-free `consent_required` result and performs no new protected read or mutation. Current session, page, and consent authority is checked before both first execution and any idempotent replay projection; a page-memory capability is injected by the page bridge outside agent-supplied tool arguments.
+
+Before **Allow assisted access**, visible and screen-reader-accessible copy states:
+
+- the purpose and scope: help with this synthetic application in the current page/session;
+- included categories: current application state and values, program requirements, normalized evidence claims and source metadata, validation results, and bounded review metadata;
+- permitted actions: request policy-allowed source bindings and propose the synthetic `.test` email;
+- excluded data/actions: raw PDFs, complete source excerpts, the complete review diff, packet selection, applicant declaration, conflict resolution, confirmation, submission, and export;
+- Revoke stops future operations that have not already passed final server authorization, but cannot erase returned or already-authorized in-flight data and cannot govern separate privileged-browser access; and
+- refresh, newer-page takeover, session expiry, and successful review preparation clear assisted access.
+
+Protected reads finalize current page/consent authority and serialize their small result under the application lock. If that authorization wins before Revoke, review-close, or page takeover, its response may arrive later and cannot be retracted. If authority loss wins first, the operation returns a value-free refusal. The visible application ignores stale-page UI updates, but CiteApply does not claim it can erase data already delivered to an external client.
+
+Dynamic register/unregister is excluded from the committed build. It may improve presentation in the future, but it is not a security boundary and adds experimental-client lifecycle risk without improving the product proof.
+
+There is no WebMCP tool for packet selection, source-snippet reading, applicant declaration, conflict resolution, review confirmation, submission, or receipt export.
+
+### Human and agent boundaries
+
+- The agent can bind a policy-allowed claim or propose a synthetic email value that remains blocked.
+- The agent cannot create or impersonate the applicant's email declaration.
+- When two accepted income sources disagree, the agent cannot choose a winner. The portal returns `conflict_requires_human` and preserves both sources.
+- The applicant resolves that conflict in the visible UI by inspecting both exact excerpts, choosing one source, and selecting a bounded reason. This records a resolution; it does not authenticate the document or prove the value true.
+- The applicant visibly declares the `.test` email in the normal UI.
+- The agent may prepare an immutable review after the portal becomes ready. Successful preparation closes assisted access.
+- The complete diff, source excerpts, declaration, conflict history, disclosure summary, and warnings remain human-UI-only.
+- Draft always provides **Review application**, which invokes the same readiness and immutable-review creation service as `prepare_submission_review`.
+- Review provides **Return to application** and **Confirm and submit this review**. Return invalidates that review, preserves valid committed answers/resolutions, returns to Draft, and leaves assisted access closed. Another assisted pass requires a new Allow.
+- The submit action locks the current application, verifies the exact current review ID/hash/version and page authority, and creates at most one immutable submission and receipt in a single PostgreSQL transaction. Invalidated or stale reviews are rejected.
+- Manual and agent preparation of identical application state must produce the same canonical review hash and receipt projection.
+
+No WebMCP or agent-facing API exposes submission. CiteApply does not claim proof of personhood or protection from every privileged browser automation mechanism; it claims a deliberately absent semantic submission capability and a visible normal-UI commitment step.
+
+### Manual fallback
+
+The applicant can complete the same application without WebMCP by choosing policy-allowed source claims in the form, resolving the same conflict, declaring the same synthetic email, selecting **Review application**, returning to edit when needed, and receiving the same receipt. Manual and agent-assisted paths call the same domain rules and persistence layer. When WebMCP is unsupported or the applicant declines access, one nonblocking message explains that agent assistance is unavailable while every manual control remains usable.
+
+### Refresh, single-page authority, and recovery
+
+Only one application page is active for a demo session. A refresh or newer tab becomes authoritative, preserves saved Draft, Review, or Submitted state, and makes an older page read-only with a clear reload message. It clears WebMCP consent and any open confirmation UI. Explicitly unsaved browser text may be lost.
+
+The authenticated demo session expires exactly 60 minutes after creation and warns at minute 50. Expiry makes application and receipt APIs unavailable and offers **Start a new synthetic demo**; a previously downloaded JSON file remains outside CiteApply. Fixed synthetic database records may be retained through the official judging period and deleted afterward through an explicitly authorized operator action subject to the selected provider's backup policy. CiteApply makes no immediate physical-deletion promise.
+
+Every mutation after successful demo creation uses the current epoch/revision, a request UUID, a canonical request digest, and application-row locking. Initial demo creation instead uses a bootstrap nonce plus request identity. Same ID/same digest guarantees no duplicate effect and a stable committed outcome, but current session/page/consent authority is checked before redisclosing a protected result. An unauthorized retry returns `consent_required` or `stale_page` while the human UI may still show the earlier committed state. Same ID/different digest and stale writes fail without a new mutation.
+
+The native WebMCP `AbortSignal` is passed to the page fetch. Abort before dispatch makes no request. After server acceptance it is graceful best-effort cancellation, not a durable database cancellation or rollback guarantee: the atomic operation may commit or may not commit, never partially commits, and an authoritative state read resolves the outcome. No server cancellation tombstone/control protocol is in scope.
+
+Submission uses one locked, idempotent transaction and a unique application submission. If the response is lost, an exact retry or refreshed bootstrap returns the persisted receipt when committed; otherwise the unchanged review remains available and the applicant confirms again. There is no two-phase intent protocol, encrypted reconciliation token, or persistent confirmed state.
+
+### Receipt
+
+`/receipt` is a value-free shell that fetches one canonical immutable `ReceiptRecord` during the 60-minute session. The screen, downloaded JSON, and print stylesheet are semantically equal projections of that record, although formatting bytes differ: final active fields, source bindings, declaration, preserved conflict resolution, review hash, accepted application revision, bounded WebMCP activity summary, and submission timestamp.
 
 ## Core Workflow
 
-1. The applicant opens the owned **Horizon Education Aid — Need-Based Scholarship** portal in a demo-scoped synthetic session.
-2. They select one of two included, clearly synthetic evidence packets. Each packet's text PDFs are processed by the same deterministic extraction pipeline; arbitrary upload is stretch.
-3. The application creates structured claims with content-addressed, versioned source anchors: document ID and hash, page, text span, normalized value, extraction version, and confidence/status. Extraction confidence is an adapter signal, not the probability that a claim is true.
-4. An external browser agent discovers the page's WebMCP tools and reads the live application requirements.
-5. After the applicant explicitly allows the current agent session to access the selected synthetic packet, the site registers the sensitive evidence tools. The agent lists permitted evidence claims and drafts 8–10 fields. Each proposal includes either an allowed `evidenceClaimId` or an unresolved `proposedValue`; it cannot set declaration actor or status.
-6. The live form visibly updates and labels each field as source-linked, user-declared, needs user declaration, missing, conflicting, or low-confidence. Stale state is a rejected-operation result, not a lasting evidence label.
-7. An answer reveals one conditional branch. The agent re-reads state and completes only supported fields.
-8. In the conflict scenario, two synthetic documents disagree on a required value. The conflict record remains visible and readiness is blocked; the agent asks the applicant instead of guessing.
-9. The applicant inspects both source snippets and either selects the current policy-supported source with a recorded resolution reason or supplies corrected evidence. For a declaration-allowed field, only the visible UI may create a version-bound declaration record. Choosing a source records a human resolution; it does not authenticate the document, prove the value true, or erase conflict history. If no source satisfies the field policy, readiness remains blocked.
-10. The agent requests a submission review. The page shows the exact final diff, evidence snippets, disclosed data, warnings, and readiness state.
-11. The applicant may edit, cancel, or confirm the exact review snapshot. No WebMCP tool or agent-facing API can submit. Submission requires a visible, version-bound confirmation in the normal UI; the prototype does not claim technical proof of personhood or immunity from privileged browser automation.
-12. The portal issues a persisted, version-bound provenance receipt containing field/value/status/source bindings, the WebMCP action summary, final application version, and human approval timestamp.
-
-## What We Are Building
-
-### Committed deadline slice
-
-One portal; 8–10 fields; one conditional branch; two synthetic evidence packets containing versioned text PDFs processed by the real deterministic parsing pipeline; one happy scenario and one contradictory scenario; source inspection; policy-valid conflict resolution; version-bound review; visible confirmation and submission; a persisted receipt view with JSON export/print styling; refresh/resume; stale-write rejection; and a real external WebMCP client trace.
-
-### Stretch only after the committed slice passes every gate
-
-Arbitrary upload, image OCR and region anchors, model-based extraction, a second conditional branch, additional fields, receipt PDF generation, additional extraction adapters, and additional client compatibility. No second portal enters the submission build.
-
-### Product surface
-
-- One polished, responsive, accessible education-aid application portal we own.
-- Two synthetic applicant packets—happy and contradictory—with 2–3 real text-PDF files each containing conspicuously synthetic data, all processed by the committed deterministic parser. A preloaded demo session must have been created through the same parser and handlers, never a hardcoded answer map.
-- 8–10 application fields and one conditional branch.
-- An evidence drawer that reveals the exact source page/span for each source-linked field.
-- Clear field and application readiness states.
-- Conflict comparison and human-resolution UI.
-- Final diff, consent/disclosure summary, visible confirmation and submit, success state, and persisted version-bound provenance receipt with JSON export and printable HTML. Generated PDF output is stretch.
-- Refresh/resume behavior for an in-progress synthetic application.
-
-### Deterministic domain core
-
-- Versioned schemas for documents, source anchors, claims, field rules, drafts, conflicts, human declarations, application versions, review snapshots, approvals, submissions, and receipts.
-- Policy rules that fail closed for missing, conflicting, stale, unsupported, invalid, or low-confidence required values.
-- Explicit separation between extraction/model adapters and provenance/readiness policy.
-- Idempotent submission and replay/stale-state protection.
-- Privacy-safe structured logging with no document body or synthetic PII values.
-- Evidence access is scoped to the current application and requires explicit user authorization. Tool payloads exclude raw document bodies by default and expose only policy-relevant structured claims and opaque source handles.
-- Extracted document text is labeled untrusted data and is never interpreted as instructions. Security tests cover prompt-like document content, oversized values, schema injection, unauthorized claim handles, and cross-application access attempts.
-- A human declaration is created only by the visible UI and records the session actor, field ID, exact value, application version, declaration-policy version, timestamp, and optional resolution reason. Agent/API attempts to forge or reuse declarations fail.
-- The authoritative state machine is `draft → review_prepared(version/hash) → user_confirmed → submitted`. Any edit, branch change, evidence resolution, or changed-version refresh returns to `draft` and invalidates confirmation.
-- A one-use, expiring approval record is bound server-side to the demo session, canonical review snapshot, exact diff, application version, and policy versions. The submission endpoint rejects missing, stale, expired, wrong-session, wrong-version, or replayed approval and is idempotent for the accepted request.
-
-### Initial WebMCP contract
-
-The technical spec may refine names and schemas, but the required capabilities are:
-
-- `get_application_state` — current version, progress, branch state, readiness summary, and safe next actions.
-- `get_form_requirements` — field rules, conditional dependencies, accepted evidence classes, and declaration policy.
-- `get_evidence_index` — consent-gated, bounded or paginated, least-disclosure claim metadata and opaque source handles needed for drafting; raw document bodies/snippets are not returned.
-- `apply_evidence_backed_answers` — draft-only batch mutation with an allowed claim binding or unresolved proposed value and an expected application version; it cannot create a human declaration.
-- `get_validation_issues` — structured missing, conflict, stale, low-confidence, and validation results.
-- `prepare_submission_review` — produces the exact review snapshot/diff for visible human confirmation.
-
-There is no WebMCP submission tool or agent-facing submission API in v1. This is a semantic contract and server-policy boundary, not a claim that the application can identify or defeat every privileged browser automation mechanism.
-
-### Engineering and proof surface
-
-- Actual WebMCP registration using the supported browser API, not a simulated final demo.
-- Imperative WebMCP is the primary contract for reads, batched mutations, version checks, cancellation, and structured failures; semantic HTML remains the normal human form. Registration lifecycle, cancellation, bounded output, tool annotations, and server-side validation are required in the technical spec.
-- A labeled testing-only client/harness for deterministic automated contract tests where needed.
-- Unit, contract, integration, browser E2E, accessibility, security/privacy, and full regression suites.
-- Setup documentation, architecture/data-flow documentation, threat model, open-source license, pinned lockfile, CI, and deployable configuration.
-- A compatibility record naming the exact browser/agent versions actually tested.
-- Version control is initialized before application code. Before submission, the public repository, setup path, and visible open-source license are verified from an incognito session; the deployed URL and testing instructions are verified from a clean supported client.
-- Primary submission target: ChatGPT's in-app browser. Secondary target: Chrome with WebMCP enabled. A first implementation spike must record the exact browser channel/version, agent/client and version, origin-trial or feature setup, secure-origin requirements, registration, discovery, invocation, result, cancellation, and visible mutation. Compatibility is claimed only for clients and versions actually tested.
-
-## What We Are Not Building
-
-- Arbitrary third-party form support, browser-extension scraping, or compatibility with unmodified government, university, insurance, shopping, or cloud sites.
-- Three industries or a generic universal form platform.
-- Real applicant PII, real applications, real institution accounts, or production document retention.
-- Arbitrary document upload, image OCR, or model-based extraction in the committed slice.
-- Document authenticity, identity verification, fraud scoring, eligibility/adjudication, award decisions, legal advice, or compliance certification.
-- Essay generation, invented supporting statements, autonomous apply, or agent-controlled final submission.
-- A cross-site identity/proof wallet, verifiable credentials, cryptographic signatures, blockchain, or production integrations such as DigiLocker.
-- Institution back-office analytics, billing, multitenancy, enterprise SSO, or caseworker workflow in v1.
-- Multilingual, voice, native-mobile, offline, or broad OCR-format coverage in v1.
-- Claims of production readiness, institutional adoption, accuracy improvement, time savings, or ROI without separate evidence.
-
-## Success Measures
-
-### Product invariants
-
-- Every ready field uses a binding kind allowed by that field's versioned policy. An agent-proposed unbound value remains `needs_user_declaration`, and a required-evidence field cannot be converted to declaration-only.
-- Within the committed synthetic test corpus, missing, conflicting, stale, invalid, unsupported, or policy-disallowed low-confidence values cannot reach ready state.
-- No WebMCP tool or agent-facing API can submit. Submission requires a visible, version-bound confirmation in the normal UI; no proof-of-personhood claim is made.
-- Every source-linked field lets the applicant inspect its exact synthetic source anchor.
-- The applicant can modify or cancel before submission.
-- The receipt exactly matches the approved application version and source bindings.
-- For every committed synthetic fixture, extracted claims and source anchors match a reviewed golden dataset; extraction failures surface as missing or low-confidence rather than silently producing a ready value.
-
-### Verified scenarios
-
-- Happy path.
-- Conditional-branch path.
-- Contradictory evidence and human resolution.
-- Missing and low-confidence evidence.
-- Stale concurrent draft rejection.
-- Manual edit after agent draft.
-- Cancellation before approval.
-- Refresh and resume.
-- Duplicate/replayed submission attempt.
-- Agent/API declaration forgery and declaration reuse on another field, value, application version, or policy version.
-- Unknown, malformed, wrong-packet, wrong-session, evidence-class-mismatched, and modified-document/hash-mismatched claim handles.
-- Consent absent, revoked, wrong-session, and post-revocation evidence-tool calls.
-- Review invalidation after a manual edit, branch change, evidence resolution, or changed application version.
-- Missing, expired, reused, wrong-session, wrong-version, and direct-endpoint approval bypass.
-- Hostile or instruction-like fixture text treated only as untrusted data.
-- Tool cancellation during mutation and duplicate request IDs with same/different payloads.
-- Log-capture assertion that no document text, source snippets, or synthetic PII values are emitted.
-- Keyboard-only review and submission.
-- Receipt view/export.
-
-### Hackathon proof
-
-- The product is visibly working within the first 15 seconds of the demo.
-- Judges see a real external agent discover and invoke the page's WebMCP tools.
-- The deliberate conflict/refusal moment is shown, not merely narrated.
-- The hosted app is verified in the exact supported client(s) named in the submission.
-- Repository, license, setup, public URL, and sub-three-minute narrated demo meet official requirements.
-- Both synthetic packets invoke the same production WebMCP handlers and produce different conflict/readiness behavior from their actual state. There is no demo-only mutation route, precomputed field-to-claim answer map, or harness-only capability. The recorded external-client trace reconciles exactly with visible mutations and the final receipt.
-- If participants are available, complete at least three observed synthetic-data sessions and report the exact sample and findings. Otherwise state explicitly that no user validation occurred.
-- Prototype buyer-learning metrics are application completion without unresolved evidence gaps and the number of clarification-required fields per application; no ROI conclusion is drawn from synthetic tests.
-
-## Inspiration And References
-
-- Chrome WebMCP declarative API: <https://developer.chrome.com/docs/ai/webmcp/declarative-api>
-- Chrome WebMCP imperative API (primary contract): <https://developer.chrome.com/docs/ai/webmcp/imperative-api>
-- Existing application assistants such as CAPP, GoScholar, and Nava Labs show adjacent category activity and overlapping approaches; they do not establish prevalence, efficacy, willingness to pay, or product-market fit: <https://cappapp.com/>, <https://www.goscholar.ai/apply>, <https://caseworker.navapbc.com/demos/form-filling-assistant>
-- EliteApply shows overlap around document-to-requirement mapping and unsupported claims: <https://eliteapply.net/>
-- ProofFill naming collision and positioning overlap: <https://prooffill.com/en>
-
-These references are competitive context, not endorsements, integrations, or evidence of product-market fit.
+1. The applicant chooses Supported or Conflict on the landing page and starts a 60-minute synthetic demo.
+2. The server verifies and parses all three packet PDFs through the production parser, then opens the visible manual form.
+3. The external client discovers all six registered WebMCP tools. Protected calls before consent disclose nothing and return `consent_required`.
+4. The applicant reads the category/exclusion/in-flight disclosure and selects visible **Allow assisted access**.
+5. The agent reads state, requirements, and the evidence index, independently composes supported claim bindings, and applies a version-checked batch.
+6. The visible form updates. Guardian dependency reveals guardian name and household size, so the agent re-reads active requirements and applies those supported bindings.
+7. In the Conflict packet, an income binding is refused because the two accepted sources disagree. The agent reads structured issues and does not bypass the conflict.
+8. The agent may propose the prompt-supplied `.test` email, but the field remains `Needs your declaration`.
+9. Premature review preparation fails closed with the conflict and declaration requirements.
+10. The applicant inspects both income excerpts, chooses one supported source with a bounded reason, and visibly declares the email.
+11. The agent prepares the immutable review. Assisted access closes, and the full review appears only in the normal UI. A manual-only journey reaches the same state through **Review application**.
+12. The applicant inspects the exact review. They may choose **Return to application**, edit, and prepare a new review, or activate **Confirm and submit this review**.
+13. The portal atomically persists one submission and opens a matching receipt. JSON download and print show semantically equal projections of the same canonical record.
 
 ## Demo Path
 
-### Opening: 0:00–0:15
+The submission video uses one continuously recorded Conflict-packet session. A clearly labelled cold-open excerpt from later in that same recording shows the genuine tool result and visible form mutation by second 10, with the same request/session evidence used in the chronological trace. The video then returns to the start of that session:
 
-Begin with the synthetic **Horizon Education Aid — Need-Based Scholarship** application, the external browser agent, and the first genuine WebMCP invocation already visible. Show its resulting field mutation and source chips by second 10. Record the interaction in short clips and remove model/network waiting while preserving the complete real tool call and resulting UI state; never replace invocation with a simulated animation. Prompt:
+- by second 10: a genuine external-client result and visible form mutation, labelled as the later same-session excerpt;
+- chronological discovery and a protected pre-consent result;
+- visible consent, separate state/rules/evidence reads, and a real visible mutation;
+- branch reveal and active-requirement re-read;
+- structured income refusal and undeclared-email block;
+- visible applicant resolution and declaration;
+- agent-prepared review, human-only confirm/submit, and matching receipt/JSON identifiers.
 
-> Complete this application using only my selected evidence packet. Never guess, and leave final submission to me.
+The Supported packet and complete manual/no-WebMCP flow are regression evidence and judge testing instructions, not competing video narratives. Waiting may be compressed only when transparently labelled. The unedited external-client trace remains a release artifact. No invocation animation, precomputed result, harness-only capability, unrelated session, or causally disconnected edit may substitute for the real call/result/UI relationship.
 
-The real WebMCP invocation completes and source-linked fields visibly populate.
+## What We Are Building
 
-### Live contract: 0:15–0:40
+- One polished, responsive, accessible scholarship portal with three page routes: landing, application, and receipt.
+- Exactly eight fields, one conditional branch, two packets, six real PDFs, one real conflict, and one declaration-only field.
+- A real deterministic fixed-PDF parser with hash/limit checks, test-only goldens, and exact source anchors.
+- A normal manual source-selection path and a six-tool WebMCP path over the same domain service.
+- Server-enforced consent with visible Allow/Revoke and no reliance on tool visibility as authorization.
+- Deterministic readiness, structured refusal, source inspection, human conflict resolution, and human email declaration.
+- Immutable review preparation, one atomic human submission, and one matching screen/JSON/print receipt.
+- Sixty-minute synthetic sessions, newest-page authority, refresh recovery, stale protection, request idempotency, and honest abort/unknown-outcome reconciliation.
+- A modular Next.js/Node application and PostgreSQL persistence with pinned dependencies, migrations, CI, and a public open-source repository.
+- Unit, contract, real-PostgreSQL integration/race, browser E2E, security/privacy, accessibility, clean-build, hosted, and genuine external-client verification.
 
-Show semantic tool calls, conditional requirements, and a source chip opening the exact document passage. Establish that the agent is working with the page's contract, not hidden coordinate automation.
+## What We Are Not Building
 
-### Winning conflict: 0:40–1:15
+- Support for unmodified third-party sites, browser-extension scraping, or generic cross-site autofill.
+- A second portal, a generic form platform, or multiple industries.
+- Real applicant data, real applications, real institution accounts, document authenticity, identity verification, fraud detection, eligibility/adjudication, or legal/compliance claims.
+- Arbitrary upload, image PDFs, OCR, model extraction, corrected-document replacement, or a general document-ingestion product.
+- Preprocessed production claims, a hardcoded answer map, demo-only mutation routes, simulated tool calls, or a harness presented as the external client.
+- Dynamic WebMCP registration/removal, a second external client, broad browser compatibility claims, or support beyond exact tested client/version combinations.
+- Concurrent collaborative tabs, offline continuation, BFCache recovery promises, dirty-input transfer, or multi-lineage page protocols.
+- Parser workers, leases, timeouts, retries, online policy migration, key-rotation choreography, event sourcing, encrypted submission reconciliation, or a two-phase submit protocol.
+- Durable server cancellation tombstones, transactional cancel/rollback claims, or a dedicated cancellation control surface.
+- A persistent confirmation/approval authority. Confirmation is the visible final UI action bound to the exact current review and transaction.
+- Server-rendered value-bearing receipt streaming, generated receipt PDF, or a separate printable artifact; semantic HTML print styling is sufficient.
+- Production-scale retention promises, custom WAF/capacity systems, operator dashboards, analytics, billing, multitenancy, SSO, or caseworker workflow.
+- Claims of production readiness, institutional adoption, time savings, accuracy gains, environmental impact, or ROI without evidence.
 
-Two synthetic documents disagree on household income. The portal returns a structured conflict, leaves the field unresolved, and blocks readiness. The agent asks the applicant which source is current; the applicant reviews the comparison, selects the current policy-supported source, and records why. If neither source satisfies policy, the only valid path is corrected evidence.
+There are no hackathon stretch features. New feature ideas are post-submission backlog only; quality work on the committed product is not considered stretch.
 
-### Controlled commitment: 1:15–1:45
+## Hard Scope Caps
 
-The agent prepares the final review. Show the diff, evidence/declaration status, disclosed data, no unresolved warnings, and the explicit statement that no WebMCP tool can submit and the normal UI requires a version-bound confirmation.
+The replacement specification and checklist must remain within all of these limits unless G1/G2 and capacity review are reopened:
 
-### Receipt and close: 1:45–2:05
+| Dimension | Cap |
+|---|---:|
+| Owned portals | 1 |
+| Application fields | exactly 8 |
+| Conditional branches | exactly 1 |
+| Synthetic packets | exactly 2 |
+| PDFs | exactly 3 per packet |
+| Deliberate conflicts | exactly 1 field |
+| WebMCP tools | exactly 6, registered once |
+| Primary external clients claimed | exactly 1 |
+| User page routes | at most 3 |
+| API route families | at most 8 |
+| Product database tables | at most 6 |
+| Real-PG concurrency proof families | at most 5 |
+| Replacement technical specification | at most 15,000 words |
 
-The applicant clicks Submit. Show the success state and provenance receipt.
+If a required guarantee cannot be expressed inside these caps, the team must simplify the claimed behavior or reopen scope. It must not add hidden infrastructure or silently weaken the test.
 
-> The agent handles complexity, the website enforces evidence, and the person keeps control.
+### Cap feasibility witness
 
-The remaining video time is reserved for a concise architecture/WebMCP explanation and closing impact statement; total must remain below three minutes.
+The replacement architecture starts from this aggregate witness, leaving one table and two API families of headroom. Later artifacts may refine names but may not split aggregate state into hidden extra surfaces without reopening capacity.
+
+Product tables:
+
+1. `applications` — session credential digest, packet and parsed aggregate, page epoch, revision, current consent, lifecycle, and expiry;
+2. `operations` — mutation request digest, committed outcome, and idempotent replay metadata;
+3. `reviews` — immutable canonical review snapshots and validity;
+4. `submissions` — one unique accepted submission plus canonical receipt; and
+5. `rate_buckets` — bounded fixed-window public demo admission and pruning.
+
+API families:
+
+1. `/api/demo` — bootstrap-nonce-bound, rate-limited synthetic demo creation and fixed-PDF parse;
+2. `/api/application` — authenticated bootstrap/takeover, snapshot, and human source projection;
+3. `/api/application/actions` — manual bindings, declaration, conflict resolution, Allow/Revoke, review/return-to-edit;
+4. `/api/webmcp` — all six tool executions through one strict discriminated server union;
+5. `/api/submission` — visible confirm-submit, exact retry/status, and receipt recovery; and
+6. `/api/receipt` — authenticated canonical receipt data and JSON export.
+
+An API family means every authored HTTP handler or Server Action surface, including operational, cleanup, control, and status behavior; alternate framework plumbing cannot evade the cap. Static synthetic PDFs and the three user pages are not authored APIs. There is no cleanup endpoint or automated physical-deletion claim in the hackathon build. Concurrent demo admission and bounded expired-bucket pruning occur inside `/api/demo` and are part of the retained PostgreSQL proof.
+
+## Acceptance Proof
+
+### Parser and provenance
+
+- All six committed PDFs are parsed at runtime through the same production adapter.
+- Hash, byte, page, and extracted-text caps are enforced before claims commit.
+- Runtime claims and exact page/span anchors match independently reviewed test goldens.
+- A test-only mutated PDF changes the parsed value/anchor, proving byte-derived behavior.
+- Modified production bytes with the old hash fail without claims; instruction-like text remains inert data.
+- Static import/bundle checks prove production code cannot import golden claim data or a precomputed claim manifest.
+
+### Domain and contract
+
+- Field evidence classes, branch reveal/clear, equal-income canonical binding plus corroboration, unequal-income conflict, email proposal/declaration, declaration-forgery rejection, readiness, canonical review hash, review invalidation/re-preparation, and active-field receipt projection have deterministic tests.
+- Every tool descriptor, strict recursive input schema, bounded result/error DTO, annotation, value budget, and server-side validation path has a snapshot/contract test.
+- Forged, cross-session, wrong-packet, evidence-class-mismatched, and stale handles fail without mutation.
+- No agent-facing path can create a declaration, resolve a conflict, confirm, submit, or receive full source excerpts/the complete review diff.
+- A DTO-to-visible-copy completeness test proves that every protected category/action and every excluded category/action is accurately represented in the assisted-access disclosure.
+- Manual and agent review preparation from identical state produce the same canonical review hash; return-to-edit invalidates the old review, and stale-review submission fails.
+
+### PostgreSQL and security
+
+Four controlled real-PostgreSQL race families cover:
+
+1. bootstrap-nonce duplicate demo creation, concurrent rate admission/bucket pruning, stale revision, and same/different-digest request replay;
+2. consent loss, review-close, page takeover, or session expiry versus protected read/apply/prepare, including read-first and authority-loss-first outcomes plus response loss after commit;
+3. human edit/declaration/resolution versus review preparation and invalidation; and
+4. submit versus edit, takeover, duplicate/exact retry, response loss, and receipt recovery.
+
+Native abort behavior has no separate transactional race claim. Tests prove the allowed outcome set after server dispatch—no commit or exactly one atomic commit, never a partial/duplicate mutation—and authoritative state reconciliation.
+
+Security tests cover exact Origin/Host/fetch metadata, HttpOnly same-site sessions, page/CSRF authority, strict body/output caps, session/packet-scoped opaque handles, XSS-safe source display, no value-bearing URLs/storage, and canary assertions that logs, console, analytics, and server errors contain no document text, snippets, synthetic personal values, or secrets.
+
+### Complete flows
+
+- Supported packet through a genuine WebMCP client.
+- Conflict packet through genuine WebMCP collaboration plus human resolution/declaration.
+- Complete manual/no-WebMCP path to the identical receipt model.
+- Manual review preparation, Return to application, edit, stale-review rejection, and re-preparation.
+- Protected calls before consent and after revoke, plus both final-authorization orderings for in-flight read/apply/prepare across Revoke, review-close, and page takeover.
+- Response loss after a committed apply or review preparation followed by Revoke, review-close, or page takeover: the retry refuses current protected disclosure, creates no duplicate effect, and the normal UI exposes the already-committed authoritative state.
+- Refresh at Draft, Review, in-flight submit, and Submitted.
+- Parser/hash failure with Return to packet selection; WebMCP-unsupported/declined manual continuity; stale/read-only page; aborted-callback unknown outcome; 50-minute warning/session expiry; and receipt-export failure.
+- Semantic equality between the accepted review, canonical `ReceiptRecord`, persisted receipt screen, JSON export, and print projection.
+
+### Accessibility and compatibility
+
+- Keyboard-complete Supported, Conflict, manual, consent/revoke, review/Return-to-edit, submit, parser failure, stale/read-only page, receipt, and export-failure flows.
+- Semantic labels, source excerpts, status text, error summary, focus placement/return, and non-color-only states.
+- Automated accessibility checks on landing, consent, draft, conflict, parser failure, stale page, review, Return-to-edit, receipt, and export failure; 320 CSS px, 200% zoom, reduced motion, and contrast checks.
+- One named VoiceOver/browser pass on the primary path and a documented manual fallback browser pass.
+- A real external-client trace names the exact application, model, browser/client version, settings, and date. Compatibility claims stop there.
+
+### Impact evidence
+
+The release includes `docs/verification/impact-evidence.md` with exact Supported, Conflict, and manual completion results; the number and type of clarification-required states each journey creates; and any observed synthetic-data participant sessions. If no participant observation occurs, it says **No user validation occurred**. It distinguishes regression evidence from future pilot measures and makes no ROI inference.
+
+Any known material WCAG A/AA defect, privacy leak, fake integration, mismatching receipt, or unverified external-client claim blocks progression.
+
+## Inspiration And References
+
+- [The WebMCP Challenge](https://webmcp.devpost.com/) — product theme and four equally weighted judging criteria.
+- [Official challenge rules](https://webmcp.devpost.com/rules) — deadline, live URL, public repository/license, tested-client, and sub-three-minute public video requirements.
+- [Chrome WebMCP Imperative API](https://developer.chrome.com/docs/ai/webmcp/imperative-api) — current `document.modelContext.registerTool`, tool-change, cancellation, and experimental lifecycle behavior.
+- [Chrome WebMCP overview](https://developer.chrome.com/docs/ai/webmcp) — origin-trial and local-testing boundaries.
+- [OpenAI site tools documentation](https://help.openai.com/en/articles/20001423-using-site-tools-in-the-chatgpt-desktop-app) — current ChatGPT desktop discovery, page scope, permissions, and availability limits.
+- Existing browser autofill, form platforms, and document-extraction systems are competitive context, not copied product designs.
 
 ## Submission Story
 
 ### WebMCP leverage
 
-This is not an autofill button wrapped as a tool. Multiple semantic reads and draft mutations operate on live, conditional page state; structured policy errors change the agent's behavior; and visible form updates preserve human oversight. Any tested compatible client invokes the same site-defined contract and constraints. Compatibility is claimed only for exact clients and versions recorded in the submission.
+Six real semantic tools compose over one live page: the agent reads site rules and source claims separately, mutates with versioned bindings, re-reads a revealed branch, receives a deterministic conflict, and prepares—but cannot submit—the exact review. Consent is proved through server behavior rather than cosmetic tool visibility.
 
 ### Execution
 
-One complete journey runs from synthetic evidence through branching draft, contradiction, resolution, exact review, human submission, and receipt. The normal human UI works without pretending WebMCP is an authentication or safety boundary.
+Judges receive a coherent applicant product rather than a protocol demo: real PDFs, a polished manual form, visible source inspection, conflict resolution, declaration, accessible review, atomic submission, and a matching immutable session receipt.
 
 ### Potential impact
 
-The primary user faces a credible, consequential application problem. The buyer hypothesis is concrete: education-aid operators may pay to reduce incomplete applications, clarification loops, and manual source matching. The prototype demonstrates the mechanism, while customer and ROI claims remain explicitly unvalidated.
+The project addresses a specific applicant and operator problem and explains a credible paid/operator and free/community path. All outcome and buyer claims remain hypotheses until measured.
 
 ### Creativity and ambition
 
-The distinctive contribution is an agent-independent, site-enforced evidence contract: source handles, deterministic refusal, structured conflict escalation, version-bound review, and human-controlled commitment in the live form. It converts browser-agent trust from a prompt request into application behavior.
+The novel trust move is shifting evidence authority from whichever agent the user happens to run into the participating receiving site. The same agent contract succeeds on consistent evidence and refuses contradictory evidence because the portal owns the provenance policy.
 
-## Timebox And Scope Ruler
+## Official Release Acceptance
 
-- Official deadline: 2026-09-03 20:00 UTC / 2026-09-04 01:30 IST.
-- Available scope window: seven calendar days from scope lock.
-- Plan: six days for foundation, vertical slices, hardening, and full verification; retain the final day for deployment proof, demo capture, submission materials, and contingency.
-- Amit explicitly authorized a quality-first autonomous build and said time is sufficient. If throughput threatens the deadline, cut stretch features and visual flourish before cutting provenance, conflict handling, accessibility, security, or required tests.
+The release gate blocks unless every official submission obligation is evidenced:
+
+- a working public HTTPS URL that judges can use without payment and that remains available through the official judging period;
+- a public source repository containing all necessary source/setup material, with an Amit-approved OSI-compatible license visible at the repository top level and in repository metadata where supported;
+- a public YouTube video shorter than three minutes with audible narration and a faithful demo of the working product;
+- exact tested external client, browser/application, model, settings, version, and test date;
+- reproducible judge/setup instructions for the Supported, Conflict, and manual paths; and
+- a complete Devpost submission recorded before `2026-09-03T20:00:00Z`.
+
+Public name ratification, license choice, repository creation/push, database/hosting provisioning, public deployment/origin configuration, video upload, and Devpost writes remain external mutations requiring Amit's explicit authorization. The combined authorization package must be requested as soon as G4 passes and approved no later than `2026-08-30T20:00:00Z` (`2026-08-31 01:30 IST`). Missing authorization makes the public-release plan a no-go; it never permits unauthorized action or silent use of the final reserve.
+
+## Timebox And Delivery Capacity
+
+Official deadline: `2026-09-03T20:00:00Z` / `2026-09-04 01:30 IST`. Feature freeze is `2026-09-02T20:00:00Z`; the final 24 wall-clock hours are protected for release regression, hosted clean-room/client proof, accessibility evidence, video, submission materials, and contingency. No feature implementation is allowed in that reserve.
+
+Capacity uses three different units and never subtracts person-hours directly from wall time:
+
+- **aggregate agent-hours** include root implementation plus parallel subagent review/test effort;
+- **critical-path wall hours** are the elapsed dependency chain after allowed parallelism; and
+- **external/user latency** is elapsed waiting/coordination for approvals and hosted services. Human-active work is capped at 4 hours P50 / 8 hours P90 and is included in aggregate effort; Amit is not assumed to work the engineering hours.
+
+| Workstream | Aggregate agent-hours P50 | Aggregate agent-hours P90 | Critical-path wall P50 | Critical-path wall P90 |
+|---|---:|---:|---:|---:|
+| Replacement G1–G4 artifacts, remediation, and reviews | 12h | 20h | 5h | 8h |
+| Native primary-client and fixed-PDF portability spikes | 10h | 16h | 7h | 12h |
+| Foundation, PostgreSQL, security baseline, migrations, CI | 10h | 16h | 6h | 10h |
+| Parser, goldens, domain policy, provenance | 13h | 20h | 8h | 13h |
+| Accessible manual UI, review, submission, receipt | 22h | 34h | 13h | 21h |
+| Six-tool bridge, consent, visible-store reconciliation | 13h | 22h | 8h | 14h |
+| Integration, races, E2E, security, accessibility, hosted proof | 26h | 42h | 14h | 24h |
+| **Engineering subtotal** | **106h** | **170h** | **61h** | **102h** |
+| External/user/provisioning latency allowance | — | — | 4h | 12h |
+| Explicit remediation reserve | — | — | 8h | 20h |
+| **Pre-freeze calendar demand** | — | — | **73h** | **134h** |
+
+This plan relies on autonomous goal-mode execution and parallel independent reviews, not continuous user labor. Task/Mac unavailability consumes wall time and triggers the same rebase as any other delay. At G1 lock, `status.md` records the exact remaining time to freeze and scheduling slack. At G4 approval, capacity is recomputed using:
+
+`remaining wall time before freeze >= remaining critical-path P90 + unresolved external/user latency allowance + 20h remediation reserve`
+
+The right side must include all unfinished implementation, verification, provisioning, and authorization work. If the inequality fails, G4 cannot pass without a reviewed scope cut.
+
+### Blocking checkpoints
+
+- **Within 12 critical-path wall hours after G4:** the exact primary client must discover all six tools, receive a value-free pre-consent refusal, read protected data after visible consent, and cause one genuine visible PostgreSQL-backed mutation. Three consecutive unedited raw runs of the state/rules/evidence/apply/branch-re-read/issues sequence must each complete within 120 seconds with no missing call. The pinned parser must parse a committed PDF with stable anchors under Node 24, a production Next build, Linux, and the selected host/runtime path.
+- **By post-G4 critical-path hour 30:** the complete Supported manual flow must reach an immutable matching receipt.
+- **By post-G4 critical-path hour 48:** the Conflict flow, all six real tools, applicant resolution/declaration, and review preparation must work locally end to end.
+- **By post-G4 critical-path hour 72:** the core automated suite, retained PostgreSQL races, security canaries, and primary accessibility flow must pass.
+- **Twenty-four hours before deadline:** feature freeze is mandatory.
+
+Failure of the primary-client/parser checkpoint or the 120-second raw sequence is an immediate scope/no-go review. A checkpoint slip over six critical-path hours, a failed G4 inequality, missed authorization deadline, or a material defect that cannot fit the remaining remediation reserve also reopens capacity. A six-tool latency failure may merge the least differentiated read tools only through formal G1/G2 reopening; it may not silently change the contract. Recovery may not introduce a shim, precomputed production claims, simulated invocation, skipped accessibility/security tests, or unsupported success claim.
 
 ## Risks And Mitigations
 
 | Risk | Mitigation |
 |---|---|
-| Experimental or client-specific WebMCP behavior | Make the first implementation slice a minimal page that registers one read tool and one version-checked mutation tool. Invoke both from the primary submission client, capture the real trace and visible UI update, and record the exact client/browser version. Failure blocks product implementation; a local harness alone cannot satisfy this proof. Request deployment authorization first if remote hosting is required. |
-| Product appears to be ordinary autofill | Make site policy, structured conflict, live conditional state, and human-controlled commitment the center of both UX and demo. |
-| Extraction variability consumes the sprint | Restrict the committed pipeline to deterministic text extraction from the included versioned PDFs, test against reviewed golden anchors, make arbitrary upload/image OCR/model extraction stretch, and never imply broader accuracy. |
-| PII/privacy concerns overwhelm the story | Use unmistakably synthetic data, least disclosure, no content logging, bounded local retention, and a documented threat model. |
-| Scope expansion | One portal only. Stretch work may deepen that portal after the complete committed slice passes all gates; no second portal enters the submission build. |
-| No customer validation before deadline | Report test evidence honestly; pursue lightweight observed-user sessions only if available; do not invent traction. |
+| Experimental WebMCP/client behavior | Register the six tools once, make the native-client spike first, retain a complete manual UI, and claim only the exact tested client/version. |
+| Parser portability | Fixed allowlisted PDFs, one bounded deterministic adapter, early Node/Linux/production/host proof, and no hidden manifest fallback. |
+| Scope regrowth | Enforce numeric caps, no hackathon stretch list, and reopen capacity before any cap changes. |
+| Privacy/security overclaim | Synthetic fixed data only, server-enforced consent, least disclosure, strict session/handle scope, value-free logs, and black-box canary tests. |
+| Human-control overclaim | Expose no semantic submit capability, require visible review/submit, and explicitly disclaim proof of personhood or privileged-browser resistance. |
+| Buyer/impact uncertainty | Present a testable hypothesis and open community value; do not invent customers, user research, savings, or ROI. |
+| Public abuse/retention | Use the allocated PostgreSQL `rate_buckets` admission path, strict payload/session limits, a 60-minute access TTL, synthetic-only records, no automated deletion claim, and provider-retention wording verified for the selected host. |
 
-## Exit Criteria For G1
+## G1 Replacement Exit Criteria
 
-- Independent product, judge, feasibility, and testability reviewers approve this single-workflow boundary.
-- P0/P1 findings are fixed or explicitly accepted with rationale.
-- Working name is collision-screened enough for internal use; public name remains user-ratified and subject to a proper trademark/domain/handle review.
-- Saved hackathon state, learner profile, agent contract, status, and build notes agree.
-- No application code has started.
+G1 passes only when:
+
+- independent product/UX, engineering/security/test, and Devpost-judge reviewers approve this exact replacement artifact;
+- all P0/P1 findings are resolved in the artifact or explicitly accepted with a documented rationale;
+- reviewers agree that the exact committed loop remains competitive under all four official judging criteria;
+- the six-tool/one-registration/real-parser decisions and every named cut are reflected consistently in the agent contract, learner profile, status, build notes, and saved guided-build state;
+- the prior PRD and specification are marked historical and no longer appear as implementation contracts; and
+- no application code has started.
+
+Only then may G2 be regenerated from this scope.
