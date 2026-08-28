@@ -1,9 +1,9 @@
 # CiteApply Product Requirements Document
 
-Status: Approved and locked at replacement G2 with reviewed G2E-01, G2E-02, and G2E-03 errata
+Status: Approved and locked at G2 local-first upstream alignment; product requirements and release acceptance remain unchanged
 Date: 2026-08-27
 Product: CiteApply (working codename)
-Upstream contract: locked `scope.md`, SHA-256 `989a8ab2573512f60ae0609ea1fee9dc74b2a0823c432006ca77915e97b2f94f`
+Upstream contract candidate: `scope.md`, SHA-256 `26b8b0fb1a68a2131a6d654198cb93f8c4bc32363e559a1d7a65747db642aa1a`
 
 ## Product Summary
 

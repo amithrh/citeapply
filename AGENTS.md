@@ -8,13 +8,13 @@ Quality means complete behavior, proportionate security, accessibility, real-cli
 
 ## Current Gate
 
-- Replacement G1 is locked at scope SHA-256 `989a8ab2573512f60ae0609ea1fee9dc74b2a0823c432006ca77915e97b2f94f`.
-- Replacement G2 passed final errata review and metadata proof; the behavioral contract is PRD SHA-256 `1fc13ede1edec072f1776d35b88a4c688bfc5a6e33ddda9d554226b9fe37f0f9`.
-- G3 passed after seven bounded exact-hash candidates were correctly rejected, the eighth content hash passed all three lanes with zero findings, and all three lanes independently completed the status-only metadata proof.
-- The locked `spec.md` is SHA-256 `9baf6bab2e779cd6b014dac982dde1a547802fd77c634074d0662b729c03830a`, 1,169 lines / 14,831 words / 121,951 bytes; restoring only its candidate status line reproduces passed content hash `1c189ddc…aa2a2`.
-- G4 is active. It must sequence the complete build, rebase the capacity inequality against the live clock, and receive three independent exact-artifact passes before application implementation begins.
-- The prior 75,417-word design and `reviews/03-spec.md` are historical evidence, never implementation contracts.
-- Do not scaffold or implement application code until replacement G3 and G4 each pass. Any cap breach, reopened cut, or product contradiction stops progression for capacity review.
+- The user's explicit local-first direction defers every provider, deployment, public-repository, Devpost, upload, outreach, monitoring, and submission action until a later conversation. It still requires the complete local fictional submission and Receipt journey.
+- The narrow G1→G4L local-first delivery amendment passed three fresh exact-hash lanes and three status-only proofs. Product behavior, caps, human authority, tests, and final public acceptance are unchanged.
+- Locked hashes are scope `4e6978083372b0043cdba26c2aaf51c1bfd5b37dce28d684c0d7c4dafa07f53c`, PRD `b6fd5e3c40c82086275962e1447185cae174fb601a1408c0ac56737e25ddc55d`, spec `236056cefb2b83bc7fea295848185ff4db9a4a583eafac2fda6480ef44657231`, checklist `d7bef6a37eb58dd1a6f624a33c2ab28bd5df407a364774fa1a2ac02af70aff08`, and producer ledger `24c9499fe57830d5b09367389e0f4da5344f21bf048e68969954d39f2f10d335`. Passed candidate content hashes are recorded in `reviews/04-checklist.md`.
+- A0L passed at ignored private-ledger SHA-256 `daae8e17b2ed9ac551f2c573a5a0b610d0b4015f93bf908f6e1433538a71ee1c` after product/UX/authority, engineering/security/testability, and WebMCP/judge/rules exact-artifact reviews returned unconditional P0/P1/P2 `0/0/0`. Its sole decision is `local_ready`; local implementation is now permitted only in the locked checklist order.
+- G5B-L requires real ChatGPT desktop site-tool discovery and three under-120-second runs on the actual local route; Chrome/harness evidence is supplemental only. After A0P, hosted parser/client parity is a blocking G5B-H subgate inside item 11 before any hosted/release claim and before item-11/G9 closure.
+- The prior locked G1/G2/G3/G4 hashes remain historical proof. The prior 75,417-word design and `reviews/03-spec.md` remain historical evidence, never implementation contracts.
+- A0L authorizes local work only. Implement no file or behavior outside the active checklist item, and do not perform A0P, provider, deployment, public-repository, upload, outreach, Devpost, or external-submission actions. Any cap breach, reopened cut, or product contradiction stops progression for capacity review.
 
 ## Sources Of Truth
 
@@ -23,7 +23,7 @@ Read these before acting, in order:
 1. `.devpost-hackathon-state.json`
 2. `docs/hackathon-build/status.md`
 3. `docs/hackathon-build/scope.md`
-4. The current replacement artifacts once approved: `prd.md`, then `spec.md`, then `checklist.md`
+4. The current replacement artifacts once approved: `prd.md`, then `spec.md`, then `checklist.md` and its locked `file-producers.json`
 5. `docs/hackathon-build/build-notes.md`
 6. The current stage review under `docs/hackathon-build/reviews/`
 
@@ -92,8 +92,10 @@ Never advance merely because code compiles or the happy path works. After implem
 ## Engineering Quality
 
 - Prefer a small modular monolith, deterministic domain logic, strict schemas, and explicit state transitions.
+- Treat `docs/hackathon-build/file-producers.json` as a locked implementation boundary: every tracked file has one creator, every modifier is declared, and no source/test/evidence path may be created until its literal row and producer-before-consumer edge validate.
 - Pin the Node and dependency versions, commit the lockfile, use migrations, and run PostgreSQL in integration/CI tests.
 - Treat PDFs, extracted text, WebMCP arguments, route bodies, URL parameters, stored browser state, and model output as untrusted.
+- For G5B-L, try exact potentially trustworthy `http://localhost:<port>` first and require empirical secure-context plus unconditional Secure `__Host-` cookie acceptance. Installing or trusting a local CA in macOS Keychain is a separate system-trust mutation and requires explicit user approval.
 - Verify committed PDF hashes and byte/page/text limits before claims commit. Instruction-like PDF text remains inert quoted data.
 - Keep production parser imports independent from goldens and precomputed claim data; add a static import/bundle assertion.
 - Keep document contents, source snippets, synthetic personal values, session/page/consent secrets, and raw request bodies out of logs, URLs, analytics, console output, and browser storage.
@@ -116,10 +118,10 @@ Run the complete relevant suite and independent review before every gate.
 
 ## Capacity And No-Go Rules
 
-- Current forecast separates 170 aggregate agent-hours P90 from 102 critical-path wall hours P90, then allocates 12 wall hours for external/user latency and 20 for remediation: 134 pre-freeze wall hours P90 plus a separate protected 24-hour release reserve.
-- Rebase actual remaining wall time at G1 lock and G4. G4 passes only when remaining time before freeze covers remaining critical-path P90, unresolved external/user latency, and the 20-hour remediation reserve.
-- The exact primary client and fixed-PDF parser portability proofs are the first post-G4 checkpoint and must pass within 12 critical-path wall hours. Three raw agent sequences must each finish within 120 seconds.
-- A checkpoint slip over six critical-path hours, a failed capacity inequality, missed authorization deadline, or failure of the native-client/parser proof reopens scope immediately.
+- The amended roster retains 168.25 implementation/pre-release aggregate agent-hours P90, 5.00 combined A0L+A0P active hours, 12 hours bounded external/user latency, and 20 hours protected abnormal-remediation reserve. A0L is 0.50 hour before H0; A0P is 4.50 hours only after local acceptance and before item 11. The former 131-hour full-path capacity pass is historical; local-candidate and later public-promotion capacity are sampled separately, and deferred work is never treated as finished.
+- Rebase actual remaining wall time at G4L lock, every wave close, and when A0P opens. Public promotion passes only when remaining time covers all unfinished critical-path P90, unresolved external/user latency, and the 20-hour reserve.
+- The exact primary ChatGPT client and local fixed-PDF parser portability proofs are the first post-A0L checkpoint and must pass within 12 critical-path wall hours. Three raw agent sequences must each finish within 120 seconds. Selected-host parser/client parity is a separate A0P-gated release blocker.
+- A failed local G4L inequality, a local checkpoint slip over six critical-path hours, or failure of the local native-client/parser proof reopens or stops local scope. A missed A0P deadline, non-ready A0P, failed public-promotion inequality, or failed hosted G5B-H sets `public_release_no_go` only and never blocks items 1–10 or invalidates a truthful local candidate.
 - Never recover by simulating WebMCP, using precomputed production claims, skipping accessibility/security tests, or making an unsupported success claim.
 
 ## Documentation Discipline
@@ -131,4 +133,4 @@ After every material change:
 - update `docs/hackathon-build/status.md` to reflect reality; and
 - record independent findings, dispositions, artifact hash/commit, commands, and results in `docs/hackathon-build/reviews/<stage>.md`.
 
-Public name/license choice, deployment, paid provisioning, public-repository creation/push, origin configuration, Devpost mutation, external messaging, thumbnail/video upload, and final submission require explicit user authorization. Request the combined package immediately after G4; approval is required by `2026-08-30T20:00:00Z`, or the public-release plan becomes no-go.
+Public name/license choice, deployment, paid provisioning, public-repository creation/push, origin configuration, Devpost mutation, external messaging, thumbnail/video upload, and final submission require explicit user authorization. H30/H48 wave-close updates report progress and public-deadline/capacity risk only; they never request approval or present the authorization package. Present A0P only after Amit tests the H72 local candidate and explicitly opens the release discussion. Approval remains required by `2026-08-30T20:00:00Z`, so honoring local-first sequencing may make the public-release plan no-go while local work continues. Final submission always requires a later immediate exact **“yes, submit.”**

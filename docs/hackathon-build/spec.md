@@ -1,12 +1,12 @@
 # CiteApply Replacement Technical Specification
 
-Status: Approved and locked at replacement G3; implementation remains prohibited until G4 passes
+Status: Approved and locked at G3 local-first execution amendment; implementation remains prohibited until A0L.2 records local_ready
 
 Date: 2026-08-27
 
-Locked scope input: SHA-256 `989a8ab2573512f60ae0609ea1fee9dc74b2a0823c432006ca77915e97b2f94f`
+G1 local-first scope candidate input: SHA-256 `26b8b0fb1a68a2131a6d654198cb93f8c4bc32363e559a1d7a65747db642aa1a`
 
-Locked G2 PRD input: SHA-256 `1fc13ede1edec072f1776d35b88a4c688bfc5a6e33ddda9d554226b9fe37f0f9`
+G2 local-first PRD candidate input: SHA-256 `be037cbb876385174347624105a4ab96090ebba4257efd5856e167526a54dd37`
 
 ## Overview
 
@@ -52,7 +52,7 @@ Production dependencies are only Next, React/DOM, `pg`, Zod, and PDF.js; develop
 
 The authorization-gated target is one Vercel Node-24 project and same-region Neon PostgreSQL 18 over pooled TLS, replaceable by any Node-24/PostgreSQL-18 host because domain code imports no provider SDK. Next tracing includes only `fixtures/packets/**/*.pdf` for Demo; build proof verifies all six hashes.
 
-Local/CI run the same migrations on pinned PostgreSQL 18.6 and Linux Node 24.20.0. Provisioning, credentials, deployment, publication, and retention claims require Amit's post-G4 authorization.
+Local/CI run the same migrations on pinned PostgreSQL 18.6 and Linux Node 24.20.0. Provisioning, credentials, deployment, publication, and retention claims require Amit's A0P public-release authorization.
 
 Required variables are `DATABASE_URL`, base64url 32-byte `CITEAPPLY_MASTER_KEY`, and `APP_ORIGIN`. HKDF-SHA-256 derives labelled start/session/page/consent/rate/operation keys. Preview/test separate origins, keys, and databases; no secret is `NEXT_PUBLIC_`.
 
@@ -325,7 +325,7 @@ Numerical thresholds are technical abuse/output bounds, never displayed as appli
 
 ### Session, page, and consent capabilities
 
-The session cookie is always `__Host-citeapply_session; HttpOnly; Secure; SameSite=Strict; Path=/`, never has `Domain`, and keeps the original 60-minute expiry. It contains a derived credential, not an application ID; PostgreSQL indexes only its digest. Production/genuine-client use HTTPS. Local/CI uses exact potentially trustworthy `http://localhost:<port>` in a fresh isolated Chromium context that visits no other localhost port. A server test parses attributes without retaining the value; Playwright proves `isSecureContext`, real-Start acceptance, absence from `document.cookie`, and authentication of the next bootstrap without injection. Rejection by the pinned browser requires explicit local HTTPS or stops for review—never a renamed/weakened cookie. Constant-time claims cover only same-length in-process comparisons.
+The session cookie is always `__Host-citeapply_session; HttpOnly; Secure; SameSite=Strict; Path=/`, never has `Domain`, and keeps the original 60-minute expiry. It contains a derived credential, not an application ID; PostgreSQL indexes only its digest. Hosted production and hosted genuine-client proof use HTTPS. Local/CI may use exact potentially trustworthy `http://localhost:<port>` in a fresh isolated browser context that visits no other localhost port only when the unmodified client proves `isSecureContext` and unconditional Secure `__Host-` cookie acceptance; otherwise separately approved trusted loopback HTTPS is required. A server test parses attributes without retaining the value; Playwright proves `isSecureContext`, real-Start acceptance, absence from `document.cookie`, and authentication of the next bootstrap without injection. Rejection by the pinned browser requires that explicit local HTTPS approval or stops for review—never a renamed/weakened cookie. Constant-time claims cover only same-length in-process comparisons.
 
 Application and Receipt shells perform this same-family two-call bootstrap:
 
@@ -1025,7 +1025,7 @@ Automated axe, semantic/keyboard, 320px, 200% zoom, reduced-motion, focus, live-
 
 ### Test layers and commands
 
-G4 will sequence these commands and name exact evidence files; none may be replaced by a verbal check:
+G4L will sequence these commands and name exact evidence files; none may be replaced by a verbal check:
 
 1. From an empty npm cache on Node 24.20.0/Linux: `npm ci`, exact direct-version/peer assertion, TypeScript 6 CLI/programmatic import, ESLint config load, `npm run typecheck`, `npm run lint`, minimal `next build`, lockfile integrity, production dependency/license inventory, and `npm audit --omit=dev` triage. Any install/peer/lint/build failure blocks feature work and reopens the stack choice.
 2. Migration/schema/table/count/storage-ceiling checks, forbidden-import/value-sentinel scan, six-tool descriptor/per-tool result snapshots, error cross-pair negatives, route-family/page count, and serialized output caps.
@@ -1103,12 +1103,12 @@ Security/adversarial coverage includes malformed and oversized envelopes, cross-
 
 ## Blocking Portability And Genuine-Client Gates
 
-Within the first 12 critical-path build hours after G4, both gates must pass or implementation stops for capacity/scope no-go review:
+Explicit local-only authority splits this checkpoint without weakening release. `G5B-L` must pass within the first 12 amended critical-path build hours and permits only local items 3–10. `G5B-H` runs after A0P public-release authority as a blocking subgate inside item 11/G9; it must close before any hosted-compatibility/release claim and before item-11/G9 closure. Neither state authorizes publication or supports a release-ready claim.
 
-1. The pinned PDF adapter parses a committed PDF with exact anchor from Node 24.20.0 on macOS, Linux CI, a production Next build, and the selected hosted Node path. All three packet parses must meet the Start lock budget. No fallback parser, preprocessed production claims, or hardcoded map may rescue failure without G2/G3 review.
-2. On an explicitly authorized HTTPS origin, the exact ChatGPT desktop built-in browser/account/model discovers the six real once-registered tools, observes the real value-free pre-consent refusal, receives protected data after visible Allow, and causes a genuine PostgreSQL-backed mutation visible in the same Application. Then three consecutive unedited raw Conflict runs must each execute this chronology from the same saved starting state: protected state → active requirements → evidence index → first apply → branch state and active-requirements reread → second apply → separate income apply/refusal → validation issues → blocked prepare. Across the chronology all six names must appear, persisted branch values must be visible, no call may be missing or substituted, and elapsed time from first invocation to final result must be at most 120 seconds. Any missing call, failed visible mutation, wrong refusal, or over-120-second run immediately stops implementation for scope/no-go review. Evidence records app build, model, account availability if visible, settings, origin, date, raw trace, elapsed time, request correlation, and visible database-backed result. The currently installed app is `26.818.41509` build `6962`, but the release record uses the actually tested build.
+1. `G5B-L` parses a committed PDF with exact anchor under Node 24.20.0 on macOS, isolated Linux, and the production Next output/local Node path. `G5B-H` repeats the proof on the selected hosted Node path. All packet parses meet the Start lock budget; no fallback, preprocessed production claim, or hardcoded map may rescue either gate.
+2. For `G5B-L`, the exact ChatGPT desktop built-in browser/account/model must empirically discover the six real once-registered tools on the actual fixed local route. Exact potentially trustworthy `http://localhost:<port>` is allowed only when the unmodified client reports a secure context and accepts the unconditional Secure `__Host-` cookie; otherwise trusted loopback HTTPS is required. The client must show the value-free pre-consent refusal, post-Allow protected data, and a visible PostgreSQL-backed mutation, then complete three unedited raw Conflict runs: state → requirements → evidence → first apply → branch state/requirements reread → second apply → separate income refusal → issues → blocked prepare. Every name appears, persistence is visible, every run is at most 120 seconds, and evidence records the actual app/build/model/account availability/settings/origin/date, raw chronology, elapsed time, causal request data, and database/UI result. Failure stops before Wave 1; Chrome and harness evidence are supplemental only. `G5B-H` repeats the exact sequence on the authorized public HTTPS candidate before any hosted-compatibility or release claim.
 
-The supplemental Chrome lane records installed Chrome `151.0.7922.174`, required WebMCP testing/origin-trial setting, secure/origin-isolated context, descriptor listing, callback object/result shape, DevTools evidence, and abort behavior. Chrome is not substituted for the primary ChatGPT site-tools claim. OpenAI currently documents site tools only in the desktop app's built-in browser; availability depends on account/model/page. If genuine discovery cannot be made reliable, a harness or ordinary Chrome animation cannot be presented as success.
+The supplemental Chrome lane records the actual exact installed Chrome build captured at proof time, required WebMCP testing/origin-trial setting, secure/origin-isolated context, descriptor listing, callback object/result shape, DevTools evidence, and abort behavior. The dated amendment preflight observed `151.0.7922.175`; that observation is evidence, not a timeless version pin. Chrome is not substituted for the primary ChatGPT site-tools claim. OpenAI currently documents site tools only in the desktop app's built-in browser; availability depends on account/model/page. If genuine discovery cannot be made reliable, a harness or ordinary Chrome animation cannot be presented as success.
 
 Before release, the early three-run evidence is rerun on the frozen build, and at least one complete genuine-client Supported journey continues through human declaration, Review, visible submission, and matching Receipt. Raw chronological traces remain available; the harness is supplemental only.
 
@@ -1158,7 +1158,7 @@ Editing preserves captured session/request causality and labels compressed waits
 | Admission lock too slow | two-second parser/load/race proof; failure reopens G3 choice |
 | Next/WebMCP dependency changes | exact pins and lockfile; no update after freeze without rerunning full gates |
 | Public host/database limits | measured authorized hosted runs; sleeping/unavailable is no-go |
-| Schedule consumes reserve | G4 capacity rebase, no stretch; defects outrank additions |
+| Schedule consumes reserve | G4L capacity rebase, no stretch; defects outrank additions |
 | Privacy/accessibility defect | fail relevant stage and remediate before progression |
 | Missing release authorization, identity, name, or license | release no-go; build permission never implies publication permission |
 

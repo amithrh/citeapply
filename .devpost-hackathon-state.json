@@ -27,19 +27,26 @@
   "rules_acknowledged": true,
   "learning": {
     "status": "active",
-    "current_step": "checklist",
+    "current_step": "build",
     "completed_steps": [
       "onboard",
       "scope",
       "prd",
-      "spec"
+      "spec",
+      "checklist"
     ],
     "plan_file": "docs/hackathon-build/scope.md",
-    "checklist_file": ""
+    "checklist_file": "docs/hackathon-build/checklist.md",
+    "checklist_sha256": "d7bef6a37eb58dd1a6f624a33c2ab28bd5df407a364774fa1a2ac02af70aff08",
+    "checklist_candidate_sha256": "18f886b89d7b467e028dbb294011d3f877d889962328bae9c56255f7725930e3",
+    "producer_manifest_file": "docs/hackathon-build/file-producers.json",
+    "producer_manifest_sha256": "24c9499fe57830d5b09367389e0f4da5344f21bf048e68969954d39f2f10d335",
+    "producer_manifest_candidate_sha256": "24c9499fe57830d5b09367389e0f4da5344f21bf048e68969954d39f2f10d335",
+    "gate_status": "a0l-passed-item1-local-foundation-active"
   },
   "submission": {
     "draft_file": "devpost-submission.md",
     "status": "not-started"
   },
-  "next_command": "build-checklist"
+  "next_command": "build-project"
 }

@@ -1,6 +1,6 @@
 # CiteApply Replacement Scope
 
-Status: Approved and locked at reopened G1; changes require G1/G2 and capacity review to reopen
+Status: Approved and locked at G1 local-first delivery amendment; product boundary unchanged
 Date: 2026-08-27
 Working codename: CiteApply
 
@@ -375,13 +375,13 @@ The release gate blocks unless every official submission obligation is evidenced
 - reproducible judge/setup instructions for the Supported, Conflict, and manual paths; and
 - a complete Devpost submission recorded before `2026-09-03T20:00:00Z`.
 
-Public name ratification, license choice, repository creation/push, database/hosting provisioning, public deployment/origin configuration, video upload, and Devpost writes remain external mutations requiring Amit's explicit authorization. The combined authorization package must be requested as soon as G4 passes and approved no later than `2026-08-30T20:00:00Z` (`2026-08-31 01:30 IST`). Missing authorization makes the public-release plan a no-go; it never permits unauthorized action or silent use of the final reserve.
+Public name ratification, license choice, repository creation/push, database/hosting provisioning, public deployment/origin configuration, video upload, and Devpost writes remain external mutations requiring Amit's explicit authorization. The H30/H48 wave-close updates report local progress and public-deadline/capacity risk only; they neither request approval nor present the authorization package. That package is presented only after Amit tests the H72 local candidate and explicitly opens the public-release discussion. Public approval remains required no later than `2026-08-30T20:00:00Z` (`2026-08-31 01:30 IST`), so honoring local-first sequencing may make the public-release plan a no-go. Missing authorization never blocks honest local implementation, permits unauthorized action, or silently consumes the final reserve.
 
 ## Timebox And Delivery Capacity
 
 Official deadline: `2026-09-03T20:00:00Z` / `2026-09-04 01:30 IST`. Feature freeze is `2026-09-02T20:00:00Z`; the final 24 wall-clock hours are protected for release regression, hosted clean-room/client proof, accessibility evidence, video, submission materials, and contingency. No feature implementation is allowed in that reserve.
 
-Capacity uses three different units and never subtracts person-hours directly from wall time:
+The table below is the full-public-path forecast retained for later A0P evaluation; it is not the local G4L entry inequality. Capacity uses three different units and never subtracts person-hours directly from wall time:
 
 - **aggregate agent-hours** include root implementation plus parallel subagent review/test effort;
 - **critical-path wall hours** are the elapsed dependency chain after allowed parallelism; and
@@ -389,7 +389,7 @@ Capacity uses three different units and never subtracts person-hours directly fr
 
 | Workstream | Aggregate agent-hours P50 | Aggregate agent-hours P90 | Critical-path wall P50 | Critical-path wall P90 |
 |---|---:|---:|---:|---:|
-| Replacement G1–G4 artifacts, remediation, and reviews | 12h | 20h | 5h | 8h |
+| Replacement G1–G4L artifacts, remediation, and reviews | 12h | 20h | 5h | 8h |
 | Native primary-client and fixed-PDF portability spikes | 10h | 16h | 7h | 12h |
 | Foundation, PostgreSQL, security baseline, migrations, CI | 10h | 16h | 6h | 10h |
 | Parser, goldens, domain policy, provenance | 13h | 20h | 8h | 13h |
@@ -401,21 +401,23 @@ Capacity uses three different units and never subtracts person-hours directly fr
 | Explicit remediation reserve | — | — | 8h | 20h |
 | **Pre-freeze calendar demand** | — | — | **73h** | **134h** |
 
-This plan relies on autonomous goal-mode execution and parallel independent reviews, not continuous user labor. Task/Mac unavailability consumes wall time and triggers the same rebase as any other delay. At G1 lock, `status.md` records the exact remaining time to freeze and scheduling slack. At G4 approval, capacity is recomputed using:
+This plan relies on autonomous goal-mode execution and parallel independent reviews, not continuous user labor. Task/Mac unavailability consumes wall time and triggers the same rebase as any other delay. At G1 lock, `status.md` records the exact remaining time to freeze and scheduling slack. Immediately before G4L approval, before A0L/H0, and at every local wave close, use the local-candidate inequality:
 
-`remaining wall time before freeze >= remaining critical-path P90 + unresolved external/user latency allowance + 20h remediation reserve`
+`remaining hours to 2026-09-02T16:15:00Z local-candidate cutoff >= unfinished A0L active wall + unfinished H0–H72 fully loaded local schedule P90 + genuinely unresolved local-only latency + 20h remediation reserve`
 
-The right side must include all unfinished implementation, verification, provisioning, and authorization work. If the inequality fails, G4 cannot pass without a reviewed scope cut.
+At complete local start the right side is `0.50 + 72 + 0 + 20 = 92.50h`. A genuinely unresolved local-only dependency is added when it exists; deferred A0P, hosted, provider, public, and submission work is never called finished or charged to this local gate. If this local inequality fails, G4L cannot pass without a reviewed scope cut.
+
+Only when A0P opens, recompute the public-promotion inequality against the same internal release-only start using every still-unfinished A0P active unit, the unfinished H72–H94 fully loaded envelope, unresolved external/user latency, and the 20-hour reserve. A failed or non-ready A0P, missed public-decision deadline, failed public inequality, or failed G5B-H sets `public_release_no_go`; it never blocks or invalidates items 1–10 or a truthful local candidate. Item 12 remains governed separately by its protected 27.75-hour release-only envelope.
 
 ### Blocking checkpoints
 
-- **Within 12 critical-path wall hours after G4:** the exact primary client must discover all six tools, receive a value-free pre-consent refusal, read protected data after visible consent, and cause one genuine visible PostgreSQL-backed mutation. Three consecutive unedited raw runs of the state/rules/evidence/apply/branch-re-read/issues sequence must each complete within 120 seconds with no missing call. The pinned parser must parse a committed PDF with stable anchors under Node 24, a production Next build, Linux, and the selected host/runtime path.
-- **By post-G4 critical-path hour 30:** the complete Supported manual flow must reach an immutable matching receipt.
-- **By post-G4 critical-path hour 48:** the Conflict flow, all six real tools, applicant resolution/declaration, and review preparation must work locally end to end.
-- **By post-G4 critical-path hour 72:** the core automated suite, retained PostgreSQL races, security canaries, and primary accessibility flow must pass.
+- **Within 12 amended critical-path wall hours after local gate A0L:** the exact primary client must empirically discover all six tools on the actual local route, receive a value-free pre-consent refusal, read protected data after visible consent, and cause one genuine visible local-PostgreSQL mutation. Three consecutive unedited raw runs of the state/rules/evidence/apply/branch-re-read/issues sequence must each complete within 120 seconds with no missing call; Chrome and harness evidence are supplemental only. The pinned parser must parse a committed PDF with stable anchors under Node 24, a production Next build, isolated Linux, and the local production runtime. This `G5B-L` checkpoint permits local items 3–10 only. After explicit public-release authority, `G5B-H` runs as a blocking subgate inside item 11/G9: it repeats parser and exact-client proof on the selected hosted runtime and authorized public HTTPS origin before any hosted-compatibility/release claim and before item-11/G9 closure.
+- **By amended H30 after A0L:** the complete Supported manual flow must reach an immutable matching receipt.
+- **By amended H48 after A0L:** the Conflict flow, all six real tools, applicant resolution/declaration, and review preparation must work locally end to end.
+- **By amended H72 after A0L:** the core automated suite, retained PostgreSQL races, security canaries, and primary accessibility flow must pass.
 - **Twenty-four hours before deadline:** feature freeze is mandatory.
 
-Failure of the primary-client/parser checkpoint or the 120-second raw sequence is an immediate scope/no-go review. A checkpoint slip over six critical-path hours, a failed G4 inequality, missed authorization deadline, or a material defect that cannot fit the remaining remediation reserve also reopens capacity. A six-tool latency failure may merge the least differentiated read tools only through formal G1/G2 reopening; it may not silently change the contract. Recovery may not introduce a shim, precomputed production claims, simulated invocation, skipped accessibility/security tests, or unsupported success claim.
+Failure of the local primary-client/parser checkpoint or the 120-second raw sequence is an immediate local scope/no-go review. A local checkpoint slip over six critical-path hours, a failed local G4L inequality, or a local defect that cannot fit the remaining remediation reserve also reopens local capacity. A missed A0P authorization deadline, non-ready A0P, failed public inequality, or failed hosted G5B-H instead sets `public_release_no_go` while honest local work may continue. A six-tool local latency failure may merge the least differentiated read tools only through formal G1/G2 reopening; it may not silently change the contract. Recovery may not introduce a shim, precomputed production claims, simulated invocation, skipped accessibility/security tests, or unsupported success claim.
 
 ## Risks And Mitigations
 

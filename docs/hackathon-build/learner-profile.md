@@ -12,7 +12,7 @@
 - Product thesis: the model proposes; the portal deterministically enforces source support, conflict handling, readiness, and human-controlled submission
 - Committed demo wedge: one fictional scholarship portal; exactly eight fields, one guardian branch, two synthetic packets with three runtime-parsed PDFs each, six once-registered semantic WebMCP tools, one structured income conflict, human-only declaration/resolution/submission, complete manual fallback, and one matching immutable session receipt
 - Scope discipline: three user pages, at most eight authored API families, six product tables, five PostgreSQL race families, no hackathon stretch features, and no application code before replacement G3–G4 pass
-- Current progress: replacement G1/G2/G3 are locked; G3's eighth content candidate passed all three lanes after seven correct rejections and all three lanes reproduced it through the final status-only metadata proof; G4 checklist and live capacity review are active
+- Current progress: the prior G1/G2/G3/G4 locks remain historical proof; the narrow G1→G4L local-first amendment passed three exact-hash reviews and three status-only proofs. A0L then passed three exact-artifact reviews at private-ledger hash `daae8e17…ee1c`; Item 1 / Wave 0 local implementation is active, while A0P/public release remains deferred.
 - Requirements discipline learned at G2: applicant-facing consent must be comprehensible and tool-scoped; human conflict decisions must remain inference-resistant in agent outputs; native abort and transport throttling need exact observable ordering without protocol growth
 
 ## Technical Experience
@@ -26,7 +26,7 @@
 
 - Preferred pace: Direct and decisive; avoid process jargon and premature commitment
 - Likely support needs: End-to-end product strategy, validation, planning, implementation, verification, and submission
-- Build mode: Autonomous goal-driven execution after the plan is locked; external/public mutations still require explicit authorization
+- Build mode: Autonomous goal-driven local implementation after the amended plan and A0L lock; provider, deployment, public repository, Devpost, upload, outreach, monitoring, and submission actions remain disabled until a later explicit discussion
 - Quality policy: No shortcuts, hacks, fake integrations, unverified claims, skipped tests, or premature progression
 - Review policy: Independent multi-agent product, engineering, security, and judge review at every stage; material findings must be remediated before the next stage
 - Verification policy: Test the complete applicable user flow at each gate, including happy path, failure path, accessibility, privacy, and regression coverage
