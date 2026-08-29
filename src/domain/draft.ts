@@ -5,8 +5,10 @@ import {
   EvidenceBindingSchema,
   Sha256Schema,
   SyntheticTestEmailSchema,
+  type ConflictReason,
   type EvidenceField,
   type FieldId,
+  type OrdinaryClearField,
   type ParsedClaim,
   type ParsedPacketV1,
 } from "../contracts/common.ts";
@@ -763,4 +765,215 @@ export function applyAssistedDraftChanges(
   const requirementsDelta =
     initialDependencyIsSaved === dependencyIsSaved(candidate) ? 0 : 1;
   return applied(candidate, updatedFields, requirementsDelta);
+}
+
+export type ClearDraftEvidenceInput = Readonly<{
+  draft: DraftAggregateV1;
+  packet: Readonly<ParsedPacketV1>;
+  field: OrdinaryClearField;
+}>;
+
+/**
+ * Clears one ordinary evidence field. Dependency and a resolved income
+ * conflict are excluded: those carry a confirmed clear of their own because
+ * clearing them discards a decision rather than a link.
+ */
+export function clearDraftEvidence(
+  input: ClearDraftEvidenceInput,
+): DraftTransitionResult {
+  const current = currentDraftForTransition(input.draft, input.packet);
+  if (!isFieldActive(input.field, dependencyIsSaved(current))) {
+    return evidenceUnavailable(current, input.field);
+  }
+  const index = FIELD_ORDER.indexOf(input.field);
+  const existing = current.fields[index];
+  if (existing === undefined) return noChange(current);
+  if (existing.status === "missing") return noChange(current);
+  if (
+    input.field === "annual_household_income" &&
+    existing.status === "ready" &&
+    existing.field === "annual_household_income" &&
+    existing.resolution !== "source_supported"
+  ) {
+    // A human-resolved conflict needs the confirmed clear, not this one.
+    return evidenceUnavailable(current, input.field);
+  }
+
+  const cleared = clearedFieldFor(input.field, input.packet);
+  const next = replaceDraftField(current, input.packet, cleared);
+  return applied(next, [input.field], 0);
+}
+
+function clearedFieldFor(
+  field: FieldId,
+  packet: Readonly<ParsedPacketV1>,
+): DraftFieldV1 {
+  if (field === "annual_household_income") {
+    return DraftFieldV1Schema.parse(initialIncomeState(packet)) as DraftFieldV1;
+  }
+  return DraftFieldV1Schema.parse({ field, status: "missing" }) as DraftFieldV1;
+}
+
+/**
+ * Closing the branch clears and excludes both conditional answers in the same
+ * atomic effect, so no inactive value can survive.
+ */
+export function clearDraftDependency(
+  draft: DraftAggregateV1,
+  packet: Readonly<ParsedPacketV1>,
+): DraftTransitionResult {
+  const current = currentDraftForTransition(draft, packet);
+  if (current.fields[4].status === "missing") return noChange(current);
+
+  const fields: unknown[] = [...current.fields];
+  fields[4] = { field: "dependency", status: "missing" };
+  fields[5] = { field: "guardian_name", status: "missing" };
+  fields[6] = { field: "household_size", status: "missing" };
+  const next = parseDraftAggregateForPacket(
+    { schema: "citeapply-draft-v1", fields },
+    packet,
+  );
+  return applied(next, ["dependency", "guardian_name", "household_size"], 1);
+}
+
+export function saveDraftEmail(
+  draft: DraftAggregateV1,
+  packet: Readonly<ParsedPacketV1>,
+  value: string,
+): DraftTransitionResult {
+  const current = currentDraftForTransition(draft, packet);
+  const existing = current.fields[3];
+  const normalized = value.trim().normalize("NFC");
+  if (existing.status !== "missing" && existing.value === normalized) {
+    return noChange(current);
+  }
+  // Saving always reopens the declaration: the applicant declares what they
+  // can currently see.
+  const candidate = PreferredContactEmailDraftFieldSchema.parse({
+    field: "preferred_contact_email",
+    status: "needs_declaration",
+    value: normalized,
+    origin: "manual",
+  }) as DraftFieldV1;
+  return applied(
+    replaceDraftField(current, packet, candidate),
+    ["preferred_contact_email"],
+    0,
+  );
+}
+
+/**
+ * The declaration is the applicant's own statement about the saved address. No
+ * assisted path can produce it.
+ */
+export function declareDraftEmail(
+  draft: DraftAggregateV1,
+  packet: Readonly<ParsedPacketV1>,
+): DraftTransitionResult {
+  const current = currentDraftForTransition(draft, packet);
+  const existing = current.fields[3];
+  if (existing.status === "missing") {
+    return evidenceUnavailable(current, "legal_name");
+  }
+  if (existing.status === "ready") return noChange(current);
+
+  const candidate = PreferredContactEmailDraftFieldSchema.parse({
+    field: "preferred_contact_email",
+    status: "ready",
+    value: existing.value,
+    origin: existing.origin,
+    declaration: { email: existing.value, declaredByApplicant: true },
+  }) as DraftFieldV1;
+  return applied(
+    replaceDraftField(current, packet, candidate),
+    ["preferred_contact_email"],
+    0,
+  );
+}
+
+export type ResolveIncomeInput = Readonly<{
+  draft: DraftAggregateV1;
+  packet: Readonly<ParsedPacketV1>;
+  claimHandle: string;
+  reason: ConflictReason;
+}>;
+
+/**
+ * Resolves a disagreement between two accepted income sources. Only a visible
+ * applicant action reaches this transition, and the chosen source must be one
+ * of the two the portal actually parsed.
+ */
+export function resolveDraftIncome(
+  input: ResolveIncomeInput,
+): DraftTransitionResult {
+  const current = currentDraftForTransition(input.draft, input.packet);
+  const existing = current.fields[7];
+  if (existing.status !== "conflict") {
+    return evidenceUnavailable(current, "annual_household_income");
+  }
+
+  const claims = incomeClaims(input.packet);
+  if (claims === null) {
+    return evidenceUnavailable(current, "annual_household_income");
+  }
+  const chosen = [claims.statement, claims.household].find(
+    (claim) => claim.claimHandle === input.claimHandle,
+  );
+  if (chosen === undefined) {
+    return evidenceUnavailable(current, "annual_household_income");
+  }
+
+  const candidate = DraftFieldV1Schema.parse({
+    field: "annual_household_income",
+    status: "ready",
+    value: chosen.normalizedValue,
+    origin: "manual",
+    resolution: {
+      chosenFingerprint: chosen.fingerprint,
+      reason: input.reason,
+    },
+    bindings: [
+      {
+        fingerprint: claims.statement.fingerprint,
+        document: claims.statement.document,
+        page: 1,
+      },
+      {
+        fingerprint: claims.household.fingerprint,
+        document: claims.household.document,
+        page: 1,
+      },
+    ],
+  }) as DraftFieldV1;
+
+  return applied(
+    replaceDraftField(current, input.packet, candidate),
+    ["annual_household_income"],
+    0,
+  );
+}
+
+/**
+ * Discards a resolution and returns the field to the unresolved conflict, so
+ * the applicant can decide again.
+ */
+export function clearDraftIncomeResolution(
+  draft: DraftAggregateV1,
+  packet: Readonly<ParsedPacketV1>,
+): DraftTransitionResult {
+  const current = currentDraftForTransition(draft, packet);
+  const existing = current.fields[7];
+  if (
+    existing.status !== "ready" ||
+    existing.field !== "annual_household_income" ||
+    existing.resolution === "source_supported"
+  ) {
+    return noChange(current);
+  }
+  const cleared = clearedFieldFor("annual_household_income", packet);
+  return applied(
+    replaceDraftField(current, packet, cleared),
+    ["annual_household_income"],
+    0,
+  );
 }

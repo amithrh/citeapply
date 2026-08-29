@@ -25,6 +25,7 @@ import {
 } from "../../contracts/webmcp.ts";
 import {
   projectActiveRequirements,
+  projectPrepareSuccess,
   projectApplySuccess,
   projectEvidenceIndex,
   projectProtectedState,
@@ -33,7 +34,6 @@ import {
   projectValidationIssues,
 } from "../../domain/agent-projectors.ts";
 import { applyAssistedDraftChanges } from "../../domain/draft.ts";
-import { evaluateDraftReadiness } from "../../domain/readiness.ts";
 import {
   lockApplicationBySessionDigest,
   saveLockedApplicationState,
@@ -47,6 +47,7 @@ import {
 } from "../security/capabilities.ts";
 import { operationIntentDigest, type Keyring } from "../security/keys.ts";
 import { draftOf, parsedPacketOf } from "./application.ts";
+import { prepareApplicationReview } from "./submission.ts";
 
 /**
  * Capabilities are injected by the page, never carried in tool arguments.
@@ -314,7 +315,7 @@ async function dispatch(
     case "apply_evidence_backed_answers":
       return applyAnswers(client, keyring, application, input as never);
     case "prepare_submission_review":
-      return prepareReview(application, draft);
+      return prepareForReview(client, keyring, application, input as never);
   }
 }
 
@@ -477,26 +478,85 @@ async function applyAnswers(
   };
 }
 
+type PrepareInput = ToolInputByName["prepare_submission_review"];
+
 /**
- * The W0 kernel proves the refusal half of preparation. Freezing a ready Draft
- * into an immutable Review lands with the Review domain in W1.
+ * The agent may ask the portal to freeze a ready Draft, but the Review it
+ * receives is opaque: an identifier and readiness only. Inspecting and
+ * submitting it remain the applicant's, and preparing closes assisted access.
  */
-function prepareReview(
+function canonicalPrepareIntent(input: PrepareInput): string {
+  return JSON.stringify([
+    "webmcp/prepare_submission_review",
+    input.requestId,
+    input.expectedApplicationRevision,
+    input.expectedRequirementsVersion,
+  ]);
+}
+
+/** An opaque 22-character handle for the frozen Review. */
+function reviewReference(reviewId: string): string {
+  return Buffer.from(reviewId.replaceAll("-", ""), "hex").toString("base64url");
+}
+
+async function prepareForReview(
+  client: PoolClient,
+  keyring: Keyring,
   application: StoredApplication,
-  draft: ReturnType<typeof draftOf>,
-): unknown {
-  const blockers = evaluateDraftReadiness(draft).blockers;
-  if (blockers.length > 0) {
+  input: PrepareInput,
+): Promise<unknown> {
+  if (
+    application.revision !== input.expectedApplicationRevision ||
+    application.requirementsVersion !== input.expectedRequirementsVersion
+  ) {
+    return staleState(application);
+  }
+
+  const prepared = await prepareApplicationReview(client, application);
+  if (prepared.kind === "stale_state") {
+    return staleState(application);
+  }
+  if (prepared.kind === "not_ready") {
     return NotReadyForReviewFailureSchema.parse({
       ok: false,
       error: {
         code: "not_ready_for_review",
         message: "The application is not ready for Review.",
         safeActions: ["use_visible_application"],
-        blockers,
+        blockers: prepared.blockers,
       },
     });
   }
-  void application;
-  return mutationUnavailable();
+
+  const recorded = await insertOperation(client, {
+    applicationId: application.id,
+    requestId: input.requestId,
+    action: "prepare_submission_review",
+    keyedIntentDigest: operationIntentDigest(
+      keyring,
+      Buffer.from(canonicalPrepareIntent(input), "utf8"),
+    ),
+    outcome: {
+      outcome: "assisted_review_prepared",
+      action: "prepare_submission_review",
+      reviewId: prepared.review.id,
+      versions: {
+        applicationRevision: prepared.application.revision,
+        requirementsVersion: prepared.application.requirementsVersion,
+      },
+    },
+  });
+  if (recorded.kind === "request_reuse_mismatch") return requestReuseMismatch();
+  if (recorded.kind === "hard_limit") return demoChangeLimit();
+
+  return {
+    ok: true,
+    data: projectPrepareSuccess(
+      {
+        applicationRevision: prepared.application.revision,
+        requirementsVersion: prepared.application.requirementsVersion,
+      },
+      reviewReference(prepared.review.id),
+    ),
+  };
 }

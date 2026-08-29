@@ -2,7 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import type { HumanDraftV1, HumanSnapshotV1 } from "../../contracts/http.ts";
+import type {
+  HumanDraftV1,
+  HumanReviewV1,
+  HumanSnapshotV1,
+} from "../../contracts/http.ts";
 import { ApplicationController } from "../../ui/controllers/application.tsx";
 import { createCiteApplyBridge } from "../../webmcp/bridge.ts";
 import { createCiteApplyDispatch } from "../../webmcp/invoke.ts";
@@ -23,6 +27,22 @@ const INITIAL_AUTHORITY: Authority = {
   expectedRequirementsVersion: 1,
 };
 
+const CONFLICT_REASONS = [
+  { value: "more_recent", label: "This source is more recent" },
+  { value: "corrected_record", label: "This source is the corrected record" },
+  {
+    value: "confirmed_for_application",
+    label: "I confirm this figure for the application",
+  },
+] as const;
+
+type ReceiptRecord = Readonly<{
+  receiptId: string;
+  submittedAt: string;
+  acceptedApplicationRevision: number;
+  acceptedReview: HumanReviewV1;
+}>;
+
 async function postJson(
   path: string,
   body: unknown,
@@ -40,27 +60,31 @@ async function postJson(
   return (await response.json()) as unknown;
 }
 
-function draftOfSnapshot(snapshot: HumanSnapshotV1): HumanDraftV1 | null {
-  return snapshot.stage === "draft" ? snapshot.view : null;
+function fieldLabel(field: string): string {
+  return field.replaceAll("_", " ");
 }
 
 export default function ApplicationPage() {
   const authorityRef = useRef<Authority>(INITIAL_AUTHORITY);
-  const [draft, setDraft] = useState<HumanDraftV1 | null>(null);
+  const [snapshot, setSnapshot] = useState<HumanSnapshotV1 | null>(null);
   const [assistance, setAssistance] = useState<
     "off" | "allowed" | "unavailable"
   >("off");
-  const [notice, setNotice] = useState("Establishing this application page…");
+  const [notice, setNotice] = useState("Checking latest state…");
   const [bridgeStatus, setBridgeStatus] = useState("not registered");
+  const [emailDraft, setEmailDraft] = useState("anaya.rao@example.test");
+  const [reason, setReason] = useState<string>("more_recent");
+  const [receipt, setReceipt] = useState<ReceiptRecord | null>(null);
+  const [problem, setProblem] = useState<string | null>(null);
 
-  const adoptSnapshot = useCallback((snapshot: HumanSnapshotV1) => {
+  const adoptSnapshot = useCallback((next: HumanSnapshotV1) => {
     authorityRef.current = {
       ...authorityRef.current,
-      expectedPageEpoch: snapshot.pageEpoch,
-      expectedApplicationRevision: snapshot.applicationRevision,
-      expectedRequirementsVersion: snapshot.requirementsVersion,
+      expectedPageEpoch: next.pageEpoch,
+      expectedApplicationRevision: next.applicationRevision,
+      expectedRequirementsVersion: next.requirementsVersion,
     };
-    setDraft(draftOfSnapshot(snapshot));
+    setSnapshot(next);
   }, []);
 
   useEffect(() => {
@@ -164,6 +188,9 @@ export default function ApplicationPage() {
           };
         }
         adoptSnapshot(result.data.snapshot);
+        setProblem(null);
+      } else if (result.error !== undefined) {
+        setProblem(result.error.message);
       }
       return result;
     },
@@ -200,9 +227,41 @@ export default function ApplicationPage() {
     },
   };
 
-  const bindEvidence = (field: string, claimHandle: string) => {
-    void runAction({ action: "bind_evidence", field, claimHandle });
+  const submit = async (review: HumanReviewV1) => {
+    const current = authorityRef.current;
+    const result = (await postJson(
+      "/api/submission",
+      {
+        mode: "submit",
+        intent: {
+          requestId: crypto.randomUUID(),
+          expectedPageEpoch: current.expectedPageEpoch,
+          expectedApplicationRevision: current.expectedApplicationRevision,
+          reviewId: review.reviewId,
+          reviewSourceRevision: review.sourceVersions.applicationRevision,
+          contentHash: review.contentHash,
+        },
+      },
+      current.pageCapability,
+    )) as {
+      ok?: boolean;
+      data?: { receipt: ReceiptRecord };
+      error?: { message: string };
+    };
+
+    if (result.ok === true && result.data !== undefined) {
+      setReceipt(result.data.receipt);
+      setProblem(null);
+      setAssistance("off");
+    } else if (result.error !== undefined) {
+      setProblem(result.error.message);
+    }
   };
+
+  const draft: HumanDraftV1 | null =
+    snapshot !== null && snapshot.stage === "draft" ? snapshot.view : null;
+  const review: HumanReviewV1 | null =
+    snapshot !== null && snapshot.stage === "review" ? snapshot.review : null;
 
   return (
     <main>
@@ -211,22 +270,94 @@ export default function ApplicationPage() {
         <p>
           <strong>Fictional demo · Synthetic data only</strong>
         </p>
-        <h1>Your synthetic application</h1>
+        <h1>Application</h1>
         <p role="status" aria-live="polite">
           {notice}
         </p>
         <p>WebMCP: {bridgeStatus}</p>
+        {problem === null ? null : <p role="alert">{problem}</p>}
       </header>
 
-      <ApplicationController
-        consent={consentPort}
-        initialAssistance={assistance}
-      />
-
-      {draft === null ? (
+      {receipt !== null ? (
+        <section aria-labelledby="receipt-heading">
+          <h2 id="receipt-heading">Submitted</h2>
+          <p>
+            Your synthetic application was accepted at {receipt.submittedAt}.
+          </p>
+          <dl>
+            <div>
+              <dt>Receipt</dt>
+              <dd>{receipt.receiptId}</dd>
+            </div>
+            <div>
+              <dt>Review</dt>
+              <dd>{receipt.acceptedReview.shortId}</dd>
+            </div>
+            <div>
+              <dt>Content hash</dt>
+              <dd>
+                <code>{receipt.acceptedReview.contentHash}</code>
+              </dd>
+            </div>
+          </dl>
+          {receipt.acceptedReview.warnings.map((warning) => (
+            <p key={warning.code}>{warning.message}</p>
+          ))}
+        </section>
+      ) : review !== null ? (
+        <section aria-labelledby="review-heading">
+          <h2 id="review-heading">Review before submitting</h2>
+          <p>
+            This frozen review is exactly what will be submitted. Assisted
+            access is closed while you review it.
+          </p>
+          <p>
+            Review {review.shortId} · content hash{" "}
+            <code>{review.contentHash.slice(0, 16)}…</code>
+          </p>
+          {review.warnings.map((warning) => (
+            <p key={warning.code} role="note">
+              {warning.message}
+            </p>
+          ))}
+          <dl>
+            {review.diffs.map((diff) => (
+              <div key={diff.field}>
+                <dt>{fieldLabel(diff.field)}</dt>
+                <dd>
+                  {String("value" in diff.final ? diff.final.value : "")}
+                  {diff.excerpts.length === 0 ? null : (
+                    <ul>
+                      {diff.excerpts.map((excerpt) => (
+                        <li key={excerpt.claimHandle}>
+                          {excerpt.title}: “{excerpt.excerpt}”
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </dd>
+              </div>
+            ))}
+          </dl>
+          <button type="button" onClick={() => void submit(review)}>
+            Submit this application
+          </button>
+          <button
+            type="button"
+            onClick={() => void runAction({ action: "return_to_draft" })}
+          >
+            Return to draft
+          </button>
+        </section>
+      ) : draft === null ? (
         <p>Loading the saved application…</p>
       ) : (
         <>
+          <ApplicationController
+            consent={consentPort}
+            initialAssistance={assistance}
+          />
+
           <section aria-labelledby="progress-heading">
             <h2 id="progress-heading">Readiness</h2>
             <p>
@@ -244,6 +375,12 @@ export default function ApplicationPage() {
                 ))}
               </ul>
             )}
+            <button
+              type="button"
+              onClick={() => void runAction({ action: "prepare_review" })}
+            >
+              Prepare review
+            </button>
           </section>
 
           <section aria-labelledby="fields-heading">
@@ -251,15 +388,18 @@ export default function ApplicationPage() {
             <dl>
               {draft.fields.map((field) => (
                 <div key={field.field}>
-                  <dt>{field.field.replaceAll("_", " ")}</dt>
+                  <dt>{fieldLabel(field.field)}</dt>
                   <dd>
                     {field.status === "ready"
                       ? String("value" in field ? field.value : "linked")
-                      : field.status === "conflict"
-                        ? "Two accepted sources disagree. You decide."
-                        : field.status === "not_required"
-                          ? "Not required"
-                          : "Not linked yet"}
+                      : field.status === "needs_declaration"
+                        ? `${field.value} — not yet declared`
+                        : field.status === "conflict"
+                          ? "Two accepted sources disagree. You decide."
+                          : field.status === "not_required"
+                            ? "Not required"
+                            : "Not linked yet"}
+
                     {field.active &&
                     field.status === "missing" &&
                     field.field !== "preferred_contact_email" ? (
@@ -272,13 +412,97 @@ export default function ApplicationPage() {
                               key={claim.claimHandle}
                               type="button"
                               onClick={() =>
-                                bindEvidence(field.field, claim.claimHandle)
+                                void runAction({
+                                  action: "bind_evidence",
+                                  field: field.field,
+                                  claimHandle: claim.claimHandle,
+                                })
                               }
                             >
                               Link {claim.document} record
                             </button>
                           ))}
                       </>
+                    ) : null}
+
+                    {field.field === "preferred_contact_email" ? (
+                      <>
+                        {" "}
+                        <label>
+                          <span>Synthetic .test email</span>
+                          <input
+                            type="email"
+                            value={emailDraft}
+                            onChange={(event) =>
+                              setEmailDraft(event.target.value)
+                            }
+                          />
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            void runAction({
+                              action: "save_email",
+                              value: emailDraft,
+                            })
+                          }
+                        >
+                          Save email
+                        </button>
+                        {field.status === "needs_declaration" ? (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              void runAction({ action: "declare_email" })
+                            }
+                          >
+                            I declare this is my address
+                          </button>
+                        ) : null}
+                      </>
+                    ) : null}
+
+                    {field.field === "annual_household_income" &&
+                    field.status === "conflict" ? (
+                      <div>
+                        <p>
+                          CiteApply will not choose between these. Pick the
+                          source you stand behind.
+                        </p>
+                        <label>
+                          <span>Why this source</span>
+                          <select
+                            value={reason}
+                            onChange={(event) => setReason(event.target.value)}
+                          >
+                            {CONFLICT_REASONS.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        {draft.claims
+                          .filter(
+                            (claim) => claim.kind === "annual_household_income",
+                          )
+                          .map((claim) => (
+                            <button
+                              key={claim.claimHandle}
+                              type="button"
+                              onClick={() =>
+                                void runAction({
+                                  action: "resolve_income",
+                                  claimHandle: claim.claimHandle,
+                                  reason,
+                                })
+                              }
+                            >
+                              Use {claim.document}:{" "}
+                              {String(claim.normalizedValue)}
+                            </button>
+                          ))}
+                      </div>
                     ) : null}
                   </dd>
                 </div>

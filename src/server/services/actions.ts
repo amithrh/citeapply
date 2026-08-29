@@ -3,7 +3,16 @@ import { randomUUID } from "node:crypto";
 import type { PoolClient } from "pg";
 
 import type { HumanAction } from "../../contracts/http.ts";
-import { bindDraftEvidence } from "../../domain/draft.ts";
+import {
+  bindDraftEvidence,
+  clearDraftDependency,
+  clearDraftEvidence,
+  clearDraftIncomeResolution,
+  declareDraftEmail,
+  resolveDraftIncome,
+  saveDraftEmail,
+  type DraftTransitionResult,
+} from "../../domain/draft.ts";
 import {
   lockApplicationById,
   saveLockedApplicationState,
@@ -22,13 +31,17 @@ import { operationIntentDigest, type Keyring } from "../security/keys.ts";
 import { draftOf, parsedPacketOf } from "./application.ts";
 
 /**
- * The W0 kernel commits the visible spine: evidence binding and the two
- * assisted-access decisions. Manual clears, declaration, and conflict
- * resolution arrive with their domain transitions in W1 (units 4.14-4.19) and
- * are refused here as unavailable rather than silently accepted.
+ * Every Draft-stage human action. Review preparation and Return belong to the
+ * Review service and are refused here.
  */
 export const W0_SUPPORTED_ACTIONS = [
   "bind_evidence",
+  "clear_evidence",
+  "clear_dependency",
+  "save_email",
+  "declare_email",
+  "resolve_income",
+  "clear_income_resolution",
   "allow_assisted_access",
   "revoke_assisted_access",
 ] as const;
@@ -98,12 +111,12 @@ type EffectPlan =
       revision: number;
       requirementsVersion: number;
       consentRequestId: string | null;
-      updatedField: string | null;
+      updatedFields: readonly string[];
     }>
   | Readonly<{
       kind: "no_change";
       consentCoordinate: string | null;
-      updatedField: string | null;
+      updatedFields: readonly string[];
     }>
   | Readonly<{ kind: "evidence_unavailable"; field: string }>
   | Readonly<{ kind: "conflict_requires_human" }>
@@ -118,7 +131,7 @@ function planEffect(
       return {
         kind: "no_change",
         consentCoordinate: locked.consentRequestId,
-        updatedField: null,
+        updatedFields: [],
       };
     }
     return {
@@ -128,13 +141,13 @@ function planEffect(
       revision: locked.revision + 1,
       requirementsVersion: locked.requirementsVersion,
       consentRequestId: action.requestId,
-      updatedField: null,
+      updatedFields: [],
     };
   }
 
   if (action.action === "revoke_assisted_access") {
     if (locked.consentRequestId === null) {
-      return { kind: "no_change", consentCoordinate: null, updatedField: null };
+      return { kind: "no_change", consentCoordinate: null, updatedFields: [] };
     }
     return {
       kind: "commit",
@@ -143,22 +156,14 @@ function planEffect(
       revision: locked.revision + 1,
       requirementsVersion: locked.requirementsVersion,
       consentRequestId: null,
-      updatedField: null,
+      updatedFields: [],
     };
   }
 
-  if (action.action !== "bind_evidence") {
-    return { kind: "unavailable_at_w0" };
-  }
-
   const packet = parsedPacketOf(locked);
-  const transition = bindDraftEvidence({
-    draft: draftOf(locked, packet),
-    packet,
-    field: action.field,
-    claimHandle: action.claimHandle,
-    origin: "manual",
-  });
+  const draft = draftOf(locked, packet);
+  const transition = contentTransition(action, draft, packet);
+  if (transition === null) return { kind: "unavailable_at_w0" };
 
   if (transition.outcome === "evidence_unavailable") {
     return { kind: "evidence_unavailable", field: transition.field };
@@ -170,7 +175,7 @@ function planEffect(
     return {
       kind: "no_change",
       consentCoordinate: null,
-      updatedField: action.field,
+      updatedFields: [],
     };
   }
 
@@ -182,8 +187,44 @@ function planEffect(
     requirementsVersion:
       locked.requirementsVersion + transition.requirementsVersionDelta,
     consentRequestId: locked.consentRequestId,
-    updatedField: action.field,
+    updatedFields: transition.updatedFields,
   };
+}
+
+function contentTransition(
+  action: HumanAction,
+  draft: ReturnType<typeof draftOf>,
+  packet: ReturnType<typeof parsedPacketOf>,
+): DraftTransitionResult | null {
+  switch (action.action) {
+    case "bind_evidence":
+      return bindDraftEvidence({
+        draft,
+        packet,
+        field: action.field,
+        claimHandle: action.claimHandle,
+        origin: "manual",
+      });
+    case "clear_evidence":
+      return clearDraftEvidence({ draft, packet, field: action.field });
+    case "clear_dependency":
+      return clearDraftDependency(draft, packet);
+    case "save_email":
+      return saveDraftEmail(draft, packet, action.value);
+    case "declare_email":
+      return declareDraftEmail(draft, packet);
+    case "resolve_income":
+      return resolveDraftIncome({
+        draft,
+        packet,
+        claimHandle: action.claimHandle,
+        reason: action.reason,
+      });
+    case "clear_income_resolution":
+      return clearDraftIncomeResolution(draft, packet);
+    default:
+      return null;
+  }
 }
 
 function storedOutcome(
@@ -218,7 +259,7 @@ function storedOutcome(
     return {
       outcome: "action_applied",
       action: action.action,
-      fields: plan.updatedField === null ? [] : [plan.updatedField],
+      fields: [...plan.updatedFields],
       versions,
     };
   }

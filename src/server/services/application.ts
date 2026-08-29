@@ -222,6 +222,7 @@ export function projectHumanSnapshot(
   application: StoredApplication,
   clock: SessionClock,
   activity: HumanActivitySummaryV1 = EMPTY_ACTIVITY,
+  reviewSnapshot: unknown = null,
 ): HumanSnapshotV1 {
   const meta = authorityMeta(application, clock);
   if (application.stage === "draft") {
@@ -245,7 +246,14 @@ export function projectHumanSnapshot(
       receiptState: "load_required",
     });
   }
-  throw new Error("Review projection is not part of the W0 kernel.");
+  if (reviewSnapshot === null) {
+    throw new Error("A Review stage projection requires its frozen Review.");
+  }
+  return HumanSnapshotV1Schema.parse({
+    ...meta,
+    stage: "review",
+    review: reviewSnapshot,
+  });
 }
 
 /**
@@ -256,11 +264,12 @@ export function projectTakeoverSnapshot(
   application: StoredApplication,
   clock: SessionClock,
   activity: HumanActivitySummaryV1 = EMPTY_ACTIVITY,
+  reviewSnapshot: unknown = null,
 ): TakeoverSnapshotV1 {
   const meta = authorityMeta(application, clock);
   if (application.stage !== "draft") {
     return TakeoverSnapshotV1Schema.parse(
-      projectHumanSnapshot(application, clock, activity),
+      projectHumanSnapshot(application, clock, activity, reviewSnapshot),
     );
   }
   const packet = parsedPacketOf(application);

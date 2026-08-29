@@ -19,6 +19,11 @@ import {
 import { runPublicTransportThrottle } from "../../../../server/security/throttle.ts";
 import { runHumanAction } from "../../../../server/services/actions.ts";
 import { projectHumanSnapshot } from "../../../../server/services/application.ts";
+import {
+  loadCurrentReview,
+  prepareApplicationReview,
+  returnApplicationToDraft,
+} from "../../../../server/services/submission.ts";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -124,6 +129,38 @@ export async function POST(request: Request): Promise<Response> {
       if (!authority.ok) return { kind: authority.code } as const;
       if (application === null) return { kind: "session_expired" } as const;
 
+      // Review preparation and Return change stage, so they are owned by the
+      // Review service rather than the Draft action spine.
+      if (parsed.data.action === "prepare_review") {
+        const prepared = await prepareApplicationReview(client, application);
+        if (prepared.kind === "not_ready") {
+          return { kind: "not_ready", blockers: prepared.blockers } as const;
+        }
+        if (prepared.kind === "stale_state") {
+          return { kind: "stale_state" } as const;
+        }
+        return {
+          kind: "review_prepared",
+          snapshot: projectHumanSnapshot(
+            prepared.application,
+            authority.clock,
+            undefined,
+            prepared.review.reviewSnapshot,
+          ),
+        } as const;
+      }
+
+      if (parsed.data.action === "return_to_draft") {
+        const returned = await returnApplicationToDraft(client, application);
+        if (returned.kind === "stale_state") {
+          return { kind: "stale_state" } as const;
+        }
+        return {
+          kind: "returned_to_draft",
+          snapshot: projectHumanSnapshot(returned.application, authority.clock),
+        } as const;
+      }
+
       const effect = await runHumanAction(
         client,
         keyring,
@@ -132,11 +169,22 @@ export async function POST(request: Request): Promise<Response> {
       );
       if (effect.kind !== "applied") return effect;
 
+      const review =
+        effect.application.stage === "draft"
+          ? null
+          : ((await loadCurrentReview(client, effect.application))
+              ?.reviewSnapshot ?? null);
+
       return {
         kind: "applied",
         outcome: effect.outcome,
         consentCapability: effect.consentCapability,
-        snapshot: projectHumanSnapshot(effect.application, authority.clock),
+        snapshot: projectHumanSnapshot(
+          effect.application,
+          authority.clock,
+          undefined,
+          review,
+        ),
       } as const;
     },
   );
@@ -191,6 +239,37 @@ export async function POST(request: Request): Promise<Response> {
         "Income sources disagree. Resolve this in CiteApply.",
         "resolve_in_visible_application",
       );
+    case "not_ready":
+      return privateJsonResponse(
+        {
+          ok: false,
+          error: {
+            code: "not_ready_for_review",
+            message: "The application is not ready for Review.",
+            safeActions: ["use_visible_application"],
+            blockers: result.blockers,
+          },
+        },
+        { status: 409 },
+      );
+    case "review_prepared":
+      return privateJsonResponse({
+        ok: true,
+        data: {
+          kind: "review_prepared",
+          action: "prepare_review",
+          snapshot: result.snapshot,
+        },
+      });
+    case "returned_to_draft":
+      return privateJsonResponse({
+        ok: true,
+        data: {
+          kind: "returned_to_draft",
+          action: "return_to_draft",
+          snapshot: result.snapshot,
+        },
+      });
     case "replayed":
       return privateJsonResponse({
         ok: true,
