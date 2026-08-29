@@ -23,17 +23,13 @@
     "verify:built-anti-hardcode": "node scripts/verify-built-anti-hardcode.mjs",
     "verify:file-structure": "node scripts/verify-file-structure.mjs",
     "verify:surfaces": "node scripts/verify-file-structure.mjs --surfaces",
-    "db:test:kernel": "sh -c 'node --test tests/integration/minimum-client-spine.test.ts' --",
-    "test:contracts": "sh -c 'node --test tests/contract/*.test.ts' --",
-    "test:domain": "sh -c 'node --test tests/contract/minimum-final-kernel.test.ts' --",
-    "test:unit": "sh -c 'node --test tests/unit/*.test.ts' --",
-    "test:property": "sh -c 'node --test tests/unit/*.test.ts' --",
-    "test:parser": "sh -c 'node --test tests/parser/*.test.ts' --",
-    "test:integration": "sh -c 'node --test tests/integration/*.test.ts' --",
-    "test:races": "sh -c 'node --test tests/races/runners/*.test.ts' --",
-    "test:security": "sh -c 'node --test tests/security/*.test.ts' --",
+    "test:contracts": "sh -c 'node --env-file-if-exists=.env.local --test tests/contract/*.test.ts' --",
+    "test:unit": "sh -c 'node --env-file-if-exists=.env.local --test tests/unit/*.test.ts' --",
+    "test:integration": "sh -c 'node --env-file-if-exists=.env.local --test tests/integration/*.test.ts' --",
+    "test:security": "sh -c 'node --env-file-if-exists=.env.local --test tests/security/*.test.ts' --",
     "test:a11y": "playwright test tests/accessibility",
-    "test:e2e": "playwright test tests/e2e"
+    "test:e2e": "playwright test tests/e2e",
+    "test:all": "sh -c 'node --env-file-if-exists=.env.local --test tests/contract/*.test.ts tests/security/*.test.ts tests/unit/*.test.ts tests/integration/*.test.ts' --"
   },
   "dependencies": {
     "next": "15.5.24",

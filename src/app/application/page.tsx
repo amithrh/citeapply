@@ -300,7 +300,7 @@ export default function ApplicationPage() {
       </header>
 
       {receipt !== null ? (
-        <section aria-labelledby="receipt-heading">
+        <section className="receipt" aria-labelledby="receipt-heading">
           <h2 id="receipt-heading">Submitted</h2>
           <p>
             Your synthetic application was accepted at {receipt.submittedAt}.
@@ -326,13 +326,13 @@ export default function ApplicationPage() {
           ))}
         </section>
       ) : review !== null ? (
-        <section aria-labelledby="review-heading">
+        <section className="frozen" aria-labelledby="review-heading">
           <h2 id="review-heading">Review before submitting</h2>
           <p>
             This frozen review is exactly what will be submitted. Assisted
             access is closed while you review it.
           </p>
-          <p>
+          <p className="meta">
             Review {review.shortId} · content hash{" "}
             <code>{review.contentHash.slice(0, 16)}…</code>
           </p>
@@ -360,7 +360,11 @@ export default function ApplicationPage() {
               </div>
             ))}
           </dl>
-          <button type="button" onClick={() => void submit(review)}>
+          <button
+            type="button"
+            className="primary"
+            onClick={() => void submit(review)}
+          >
             Submit this application
           </button>
           <button
@@ -390,7 +394,7 @@ export default function ApplicationPage() {
             {draft.blockers.length === 0 ? (
               <p>Nothing is blocking Review.</p>
             ) : (
-              <ul>
+              <ul className="blockers">
                 {draft.blockers.map((blocker) => (
                   <li key={`${blocker.code}-${blocker.field}`}>
                     {blocker.message}
@@ -400,6 +404,7 @@ export default function ApplicationPage() {
             )}
             <button
               type="button"
+              className="primary"
               onClick={() => void runAction({ action: "prepare_review" })}
             >
               Prepare review
@@ -487,7 +492,7 @@ export default function ApplicationPage() {
 
                     {field.field === "annual_household_income" &&
                     field.status === "conflict" ? (
-                      <div>
+                      <div className="decide">
                         <p>
                           CiteApply will not choose between these. Pick the
                           source you stand behind.

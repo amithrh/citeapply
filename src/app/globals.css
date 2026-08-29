@@ -1,0 +1,555 @@
+/*
+ * CiteApply — Horizon Education Aid
+ *
+ * The visual system treats the application as an annotated document rather
+ * than a form: every answer hangs its source beneath it on a colored rule.
+ * Teal is the portal speaking with evidence behind it. Ochre is the portal
+ * declining to decide and handing the decision to the applicant.
+ */
+
+:root {
+  --ink: #12212e;
+  --paper: #fafbfc;
+  --panel: #eef3f6;
+  --rule: #d7e0e6;
+  --seal: #0f6e6b;
+  --seal-soft: #e4f0ef;
+  --decide: #a75a06;
+  --decide-soft: #fdf2e3;
+  --quiet: #556674;
+
+  --measure: 47rem;
+  --step: 0.5rem;
+
+  --sans: var(--font-public-sans), "Public Sans", system-ui, sans-serif;
+  --serif: var(--font-newsreader), "Newsreader", Georgia, serif;
+  --mono: var(--font-plex-mono), "IBM Plex Mono", ui-monospace, monospace;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 1rem;
+  line-height: 1.55;
+  font-variant-numeric: tabular-nums;
+}
+
+main {
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: calc(var(--step) * 5) calc(var(--step) * 3) calc(var(--step) * 12);
+}
+
+/* ---- Masthead -------------------------------------------------------- */
+
+main > header {
+  border-bottom: 2px solid var(--ink);
+  padding-bottom: calc(var(--step) * 3);
+  margin-bottom: calc(var(--step) * 5);
+}
+
+main > header > p:first-child {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--seal);
+}
+
+h1 {
+  font-family: var(--serif);
+  font-size: clamp(1.9rem, 1.4rem + 2vw, 2.6rem);
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  margin: calc(var(--step) * 2) 0 calc(var(--step) * 1.5);
+}
+
+h2 {
+  font-family: var(--serif);
+  font-size: 1.3rem;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  margin: 0 0 calc(var(--step) * 2);
+}
+
+h3 {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--quiet);
+  margin: calc(var(--step) * 3) 0 var(--step);
+}
+
+p {
+  margin: 0 0 calc(var(--step) * 1.5);
+  max-width: 62ch;
+}
+
+strong {
+  font-weight: 700;
+}
+
+code {
+  font-family: var(--mono);
+  font-size: 0.85em;
+  word-break: break-all;
+}
+
+/* The synthetic-data marker is a standing condition of the demo, so it reads
+   as a stamp rather than a dismissible notice. */
+main > header .stamp,
+main > header > p:nth-child(2) {
+  display: inline-block;
+  margin: 0;
+  padding: 0.15rem 0.5rem;
+  border: 1px solid var(--decide);
+  border-radius: 3px;
+  background: var(--decide-soft);
+  color: var(--decide);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+main > header > p:nth-child(2) strong {
+  font-weight: 700;
+}
+
+/* ---- Status lines ----------------------------------------------------- */
+
+[role="status"],
+[role="alert"],
+[role="note"] {
+  font-size: 0.9rem;
+  color: var(--quiet);
+}
+
+[role="alert"] {
+  border-left: 3px solid var(--decide);
+  padding-left: calc(var(--step) * 1.5);
+  color: var(--decide);
+  font-weight: 600;
+}
+
+/* ---- Sections --------------------------------------------------------- */
+
+section {
+  margin: 0 0 calc(var(--step) * 5);
+}
+
+aside {
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--decide);
+  border-radius: 4px;
+  background: #fff;
+  padding: calc(var(--step) * 2) calc(var(--step) * 3);
+  margin: 0 0 calc(var(--step) * 5);
+}
+
+aside h2 {
+  font-family: var(--sans);
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-bottom: var(--step);
+}
+
+aside p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--quiet);
+}
+
+/* ---- Packet choices --------------------------------------------------- */
+
+article {
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: #fff;
+  padding: calc(var(--step) * 3);
+  margin-bottom: calc(var(--step) * 2);
+}
+
+article h3 {
+  font-family: var(--serif);
+  font-size: 1.1rem;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--ink);
+  margin: 0 0 var(--step);
+}
+
+article p {
+  font-size: 0.92rem;
+  color: var(--quiet);
+}
+
+/* ---- Field ledger ----------------------------------------------------- */
+
+dl {
+  margin: 0;
+  border-top: 1px solid var(--rule);
+}
+
+dl > div {
+  display: grid;
+  grid-template-columns: 13rem 1fr;
+  gap: calc(var(--step) * 2);
+  padding: calc(var(--step) * 2.5) 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+dt {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--quiet);
+  padding-top: 0.15rem;
+}
+
+dd {
+  margin: 0;
+  font-size: 1.02rem;
+}
+
+/* The source tether: an answer and the record it came from, joined by a rule
+   whose colour says who is responsible for it. */
+dd ul {
+  list-style: none;
+  margin: var(--step) 0 0;
+  padding: 0 0 0 calc(var(--step) * 1.75);
+  border-left: 3px solid var(--seal);
+}
+
+dd ul li {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--quiet);
+  margin-bottom: 0.2rem;
+}
+
+/* ---- Buttons ---------------------------------------------------------- */
+
+button {
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--ink);
+  border-radius: 3px;
+  padding: 0.4rem 0.85rem;
+  margin: var(--step) var(--step) 0 0;
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+button:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--seal);
+  outline-offset: 2px;
+}
+
+button[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+button[aria-disabled="true"]:hover {
+  background: #fff;
+  color: var(--ink);
+}
+
+/* The two moments that commit something the applicant is responsible for. */
+section article button,
+#allow-assisted-access-button,
+button.primary {
+  background: var(--seal);
+  border-color: var(--seal);
+  color: #fff;
+}
+
+section article button:hover,
+#allow-assisted-access-button:hover,
+button.primary:hover {
+  background: #0b5754;
+  border-color: #0b5754;
+  color: #fff;
+}
+
+/* ---- Readiness -------------------------------------------------------- */
+
+section ul {
+  padding-left: calc(var(--step) * 2.5);
+  margin: 0 0 calc(var(--step) * 2);
+}
+
+section li {
+  margin-bottom: 0.35rem;
+}
+
+.blockers {
+  list-style: none;
+  padding: 0;
+  border-left: 3px solid var(--decide);
+}
+
+.blockers li {
+  padding-left: calc(var(--step) * 1.75);
+  font-size: 0.92rem;
+  color: var(--decide);
+}
+
+/* ---- The conflict: the one place the portal refuses to decide ---------- */
+
+.decide {
+  border: 1px solid var(--decide);
+  border-radius: 4px;
+  background: var(--decide-soft);
+  padding: calc(var(--step) * 2.5);
+  margin-top: calc(var(--step) * 1.5);
+}
+
+.decide > p:first-child {
+  font-family: var(--serif);
+  font-size: 1.02rem;
+  color: var(--decide);
+  margin-bottom: calc(var(--step) * 2);
+}
+
+.decide label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--quiet);
+  margin-bottom: var(--step);
+}
+
+.decide button {
+  border-color: var(--decide);
+  color: var(--decide);
+}
+
+.decide button:hover {
+  background: var(--decide);
+  color: #fff;
+}
+
+/* ---- Inputs ----------------------------------------------------------- */
+
+label {
+  display: inline-block;
+}
+
+label span {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--quiet);
+  margin-bottom: 0.25rem;
+}
+
+input,
+select {
+  font: inherit;
+  font-size: 0.95rem;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 0.4rem 0.6rem;
+  min-width: 16rem;
+  max-width: 100%;
+}
+
+input:hover,
+select:hover {
+  border-color: var(--quiet);
+}
+
+/* ---- Frozen review ---------------------------------------------------- */
+
+.frozen {
+  border-top: 3px double var(--ink);
+  border-bottom: 3px double var(--ink);
+  background: var(--panel);
+  padding: calc(var(--step) * 4) calc(var(--step) * 3);
+  margin: 0 calc(var(--step) * -3) calc(var(--step) * 5);
+}
+
+.frozen h2::before {
+  content: "Frozen";
+  display: block;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--seal);
+  margin-bottom: 0.4rem;
+}
+
+.frozen .meta {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--quiet);
+}
+
+.frozen [role="note"] {
+  border-left: 3px solid var(--decide);
+  padding-left: calc(var(--step) * 1.75);
+  color: var(--decide);
+  font-weight: 600;
+}
+
+.frozen dl {
+  border-top-color: #c9d5dd;
+}
+
+.frozen dl > div {
+  border-bottom-color: #c9d5dd;
+}
+
+/* ---- Receipt ---------------------------------------------------------- */
+
+.receipt {
+  border: 1px solid var(--seal);
+  border-top: 4px solid var(--seal);
+  border-radius: 4px;
+  background: var(--seal-soft);
+  padding: calc(var(--step) * 4) calc(var(--step) * 3);
+}
+
+.receipt h2::before {
+  content: "Accepted";
+  display: block;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--seal);
+  margin-bottom: 0.4rem;
+}
+
+.receipt dd {
+  font-family: var(--mono);
+  font-size: 0.82rem;
+}
+
+.receipt dl > div {
+  border-bottom-color: #c2ddda;
+}
+
+.receipt dl {
+  border-top-color: #c2ddda;
+}
+
+/* ---- Consent dialog --------------------------------------------------- */
+
+dialog {
+  max-width: 40rem;
+  width: calc(100% - 2rem);
+  border: 1px solid var(--ink);
+  border-top: 4px solid var(--seal);
+  border-radius: 4px;
+  background: var(--paper);
+  color: var(--ink);
+  padding: calc(var(--step) * 4);
+}
+
+dialog::backdrop {
+  background: rgb(18 33 46 / 0.55);
+}
+
+dialog h2 {
+  margin-top: 0;
+}
+
+dialog ul {
+  padding-left: calc(var(--step) * 2.5);
+}
+
+dialog li,
+dialog p {
+  font-size: 0.9rem;
+}
+
+dialog details {
+  border-top: 1px solid var(--rule);
+  margin-top: calc(var(--step) * 3);
+  padding-top: calc(var(--step) * 2);
+}
+
+dialog summary {
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+dialog > div:last-child {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--step);
+  border-top: 1px solid var(--rule);
+  margin-top: calc(var(--step) * 3);
+  padding-top: calc(var(--step) * 3);
+}
+
+/* ---- Responsive ------------------------------------------------------- */
+
+@media (max-width: 34rem) {
+  dl > div {
+    grid-template-columns: 1fr;
+    gap: var(--step);
+  }
+
+  .frozen {
+    margin-left: 0;
+    margin-right: 0;
+    padding-left: calc(var(--step) * 2);
+    padding-right: calc(var(--step) * 2);
+  }
+
+  input,
+  select {
+    min-width: 0;
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

@@ -27,14 +27,17 @@ type CounterPolicy = Readonly<{
 }>;
 
 const POLICIES: Readonly<Record<RateBucket | "all_api", CounterPolicy>> = {
-  demo_get: { limit: 60, windowSeconds: 60 },
-  demo_start: { limit: 6, windowSeconds: 600 },
-  application: { limit: 120, windowSeconds: 60 },
-  actions: { limit: 120, windowSeconds: 60 },
-  webmcp: { limit: 60, windowSeconds: 60 },
-  submission: { limit: 30, windowSeconds: 60 },
-  receipt: { limit: 60, windowSeconds: 60 },
-  all_api: { limit: 600, windowSeconds: 60 },
+  demo_get: { limit: 240, windowSeconds: 60 },
+  // The counters are deployment-wide, not per-visitor, so the Start budget has
+  // to accommodate many independent people trying the demo at once. Concurrent
+  // capacity is bounded separately by MAX_APPLICATIONS.
+  demo_start: { limit: 120, windowSeconds: 600 },
+  application: { limit: 600, windowSeconds: 60 },
+  actions: { limit: 600, windowSeconds: 60 },
+  webmcp: { limit: 300, windowSeconds: 60 },
+  submission: { limit: 120, windowSeconds: 60 },
+  receipt: { limit: 240, windowSeconds: 60 },
+  all_api: { limit: 2_400, windowSeconds: 60 },
 };
 
 type CounterKey = keyof typeof POLICIES;
