@@ -756,3 +756,28 @@ Recorded so they are not mistaken for drift:
 - Activity projection from operation rows is still the honest empty placeholder.
 - Deployment, the public repository, the demo video, and the Devpost submission
   remain the entrant's actions and have not been taken.
+
+## 2026-08-29 (later) — W1 journey complete, reviewed, and given a visual identity
+
+- Completed the applicant journey: the six manual draft transitions, canonical
+  content and the immutable Review freeze, Review and Submission persistence,
+  `/api/submission`, `/api/receipt`, and every one of the eleven human actions.
+- A second engineering/security review found, and this session repaired: a
+  Review-stage reload that threw and stranded the application permanently; three
+  paths that could commit an effect and then report a refusal; two stage
+  transitions that bypassed the coordinate guard and wrote no ledger row; a
+  receipt that could never be reached after a reload; a Review reference that
+  could be reversed to the Review identity; and Review immutability that was a
+  code convention rather than a database guarantee.
+- A judge-perspective review scored WebMCP Leverage 9/10 but Execution 6/10,
+  primarily because the product rendered as unstyled default HTML, and found two
+  submission-integrity problems: deployment-wide rate limits that would lock out
+  judges after a handful of demo starts, and a documented verification command
+  that failed from a clean checkout.
+- Acted on all of it: a designed interface built on the source-tether idea, fonts
+  self-hosted so the strict CSP needs no exception, raised rate budgets, working
+  test scripts, and README corrections that state plainly what is and is not
+  verified.
+- The built anti-hardcode verifier was firing on an npm script name in the copied
+  manifest. It was made more precise rather than looser, and the change was
+  proven to still catch a genuine injected leak.

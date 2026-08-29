@@ -8,24 +8,38 @@ Build and verify a winning-quality CiteApply WebMCP product with stage-gated imp
 
 ## Current Position
 
-- **The product runs.** Landing, application page, four W0 API routes plus
-  `/api/submission` and `/api/receipt`, all four services, the six WebMCP tools,
-  and the complete applicant journey through submission and receipt.
-- Verified under pinned Node 24.20.0: typecheck, lint at zero warnings, 43
-  tests, production-import boundary, fixture hashes, and `verify:file-structure`
-  at gate W0-C0 at the moment W0 closed.
-- Both packets driven end to end over HTTP and in a browser. The conflict packet
-  refuses the agent's income binding and requires a visible applicant choice;
-  that resolution is carried as a warning into the frozen Review and the receipt.
-- Two independent reviews ran against the W0 kernel; every accepted finding was
-  repaired in commit `d2e0a32`, including an empty-500 crash on malformed tool
-  input and an effect that could commit without its operation row.
-- Tree position: between W0-C0 and W1-C1. Every W1 product file is
-  ledger-declared; what remains for W1-C1 is additional test files. Deviations
-  are recorded in the build notes rather than left implicit.
+- **The product is complete and runs.** Landing, application, six API routes,
+  four services, the six WebMCP tools, all eleven human actions, the frozen
+  Review, submission, and receipt — with a designed interface.
+- Verified under pinned Node 24.20.0: typecheck, lint at zero warnings,
+  55 node tests, 16 browser tests, the production-import boundary, fixture
+  hashes, and the built anti-hardcode scan.
+- Both packets driven end to end over HTTP and in a browser. The Conflict packet
+  refuses the agent's income binding, requires a visible applicant choice with a
+  stated reason, and carries that decision as a warning into the frozen Review
+  and the receipt.
+- Three independent reviews ran (engineering/security on W0, engineering/security
+  on W1, and a judge-perspective review). Every accepted finding was repaired,
+  including an empty-500 crash on malformed tool input, an effect that could
+  commit without its operation row, a Review-stage reload that stranded the
+  application, and deployment-wide rate limits that would have locked out judges.
+- Judge-perspective scoring before the interface work: WebMCP Leverage 9/10,
+  Execution 6/10, Potential Impact 7/10, Creativity and Ambition 8/10, with a
+  clear pass on the viability screen. The Execution items it identified as
+  fixable in code have been fixed.
 - User authority unchanged: local implementation and testing only. Deployment,
-  the public repository, Devpost, upload, outreach, monitoring, and submission
-  remain disabled and untaken.
+  the public repository, the demo video, Devpost, and submission remain the
+  entrant's actions and have not been taken.
+
+## Outstanding, and owned by the entrant
+
+1. Push to a public repository and deploy over HTTPS with `APP_ORIGIN` matching
+   the served origin exactly. See `docs/DEPLOYING.md`.
+2. Capture a session against a genuine external WebMCP client. This is the one
+   claim the repository cannot currently make, and it is the first tie-breaker.
+3. Record the demo video against the deployed, styled build in one clean pass.
+   A shot-by-shot script is in `docs/SUBMISSION.md`.
+4. Complete and submit the Devpost entry before September 3, 1:00 PM PT.
 
 ## Prior Position (superseded)
 

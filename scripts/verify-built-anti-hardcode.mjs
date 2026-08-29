@@ -5,16 +5,32 @@ import { extname, join, relative, resolve, sep } from "node:path";
 const buildRoot = resolve(".next");
 const scanRoots = [join(buildRoot, "server"), join(buildRoot, "standalone")];
 const textExtensions = new Set([".js", ".mjs", ".cjs", ".json", ".map", ".html"]);
-const forbiddenLiterals = [
+// Fixture-derived answers must never appear in the production bundle.
+const forbiddenAnswerLiterals = [
   "Anaya Rao",
   "HZN-2026-0142",
   "Northstar Community College",
   "Meera Rao",
   "INR 480,000",
   "INR 540,000",
-  "tests/goldens",
-  "scripts/generate-fixtures",
 ];
+
+// Test-only sources must never be reachable from production code. These are
+// path references, so the copied npm manifest — which lists script names and
+// no code — is checked separately below.
+const forbiddenPathLiterals = ["tests/goldens", "scripts/generate-fixtures"];
+
+// The generator and goldens must be absent from the build tree outright, not
+// merely unreferenced.
+const forbiddenBuildPaths = [
+  "standalone/scripts/generate-fixtures.mjs",
+  "standalone/tests",
+  "server/tests",
+];
+
+function isCopiedManifest(path) {
+  return relative(buildRoot, path).split(sep).join("/") === "standalone/package.json";
+}
 
 async function exists(path) {
   try {
@@ -46,12 +62,21 @@ const findings = [];
 const files = (await Promise.all(scanRoots.map(filesBelow))).flat();
 for (const file of files) {
   const source = await readFile(file, "utf8");
-  for (const literal of forbiddenLiterals) {
+  const literals = isCopiedManifest(file)
+    ? forbiddenAnswerLiterals
+    : [...forbiddenAnswerLiterals, ...forbiddenPathLiterals];
+  for (const literal of literals) {
     if (source.includes(literal)) {
       findings.push(
         `${relative(process.cwd(), file).split(sep).join("/")} contains ${JSON.stringify(literal)}`,
       );
     }
+  }
+}
+
+for (const candidate of forbiddenBuildPaths) {
+  if (await exists(join(buildRoot, candidate))) {
+    findings.push(`${candidate} must not be present in the production build.`);
   }
 }
 
