@@ -90,7 +90,8 @@ function missingEvidenceFieldSchema<const F extends EvidenceField>(field: F) {
     .strict();
 }
 
-const InactiveGuardianFieldSchema = inactiveConditionalFieldSchema("guardian_name");
+const InactiveGuardianFieldSchema =
+  inactiveConditionalFieldSchema("guardian_name");
 const InactiveHouseholdSizeFieldSchema =
   inactiveConditionalFieldSchema("household_size");
 const InactiveConditionalFieldSchema = z.union([
@@ -103,9 +104,11 @@ const MissingStudentIdFieldSchema = missingEvidenceFieldSchema("student_id");
 const MissingInstitutionFieldSchema = missingEvidenceFieldSchema("institution");
 const MissingDependencyFieldSchema = missingEvidenceFieldSchema("dependency");
 const MissingGuardianFieldSchema = missingEvidenceFieldSchema("guardian_name");
-const MissingHouseholdSizeFieldSchema = missingEvidenceFieldSchema("household_size");
-const MissingIncomeFieldSchema =
-  missingEvidenceFieldSchema("annual_household_income");
+const MissingHouseholdSizeFieldSchema =
+  missingEvidenceFieldSchema("household_size");
+const MissingIncomeFieldSchema = missingEvidenceFieldSchema(
+  "annual_household_income",
+);
 const MissingEvidenceFieldSchema = z.union([
   MissingLegalNameFieldSchema,
   MissingStudentIdFieldSchema,
@@ -273,7 +276,8 @@ export const HumanActivityV1Schema = z.union([
           (fields) => {
             const indexes = fields.map((field) => FIELD_IDS.indexOf(field));
             return indexes.every(
-              (index, position) => position === 0 || index > indexes[position - 1]!,
+              (index, position) =>
+                position === 0 || index > indexes[position - 1]!,
             );
           },
           { message: "Activity fields must be unique and in canonical order." },
@@ -298,7 +302,8 @@ const HumanEvidenceExcerptBaseShape = {
 
 function stringExcerptSchema<
   const K extends "legal_name" | "student_id" | "institution" | "guardian_name",
-  const T extends "Synthetic Enrollment Record" | "Synthetic Household Statement",
+  const T extends
+    "Synthetic Enrollment Record" | "Synthetic Household Statement",
 >(kind: K, title: T) {
   return z
     .object({
@@ -316,14 +321,19 @@ function stringExcerptSchema<
 
 function numericExcerptSchema<
   const K extends "household_size" | "annual_household_income",
-  const T extends "Synthetic Household Statement" | "Synthetic Income Statement",
+  const T extends
+    "Synthetic Household Statement" | "Synthetic Income Statement",
 >(kind: K, title: T) {
   return z
     .object({
       ...HumanEvidenceExcerptBaseShape,
       title: z.literal(title),
       kind: z.literal(kind),
-      normalizedValue: z.number().int().safe().min(kind === "household_size" ? 1 : 0),
+      normalizedValue: z
+        .number()
+        .int()
+        .safe()
+        .min(kind === "household_size" ? 1 : 0),
     })
     .strict();
 }
@@ -353,7 +363,11 @@ const HumanFieldsV1Schema = z.tuple([
   z.union([MissingLegalNameFieldSchema, ReadyLegalNameFieldSchema]),
   z.union([MissingStudentIdFieldSchema, ReadyStudentIdFieldSchema]),
   z.union([MissingInstitutionFieldSchema, ReadyInstitutionFieldSchema]),
-  z.union([MissingEmailFieldSchema, UndeclaredEmailFieldSchema, ReadyEmailFieldSchema]),
+  z.union([
+    MissingEmailFieldSchema,
+    UndeclaredEmailFieldSchema,
+    ReadyEmailFieldSchema,
+  ]),
   z.union([MissingDependencyFieldSchema, ReadyDependencyFieldSchema]),
   z.union([
     InactiveGuardianFieldSchema,
@@ -414,19 +428,25 @@ export const HumanActivitySummaryV1Schema = z
       }
     }
     const visibleCounts = {
-      allowed: latest.filter(({ kind }) => kind === "assistance_allowed").length,
-      revoked: latest.filter(({ kind }) => kind === "assistance_revoked").length,
-      acceptedBatches: latest.filter(({ kind }) => kind === "answers_applied").length,
+      allowed: latest.filter(({ kind }) => kind === "assistance_allowed")
+        .length,
+      revoked: latest.filter(({ kind }) => kind === "assistance_revoked")
+        .length,
+      acceptedBatches: latest.filter(({ kind }) => kind === "answers_applied")
+        .length,
       refusals: latest.filter(({ kind }) => kind === "income_refused").length,
       assistedReviewsPrepared: latest.filter(
         ({ kind }) => kind === "assisted_review_prepared",
       ).length,
     };
-    for (const key of Object.keys(visibleCounts) as (keyof typeof visibleCounts)[]) {
+    for (const key of Object.keys(
+      visibleCounts,
+    ) as (keyof typeof visibleCounts)[]) {
       if (totals[key] < visibleCounts[key]) {
         context.addIssue({
           code: "custom",
-          message: "Activity totals cannot be smaller than the visible latest events.",
+          message:
+            "Activity totals cannot be smaller than the visible latest events.",
           path: ["totals", key],
         });
       }
@@ -465,8 +485,16 @@ function refineHumanDraft(
   draft: HumanDraftCandidate,
   context: z.RefinementCtx,
 ): void {
-  const [legalName, studentId, institution, email, dependency, guardian, household, income] =
-    draft.fields;
+  const [
+    legalName,
+    studentId,
+    institution,
+    email,
+    dependency,
+    guardian,
+    household,
+    income,
+  ] = draft.fields;
   const sixFieldState = draft.progress.total === 6;
   if (
     sixFieldState &&
@@ -508,8 +536,17 @@ function refineHumanDraft(
     );
   }
 
-  const expectedBlockers: Array<Readonly<{ code: string; field: FieldId }>> = [];
-  for (const field of [legalName, studentId, institution, dependency, guardian, household, income]) {
+  const expectedBlockers: Array<Readonly<{ code: string; field: FieldId }>> =
+    [];
+  for (const field of [
+    legalName,
+    studentId,
+    institution,
+    dependency,
+    guardian,
+    household,
+    income,
+  ]) {
     if (field.active === true && field.status === "missing") {
       expectedBlockers.push({ code: "missing_evidence", field: field.field });
     }
@@ -521,14 +558,20 @@ function refineHumanDraft(
     });
   }
   if (email.status === "missing") {
-    expectedBlockers.push({ code: "invalid_email", field: "preferred_contact_email" });
+    expectedBlockers.push({
+      code: "invalid_email",
+      field: "preferred_contact_email",
+    });
   } else if (email.status === "needs_declaration") {
     expectedBlockers.push({
       code: "declaration_required",
       field: "preferred_contact_email",
     });
   }
-  const actualBlockers = draft.blockers.map(({ code, field }) => ({ code, field }));
+  const actualBlockers = draft.blockers.map(({ code, field }) => ({
+    code,
+    field,
+  }));
   if (JSON.stringify(actualBlockers) !== JSON.stringify(expectedBlockers)) {
     addDraftIssue(
       context,
@@ -540,7 +583,14 @@ function refineHumanDraft(
   const claimByHandle = new Map(
     draft.claims.map((claim) => [claim.claimHandle, claim] as const),
   );
-  for (const field of [legalName, studentId, institution, dependency, guardian, household]) {
+  for (const field of [
+    legalName,
+    studentId,
+    institution,
+    dependency,
+    guardian,
+    household,
+  ]) {
     if (field.active !== true || field.status !== "ready") continue;
     const binding = field.bindings[0];
     const claim = claimByHandle.get(binding.claimHandle);
@@ -562,7 +612,8 @@ function refineHumanDraft(
   const householdIncomeClaim = draft.claims[6];
   const statementIncomeClaim = draft.claims[7];
   const incomesMatch =
-    householdIncomeClaim.normalizedValue === statementIncomeClaim.normalizedValue;
+    householdIncomeClaim.normalizedValue ===
+    statementIncomeClaim.normalizedValue;
   if (
     (draft.packet === "supported" && !incomesMatch) ||
     (draft.packet === "conflict" && incomesMatch)
@@ -622,7 +673,8 @@ function refineHumanDraft(
   }
 }
 
-export const HumanDraftV1Schema = HumanDraftBaseSchema.superRefine(refineHumanDraft);
+export const HumanDraftV1Schema =
+  HumanDraftBaseSchema.superRefine(refineHumanDraft);
 
 export const HumanReviewWarningV1Schema = z
   .object({
@@ -669,7 +721,9 @@ export const HumanReviewDiffsV1Schema = z.tuple([
   ),
 ]);
 
-function expectedTitle(document: "enrollment" | "household" | "income"): string {
+function expectedTitle(
+  document: "enrollment" | "household" | "income",
+): string {
   switch (document) {
     case "enrollment":
       return "Synthetic Enrollment Record";
@@ -711,7 +765,8 @@ function refineHumanReview(
       ) {
         context.addIssue({
           code: "custom",
-          message: "Review email must match its declaration and have no excerpt.",
+          message:
+            "Review email must match its declaration and have no excerpt.",
           path: ["diffs", index],
         });
       }
@@ -730,7 +785,8 @@ function refineHumanReview(
     ) {
       context.addIssue({
         code: "custom",
-        message: "Review field binding and excerpt must identify the same evidence.",
+        message:
+          "Review field binding and excerpt must identify the same evidence.",
         path: ["diffs", index],
       });
     }
@@ -763,7 +819,8 @@ function refineHumanReview(
     ) {
       context.addIssue({
         code: "custom",
-        message: "Supported income Review data must be exact corroborating evidence.",
+        message:
+          "Supported income Review data must be exact corroborating evidence.",
         path: ["diffs", 7],
       });
     }
@@ -795,7 +852,8 @@ function refineHumanReview(
     ) {
       context.addIssue({
         code: "custom",
-        message: "Resolved income Review data must preserve the applicant's exact choice.",
+        message:
+          "Resolved income Review data must preserve the applicant's exact choice.",
         path: ["diffs", 7],
       });
     }
@@ -824,9 +882,7 @@ export type HumanReviewValidationContext = Readonly<{
   expectedSourceVersions: Versions;
   expectedActivity: z.infer<typeof HumanActivitySummaryV1Schema>;
   parsedPacket: ParsedPacketV1;
-  expectedOriginForField: (
-    field: FieldId,
-  ) => "manual" | "assisted" | undefined;
+  expectedOriginForField: (field: FieldId) => "manual" | "assisted" | undefined;
 }>;
 
 declare const coherentHumanReviewBrand: unique symbol;
@@ -864,14 +920,18 @@ export function parseCoherentHumanReview(
   }
   for (const diff of review.diffs) {
     if (diff.final.origin !== validation.expectedOriginForField(diff.field)) {
-      throw new TypeError("Review final origin does not match the frozen ready Draft.");
+      throw new TypeError(
+        "Review final origin does not match the frozen ready Draft.",
+      );
     }
   }
   const claimsByHandle = new Map(
     parsedPacket.claims.map((claim) => [claim.claimHandle, claim] as const),
   );
   const documentsByCode = new Map(
-    parsedPacket.documents.map((document) => [document.code, document] as const),
+    parsedPacket.documents.map(
+      (document) => [document.code, document] as const,
+    ),
   );
   for (const diff of review.diffs) {
     for (const excerpt of diff.excerpts) {
@@ -926,7 +986,8 @@ export function parseCoherentHumanReview(
   const chosenFingerprint =
     incomeFinal.resolution === "source_supported"
       ? undefined
-      : claimsByHandle.get(incomeFinal.resolution.chosen.claimHandle)?.fingerprint;
+      : claimsByHandle.get(incomeFinal.resolution.chosen.claimHandle)
+          ?.fingerprint;
   if (
     boundFingerprints.some((fingerprint) => fingerprint === undefined) ||
     new Set(boundFingerprints).size !== boundFingerprints.length ||
@@ -937,7 +998,9 @@ export function parseCoherentHumanReview(
     (typeof incomeContent.resolution !== "string" &&
       incomeContent.resolution.chosenFingerprint !== chosenFingerprint)
   ) {
-    throw new TypeError("Review evidence bindings do not match canonical fingerprints.");
+    throw new TypeError(
+      "Review evidence bindings do not match canonical fingerprints.",
+    );
   }
   return review as CoherentHumanReviewV1;
 }
@@ -956,7 +1019,8 @@ export const ReceiptRecordV1Schema = z
       acceptedApplicationRevision ===
       acceptedReview.sourceVersions.applicationRevision,
     {
-      message: "Receipt revision must equal the accepted Review source revision.",
+      message:
+        "Receipt revision must equal the accepted Review source revision.",
       path: ["acceptedApplicationRevision"],
     },
   );
@@ -1038,9 +1102,13 @@ export const ReceiptDeliveryV1Schema = z
     serverNow: Rfc3339InstantSchema,
   })
   .strict()
-  .refine(({ expiresAt, serverNow }) => Date.parse(serverNow) <= Date.parse(expiresAt), {
-    message: "Receipt delivery cannot be issued after session expiry.",
-  });
+  .refine(
+    ({ expiresAt, serverNow }) =>
+      Date.parse(serverNow) <= Date.parse(expiresAt),
+    {
+      message: "Receipt delivery cannot be issued after session expiry.",
+    },
+  );
 
 export const StartTokenSchema = z
   .object({
@@ -1050,9 +1118,12 @@ export const StartTokenSchema = z
     signature: CapabilitySchema,
   })
   .strict()
-  .refine(({ issuedAt, expiresAt }) => Date.parse(issuedAt) < Date.parse(expiresAt), {
-    message: "Start token expiry must be after issuance.",
-  });
+  .refine(
+    ({ issuedAt, expiresAt }) => Date.parse(issuedAt) < Date.parse(expiresAt),
+    {
+      message: "Start token expiry must be after issuance.",
+    },
+  );
 
 export const DemoGetRequestSchema = z
   .object({ mode: z.literal("issue_start_token") })
@@ -1091,11 +1162,11 @@ export const DemoGetFailureSchema = z.union([
   DemoTokenUnavailableSchema,
 ]);
 
-function failureWithMessage<const C extends string, const M extends string, const A extends string>(
-  code: C,
-  message: M,
-  safeAction: A,
-) {
+function failureWithMessage<
+  const C extends string,
+  const M extends string,
+  const A extends string,
+>(code: C, message: M, safeAction: A) {
   return z
     .object({
       ok: z.literal(false),
@@ -1131,7 +1202,10 @@ export const ApplicationRequestSchema = z.discriminatedUnion("mode", [
     .strict(),
   z.object({ mode: z.literal("snapshot") }).strict(),
   z
-    .object({ mode: z.literal("evidence_excerpt"), claimHandle: ClaimHandleSchema })
+    .object({
+      mode: z.literal("evidence_excerpt"),
+      claimHandle: ClaimHandleSchema,
+    })
     .strict(),
 ]);
 
@@ -1156,7 +1230,9 @@ const TakeoverSuccessSchema = successSchema(
     .strict(),
 );
 const SnapshotSuccessSchema = successSchema(
-  z.object({ kind: z.literal("snapshot"), snapshot: HumanSnapshotV1Schema }).strict(),
+  z
+    .object({ kind: z.literal("snapshot"), snapshot: HumanSnapshotV1Schema })
+    .strict(),
 );
 const EvidenceExcerptSuccessSchema = successSchema(
   z
@@ -1214,7 +1290,9 @@ export const HumanActionRequestSchema = z.discriminatedUnion("action", [
       value: SyntheticTestEmailSchema,
     })
     .strict(),
-  z.object({ ...actionCoordinates, action: z.literal("declare_email") }).strict(),
+  z
+    .object({ ...actionCoordinates, action: z.literal("declare_email") })
+    .strict(),
   z
     .object({
       ...actionCoordinates,
@@ -1230,10 +1308,24 @@ export const HumanActionRequestSchema = z.discriminatedUnion("action", [
       confirmed: z.literal(true),
     })
     .strict(),
-  z.object({ ...actionCoordinates, action: z.literal("allow_assisted_access") }).strict(),
-  z.object({ ...actionCoordinates, action: z.literal("revoke_assisted_access") }).strict(),
-  z.object({ ...actionCoordinates, action: z.literal("prepare_review") }).strict(),
-  z.object({ ...actionCoordinates, action: z.literal("return_to_draft") }).strict(),
+  z
+    .object({
+      ...actionCoordinates,
+      action: z.literal("allow_assisted_access"),
+    })
+    .strict(),
+  z
+    .object({
+      ...actionCoordinates,
+      action: z.literal("revoke_assisted_access"),
+    })
+    .strict(),
+  z
+    .object({ ...actionCoordinates, action: z.literal("prepare_review") })
+    .strict(),
+  z
+    .object({ ...actionCoordinates, action: z.literal("return_to_draft") })
+    .strict(),
 ]);
 
 export const DRAFT_CONTENT_ACTIONS = [
@@ -1276,10 +1368,7 @@ const StoredBlockerCoordinatesV1Schema = z
 function storedAppliedOutcome<
   const A extends (typeof DRAFT_CONTENT_ACTIONS)[number],
   const S extends z.ZodType,
->(
-  action: A,
-  fields: S,
-) {
+>(action: A, fields: S) {
   return z
     .object({
       outcome: z.literal("action_applied"),
@@ -1481,7 +1570,8 @@ const ContentNoChangeSuccessSchema = successSchema(
     })
     .strict()
     .refine(({ snapshot }) => snapshotIncludesCommittedStableRow(snapshot), {
-      message: "A no-change result requires its committed stable operation row.",
+      message:
+        "A no-change result requires its committed stable operation row.",
       path: ["snapshot", "projectionSequence"],
     }),
 );
@@ -1495,7 +1585,8 @@ const AllowNoChangeSuccessSchema = successSchema(
     })
     .strict()
     .refine(({ snapshot }) => snapshotIncludesCommittedStableRow(snapshot), {
-      message: "A no-change result requires its committed stable operation row.",
+      message:
+        "A no-change result requires its committed stable operation row.",
       path: ["snapshot", "projectionSequence"],
     }),
 );
@@ -1508,7 +1599,8 @@ const RevokeNoChangeSuccessSchema = successSchema(
     })
     .strict()
     .refine(({ snapshot }) => snapshotIncludesCommittedStableRow(snapshot), {
-      message: "A no-change result requires its committed stable operation row.",
+      message:
+        "A no-change result requires its committed stable operation row.",
       path: ["snapshot", "projectionSequence"],
     }),
 );
@@ -1581,7 +1673,8 @@ export const SubmissionSuccessSchema = successSchema(
         snapshot.serverNow === delivery.serverNow &&
         snapshot.expiresAt === delivery.expiresAt,
       {
-        message: "Submission snapshot and Receipt delivery coordinates must match.",
+        message:
+          "Submission snapshot and Receipt delivery coordinates must match.",
       },
     ),
 );
@@ -1592,9 +1685,9 @@ export const ReceiptRequestSchema = z.discriminatedUnion("mode", [
   z.object({ mode: z.literal("prepare_print") }).strict(),
 ]);
 
-function receiptSuccessSchema<const M extends "load" | "export_json" | "prepare_print">(
-  mode: M,
-) {
+function receiptSuccessSchema<
+  const M extends "load" | "export_json" | "prepare_print",
+>(mode: M) {
   return successSchema(
     z
       .object({ mode: z.literal(mode), delivery: ReceiptDeliveryV1Schema })
@@ -1736,21 +1829,22 @@ export function applicationResultSchemaForRequest(
 
 type ReceiptRequestInput = z.infer<typeof ReceiptRequestSchema>;
 
-type ReceiptResultForRequest<R extends ReceiptRequestInput> =
-  R extends { mode: "load" }
-    ? | z.infer<typeof ReceiptLoadSuccessSchema>
-      | z.infer<typeof ReceiptLoadFailureSchema>
-    : R extends { mode: "export_json" }
-      ? | z.infer<typeof ReceiptJsonSuccessSchema>
+type ReceiptResultForRequest<R extends ReceiptRequestInput> = R extends {
+  mode: "load";
+}
+  ? | z.infer<typeof ReceiptLoadSuccessSchema>
+    | z.infer<typeof ReceiptLoadFailureSchema>
+  : R extends { mode: "export_json" }
+    ? | z.infer<typeof ReceiptJsonSuccessSchema>
+      | z.infer<typeof ReceiptExportFailureSchema>
+    : R extends { mode: "prepare_print" }
+      ? | z.infer<typeof ReceiptPrintSuccessSchema>
         | z.infer<typeof ReceiptExportFailureSchema>
-      : R extends { mode: "prepare_print" }
-        ? | z.infer<typeof ReceiptPrintSuccessSchema>
-          | z.infer<typeof ReceiptExportFailureSchema>
-        : never;
+      : never;
 
-export function receiptResultSchemaForRequest<const R extends ReceiptRequestInput>(
-  request: R,
-): z.ZodType<ReceiptResultForRequest<R>>;
+export function receiptResultSchemaForRequest<
+  const R extends ReceiptRequestInput,
+>(request: R): z.ZodType<ReceiptResultForRequest<R>>;
 export function receiptResultSchemaForRequest(
   request: ReceiptRequestInput,
 ): z.ZodType<ReceiptResultForRequest<ReceiptRequestInput>> {
@@ -1905,8 +1999,7 @@ function snapshotIncludesCommittedStableRow(
 ): boolean {
   const counts = causalCoordinateCounts(snapshot);
   return (
-    counts !== undefined &&
-    counts.revisionEffects < snapshot.projectionSequence
+    counts !== undefined && counts.revisionEffects < snapshot.projectionSequence
   );
 }
 
@@ -1956,8 +2049,7 @@ function immediateHistoricalReviewMatchesOriginal(
   ) {
     return true;
   }
-  const sourceApplicationRevision =
-    original.versions.applicationRevision - 1;
+  const sourceApplicationRevision = original.versions.applicationRevision - 1;
   return (
     sourceApplicationRevision >= 0 &&
     snapshot.review.reviewId === original.reviewId &&
@@ -2143,7 +2235,9 @@ function snapshotIsWithinSession(
 ): boolean {
   const serverNow = rfc3339EpochNanoseconds(snapshot.serverNow);
   const expiresAt = rfc3339EpochNanoseconds(snapshot.expiresAt);
-  return serverNow !== undefined && expiresAt !== undefined && serverNow < expiresAt;
+  return (
+    serverNow !== undefined && expiresAt !== undefined && serverNow < expiresAt
+  );
 }
 
 function storedAllowCoordinateIsCurrent(
@@ -2300,10 +2394,9 @@ function historicalConsentTransitionIsReachable(
   return original.outcome !== "review_prepared" || nonRequirementsDelta >= 2;
 }
 
-type StoredOutcomeWithExactAction<
-  O,
-  A extends HumanActionName,
-> = O extends { action: infer Existing extends HumanActionName }
+type StoredOutcomeWithExactAction<O, A extends HumanActionName> = O extends {
+  action: infer Existing extends HumanActionName;
+}
   ? A extends Existing
     ? Omit<O, "action"> & { action: A }
     : never
@@ -2375,9 +2468,9 @@ function replayForRequest(
   );
 }
 
-function contentSuccessForAction<const A extends (typeof DRAFT_CONTENT_ACTIONS)[number]>(
-  action: A,
-) {
+function contentSuccessForAction<
+  const A extends (typeof DRAFT_CONTENT_ACTIONS)[number],
+>(action: A) {
   return z.union([
     successSchema(
       z
@@ -2585,11 +2678,7 @@ function currentSuccessMatchesRequest(
       return false;
     }
     if (context.storedOutcome !== null) {
-      return capabilityBearingAllowReplayMatchesContext(
-        request,
-        data,
-        context,
-      );
+      return capabilityBearingAllowReplayMatchesContext(request, data, context);
     }
     if (
       context.currentConsentRequestId === null ||
@@ -2650,34 +2739,33 @@ type NonConflictEvidenceActionFailure = Exclude<
   z.infer<typeof ConflictRequiresHumanFailureSchema>
 >;
 
-type HumanActionFailureForRequest<R extends HumanActionRequest> =
-  R extends {
-    action: "bind_evidence";
-    field: infer F extends EvidenceField;
-  }
-    ? "annual_household_income" extends F
-      ? EvidenceActionFailure
-      : NonConflictEvidenceActionFailure
-    : R extends { action: "resolve_income" }
-      ? z.infer<typeof ResolveIncomeFailureSchema>
-      : R extends { action: "save_email" | "declare_email" }
-        ? z.infer<typeof EmailActionFailureSchema>
-        : R extends { action: "allow_assisted_access" }
-          ? z.infer<typeof AllowFailureSchema>
-          : R extends { action: "revoke_assisted_access" }
-            ? z.infer<typeof RevokeFailureSchema>
-            : R extends { action: "prepare_review" }
-              ? z.infer<typeof PrepareActionFailureSchema>
-              : R extends { action: "return_to_draft" }
-                ? z.infer<typeof ReturnActionFailureSchema>
-                : R extends {
-                      action:
-                        | "clear_evidence"
-                        | "clear_dependency"
-                        | "clear_income_resolution";
-                    }
-                  ? z.infer<typeof ContentActionFailureSchema>
-                  : never;
+type HumanActionFailureForRequest<R extends HumanActionRequest> = R extends {
+  action: "bind_evidence";
+  field: infer F extends EvidenceField;
+}
+  ? "annual_household_income" extends F
+    ? EvidenceActionFailure
+    : NonConflictEvidenceActionFailure
+  : R extends { action: "resolve_income" }
+    ? z.infer<typeof ResolveIncomeFailureSchema>
+    : R extends { action: "save_email" | "declare_email" }
+      ? z.infer<typeof EmailActionFailureSchema>
+      : R extends { action: "allow_assisted_access" }
+        ? z.infer<typeof AllowFailureSchema>
+        : R extends { action: "revoke_assisted_access" }
+          ? z.infer<typeof RevokeFailureSchema>
+          : R extends { action: "prepare_review" }
+            ? z.infer<typeof PrepareActionFailureSchema>
+            : R extends { action: "return_to_draft" }
+              ? z.infer<typeof ReturnActionFailureSchema>
+              : R extends {
+                    action:
+                      | "clear_evidence"
+                      | "clear_dependency"
+                      | "clear_income_resolution";
+                  }
+                ? z.infer<typeof ContentActionFailureSchema>
+                : never;
 
 function failureSchemaForHumanAction<const R extends HumanActionRequest>(
   request: R,
@@ -2746,13 +2834,10 @@ export function humanActionResultSchema(
   const currentSuccess = currentSuccessSchemaForHumanAction(
     request.action,
   ).refine(
-    (value) =>
-      currentSuccessMatchesRequest(
-        request,
-        value,
-        validationContext,
-      ),
-    { message: "Current action result does not match its request coordinates." },
+    (value) => currentSuccessMatchesRequest(request, value, validationContext),
+    {
+      message: "Current action result does not match its request coordinates.",
+    },
   );
   return z.union([
     currentSuccess,

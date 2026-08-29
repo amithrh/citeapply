@@ -21,7 +21,9 @@ function boundedTimeout(value: number | undefined, fallback: number): number {
   const selected = value ?? fallback;
 
   if (!Number.isSafeInteger(selected) || selected < 1 || selected > 30_000) {
-    throw new DatabaseInvariantError("Database timeout configuration is invalid.");
+    throw new DatabaseInvariantError(
+      "Database timeout configuration is invalid.",
+    );
   }
 
   return selected;
@@ -31,7 +33,10 @@ async function configureTransaction(
   client: PoolClient,
   options: TransactionOptions,
 ): Promise<void> {
-  const lockTimeout = boundedTimeout(options.lockTimeoutMs, DEFAULT_LOCK_TIMEOUT_MS);
+  const lockTimeout = boundedTimeout(
+    options.lockTimeoutMs,
+    DEFAULT_LOCK_TIMEOUT_MS,
+  );
   const statementTimeout = boundedTimeout(
     options.statementTimeoutMs,
     DEFAULT_STATEMENT_TIMEOUT_MS,
@@ -97,10 +102,13 @@ export function requireSingleRow<T extends QueryResultRow>(
 }
 
 function normalizeDatabaseDate(value: unknown): Date {
-  const date = value instanceof Date ? new Date(value.getTime()) : new Date(String(value));
+  const date =
+    value instanceof Date ? new Date(value.getTime()) : new Date(String(value));
 
   if (!Number.isFinite(date.getTime())) {
-    throw new DatabaseInvariantError("PostgreSQL returned an invalid clock value.");
+    throw new DatabaseInvariantError(
+      "PostgreSQL returned an invalid clock value.",
+    );
   }
 
   return date;
@@ -110,6 +118,9 @@ export async function readDatabaseClock(client: PoolClient): Promise<Date> {
   const result = await client.query<{ server_now: Date | string }>(
     "SELECT clock_timestamp() AS server_now",
   );
-  const row = requireSingleRow(result.rows, "PostgreSQL did not return one clock row.");
+  const row = requireSingleRow(
+    result.rows,
+    "PostgreSQL did not return one clock row.",
+  );
   return normalizeDatabaseDate(row.server_now);
 }

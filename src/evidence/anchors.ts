@@ -34,7 +34,11 @@ export function assertCharacterRange(
   if (!Number.isInteger(range.start) || !Number.isInteger(range.end)) {
     throw new Error("Evidence anchor offsets must be integers.");
   }
-  if (range.start < 0 || range.end <= range.start || range.end > pageText.length) {
+  if (
+    range.start < 0 ||
+    range.end <= range.start ||
+    range.end > pageText.length
+  ) {
     throw new Error("Evidence anchor is outside the normalized page text.");
   }
   if (range.end - range.start > maxCharacters) {
@@ -49,7 +53,9 @@ export function findUniqueLabelledValue(
   maxCharacters = MAX_EXCERPT_CHARACTERS,
 ): LabelledValueAnchor {
   if (!LABEL_GRAMMAR.test(label)) {
-    throw new Error("Evidence label does not match the closed labelled-line grammar.");
+    throw new Error(
+      "Evidence label does not match the closed labelled-line grammar.",
+    );
   }
 
   const normalizedText = normalizeLabelledPageText(pageText);
@@ -77,12 +83,17 @@ export function findUniqueLabelledValue(
   }
 
   if (matches.length !== 1) {
-    throw new Error("Evidence label must occur exactly once in normalized page text.");
+    throw new Error(
+      "Evidence label must occur exactly once in normalized page text.",
+    );
   }
   return matches[0]!;
 }
 
-export function sliceCharacterRange(pageText: string, range: CharacterRange): string {
+export function sliceCharacterRange(
+  pageText: string,
+  range: CharacterRange,
+): string {
   const normalizedText = normalizeLabelledPageText(pageText);
   const checkedRange = assertCharacterRange(normalizedText, range);
   return normalizedText.slice(checkedRange.start, checkedRange.end);

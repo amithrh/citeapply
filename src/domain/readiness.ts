@@ -3,10 +3,7 @@ import {
   type DomainReadinessBlocker,
   type EvidenceField,
 } from "../contracts/common.ts";
-import {
-  type DraftAggregateV1,
-  activeDraftFieldIds,
-} from "./draft.ts";
+import { type DraftAggregateV1, activeDraftFieldIds } from "./draft.ts";
 import { EVIDENCE_FIELD_ORDER } from "./fields.ts";
 
 export type DraftReadinessV1 = Readonly<{
@@ -23,9 +20,7 @@ function deepFreezeJson<const T>(value: T): T {
   return Object.isFrozen(value) ? value : Object.freeze(value);
 }
 
-function missingEvidenceBlocker(
-  field: EvidenceField,
-): DomainReadinessBlocker {
+function missingEvidenceBlocker(field: EvidenceField): DomainReadinessBlocker {
   return {
     code: "missing_evidence",
     field,
@@ -92,7 +87,9 @@ export function evaluateDraftReadiness(
     (field) => activeFields.has(field.field) && field.status === "ready",
   ).length;
   if (ready + parsedBlockers.length !== total) {
-    throw new TypeError("Draft readiness is inconsistent with saved field state.");
+    throw new TypeError(
+      "Draft readiness is inconsistent with saved field state.",
+    );
   }
 
   return deepFreezeJson({

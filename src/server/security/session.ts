@@ -10,7 +10,8 @@ export const SESSION_COOKIE_NAME = "__Host-citeapply_session";
 export const SESSION_DURATION_MS = 60 * 60 * 1_000;
 
 const MAX_COOKIE_HEADER_BYTES = 4_096;
-const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_V4 =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const START_NONCE = /^[A-Za-z0-9_-]{22}$/;
 
 export type SessionCoordinate = Readonly<{
@@ -29,7 +30,10 @@ function requireInstant(value: string, label: string): string {
 }
 
 function validateCoordinate(coordinate: SessionCoordinate): void {
-  if (coordinate.packetCode !== "supported" && coordinate.packetCode !== "conflict") {
+  if (
+    coordinate.packetCode !== "supported" &&
+    coordinate.packetCode !== "conflict"
+  ) {
     throw new Error("The session packet coordinate is invalid.");
   }
   if (
@@ -72,7 +76,9 @@ export function sessionCredentialMatchesDigest(
   return candidate !== null && constantTimeEqualBytes(candidate, storedDigest);
 }
 
-export function readSessionCredential(cookieHeader: string | null): string | null {
+export function readSessionCredential(
+  cookieHeader: string | null,
+): string | null {
   if (
     cookieHeader === null ||
     Buffer.byteLength(cookieHeader, "utf8") > MAX_COOKIE_HEADER_BYTES

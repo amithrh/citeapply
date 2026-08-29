@@ -78,14 +78,18 @@ function requireMasterKey(encoded: string | undefined): Buffer {
 
 function requireCanonicalOrigin(value: string | undefined): string {
   if (value === undefined || value.length === 0 || value.length > 2_048) {
-    throw new KeyConfigurationError("APP_ORIGIN is required for key derivation.");
+    throw new KeyConfigurationError(
+      "APP_ORIGIN is required for key derivation.",
+    );
   }
 
   let url: URL;
   try {
     url = new URL(value);
   } catch {
-    throw new KeyConfigurationError("APP_ORIGIN is invalid for key derivation.");
+    throw new KeyConfigurationError(
+      "APP_ORIGIN is invalid for key derivation.",
+    );
   }
 
   if (
@@ -123,7 +127,8 @@ export function frameParts(parts: readonly (string | Uint8Array)[]): Buffer {
   const framed: Buffer[] = [];
 
   for (const part of parts) {
-    const bytes = typeof part === "string" ? Buffer.from(part, "utf8") : Buffer.from(part);
+    const bytes =
+      typeof part === "string" ? Buffer.from(part, "utf8") : Buffer.from(part);
     if (bytes.byteLength > 65_535) {
       throw new Error("A capability coordinate exceeds its byte limit.");
     }
@@ -156,7 +161,10 @@ export function deriveOpaqueCapability(
   }
 
   return encodeBase64Url(
-    hmacSha256(key, frameParts([`citeapply-capability-v1/${purpose}`, ...coordinates])),
+    hmacSha256(
+      key,
+      frameParts([`citeapply-capability-v1/${purpose}`, ...coordinates]),
+    ),
   );
 }
 

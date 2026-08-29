@@ -1,6 +1,9 @@
 "use client";
 
-import { ReadUnavailableSchema } from "../contracts/outcomes.ts";
+import {
+  MutationUnavailableSchema,
+  ReadUnavailableSchema,
+} from "../contracts/outcomes.ts";
 import type { ToolInputByName, ToolName } from "../contracts/webmcp.ts";
 import type { CiteApplyToolDispatch } from "./descriptors.ts";
 
@@ -20,13 +23,42 @@ export type InvocationAuthority = Readonly<{
 
 export type AuthorityReader = () => InvocationAuthority;
 
-function unavailableResult(): unknown {
+const MUTATING_TOOLS = [
+  "apply_evidence_backed_answers",
+  "prepare_submission_review",
+] as const;
+
+function supportReference(): string {
+  const alphabet = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+  const bytes = crypto.getRandomValues(new Uint8Array(8));
+  let reference = "CA-";
+  for (const byte of bytes) reference += alphabet[byte % alphabet.length];
+  return reference;
+}
+
+/**
+ * An uncertain mutation must never be reported as a retry-safe read failure:
+ * the effect may already have committed, so the page reconciles instead.
+ */
+function unavailableResult(tool: ToolName): unknown {
+  if ((MUTATING_TOOLS as readonly string[]).includes(tool)) {
+    return MutationUnavailableSchema.parse({
+      ok: false,
+      error: {
+        code: "temporarily_unavailable",
+        message:
+          "CiteApply could not confirm this action. Checking the latest application.",
+        supportReference: supportReference(),
+        safeActions: ["reconcile_current_state"],
+      },
+    });
+  }
   return ReadUnavailableSchema.parse({
     ok: false,
     error: {
       code: "temporarily_unavailable",
       message: "CiteApply is temporarily unavailable.",
-      supportReference: "CA-00000000",
+      supportReference: supportReference(),
       safeActions: ["use_visible_application"],
     },
   });
@@ -62,7 +94,7 @@ export function createCiteApplyDispatch(
   ): Promise<unknown> => {
     const body = JSON.stringify({ tool: name, input });
     if (new TextEncoder().encode(body).byteLength > MAX_REQUEST_BYTES) {
-      return unavailableResult();
+      return unavailableResult(name);
     }
 
     let response: Response;
@@ -78,18 +110,18 @@ export function createCiteApplyDispatch(
       });
     } catch (error) {
       if (options.signal.aborted) throw error;
-      return unavailableResult();
+      return unavailableResult(name);
     }
 
     const contentType = response.headers.get("content-type") ?? "";
     if (!contentType.startsWith("application/json")) {
-      return unavailableResult();
+      return unavailableResult(name);
     }
 
     try {
       return (await response.json()) as unknown;
     } catch {
-      return unavailableResult();
+      return unavailableResult(name);
     }
   }) as CiteApplyToolDispatch;
 }

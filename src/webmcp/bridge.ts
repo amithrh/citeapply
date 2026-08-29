@@ -13,11 +13,7 @@ import {
 } from "./descriptors.ts";
 
 export type BridgeStatus =
-  | "idle"
-  | "registering"
-  | "registered"
-  | "unavailable"
-  | "disposed";
+  "idle" | "registering" | "registered" | "unavailable" | "disposed";
 
 export type BridgeSnapshot = Readonly<{
   generation: number;
@@ -98,7 +94,8 @@ export function createCiteApplyBridge(
   let active = false;
   let activeGeneration: number | undefined;
   let currentActivationToken: BridgeActivationToken | undefined;
-  let status: BridgeStatus = modelContext === undefined ? "unavailable" : "idle";
+  let status: BridgeStatus =
+    modelContext === undefined ? "unavailable" : "idle";
   let registration: Promise<BridgeSnapshot> | undefined;
 
   const snapshot = (): BridgeSnapshot =>
@@ -251,10 +248,7 @@ export function createCiteApplyBridge(
   if (modelContext === undefined) {
     unavailableBridgeByDispatch.set(dispatch, bridge);
   } else {
-    bridgeByModelContext.set(
-      modelContext,
-      Object.freeze({ dispatch, bridge }),
-    );
+    bridgeByModelContext.set(modelContext, Object.freeze({ dispatch, bridge }));
   }
   return bridge;
 }

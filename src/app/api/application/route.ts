@@ -35,6 +35,19 @@ import {
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
+const MAX_BODY_BYTES = 4096;
+
+/** Reads a bounded JSON body; a malformed or oversized body is never thrown. */
+async function readJsonBody(request: Request): Promise<unknown | null> {
+  const raw = await request.text();
+  if (Buffer.byteLength(raw, "utf8") > MAX_BODY_BYTES) return null;
+  try {
+    return JSON.parse(raw) as unknown;
+  } catch {
+    return null;
+  }
+}
+
 function failure(status: number, body: unknown): Response {
   return privateJsonResponse(body, { status });
 }
@@ -100,7 +113,9 @@ export async function POST(request: Request): Promise<Response> {
     return response;
   }
 
-  const parsed = ApplicationRequestSchema.safeParse(await request.json());
+  const body_ = await readJsonBody(request);
+  if (body_ === null) return invalidRequest();
+  const parsed = ApplicationRequestSchema.safeParse(body_);
   if (!parsed.success) return invalidRequest();
   const body = parsed.data;
 
@@ -156,7 +171,12 @@ export async function POST(request: Request): Promise<Response> {
           body.requestId,
           sha256(`${body.requestId} ${randomUUID()}`),
         );
-        const authority = await finalizeAuthority(client, keyring, taken, "session");
+        const authority = await finalizeAuthority(
+          client,
+          keyring,
+          taken,
+          "session",
+        );
         if (!authority.ok) return { status: "session_expired" } as const;
         return {
           status: "takeover",
@@ -168,9 +188,15 @@ export async function POST(request: Request): Promise<Response> {
         } as const;
       }
 
-      const authority = await finalizeAuthority(client, keyring, application, "page", {
-        pageCapability,
-      });
+      const authority = await finalizeAuthority(
+        client,
+        keyring,
+        application,
+        "page",
+        {
+          pageCapability,
+        },
+      );
       if (!authority.ok) {
         return authority.code === "session_expired"
           ? ({ status: "session_expired" } as const)
@@ -192,7 +218,7 @@ export async function POST(request: Request): Promise<Response> {
         parsedPacketOf(application),
         body.claimHandle,
       );
-      if (excerpt === null) return { status: "invalid_request" } as const;
+      if (excerpt === null) return { status: "evidence_unavailable" } as const;
       return {
         status: "evidence_excerpt",
         data: {
@@ -213,7 +239,16 @@ export async function POST(request: Request): Promise<Response> {
 
   if (result.status === "session_expired") return sessionExpired();
   if (result.status === "stale_page") return stalePage();
-  if (result.status === "invalid_request") return invalidRequest();
+  if (result.status === "evidence_unavailable") {
+    return failure(409, {
+      ok: false,
+      error: {
+        code: "evidence_unavailable",
+        message: "That evidence is not currently available for this field.",
+        safeActions: ["reread_state_and_requirements"],
+      },
+    });
+  }
   if (result.status === "challenge") {
     return privateJsonResponse({
       ok: true,

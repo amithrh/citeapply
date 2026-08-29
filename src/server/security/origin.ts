@@ -64,7 +64,10 @@ export function loadOriginPolicy(
   };
 }
 
-function requireExactRequestUrl(requestUrl: string, policy: OriginPolicy): void {
+function requireExactRequestUrl(
+  requestUrl: string,
+  policy: OriginPolicy,
+): void {
   let url: URL;
   try {
     url = new URL(requestUrl);

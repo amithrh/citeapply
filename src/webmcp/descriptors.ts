@@ -54,7 +54,10 @@ function assertDescriptor(descriptor: CiteApplyDescriptor): void {
     throw new Error(`WebMCP input schema is not closed: ${descriptor.name}`);
   }
   for (const [parameter, value] of Object.entries(schema.properties ?? {})) {
-    if (typeof value.description !== "string" || value.description.length >= 150) {
+    if (
+      typeof value.description !== "string" ||
+      value.description.length >= 150
+    ) {
       throw new Error(
         `WebMCP parameter description is missing or too long: ${descriptor.name}.${parameter}`,
       );
@@ -76,18 +79,19 @@ function throwIfAborted(signal: AbortSignal): void {
   }
 }
 
-export const CITEAPPLY_DESCRIPTORS: readonly CiteApplyDescriptor[] = Object.freeze(
-  TOOL_NAMES.map((name) => {
-    const descriptor: CiteApplyDescriptor = Object.freeze({
-      name,
-      description: TOOL_DESCRIPTIONS[name],
-      inputSchema: deepFreezeJson(closedJsonSchema(TOOL_INPUT_SCHEMAS[name])),
-      annotations: Object.freeze({ ...TOOL_ANNOTATIONS[name] }),
-    });
-    assertDescriptor(descriptor);
-    return descriptor;
-  }),
-);
+export const CITEAPPLY_DESCRIPTORS: readonly CiteApplyDescriptor[] =
+  Object.freeze(
+    TOOL_NAMES.map((name) => {
+      const descriptor: CiteApplyDescriptor = Object.freeze({
+        name,
+        description: TOOL_DESCRIPTIONS[name],
+        inputSchema: deepFreezeJson(closedJsonSchema(TOOL_INPUT_SCHEMAS[name])),
+        annotations: Object.freeze({ ...TOOL_ANNOTATIONS[name] }),
+      });
+      assertDescriptor(descriptor);
+      return descriptor;
+    }),
+  );
 
 export function materializeModelContextTools(
   dispatch: CiteApplyToolDispatch,

@@ -41,9 +41,7 @@ export function ApplicationController({
   const [assistance, setAssistance] =
     useState<AssistanceMode>(initialAssistance);
   const [disclosureOpen, setDisclosureOpen] = useState(false);
-  const [busyAction, setBusyAction] = useState<"allow" | "revoke" | null>(
-    null,
-  );
+  const [busyAction, setBusyAction] = useState<"allow" | "revoke" | null>(null);
   const [status, setStatus] = useState(INITIAL_STATUS[initialAssistance]);
   const busyRef = useRef(false);
   const operationSequenceRef = useRef(0);

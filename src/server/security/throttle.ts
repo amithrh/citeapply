@@ -40,6 +40,8 @@ export async function runPublicTransportThrottle(
   return projectTransportResult(route, await runRatePreflight(pool, route));
 }
 
-export function retryAfterHeader(result: TransportThrottleResult): string | null {
+export function retryAfterHeader(
+  result: TransportThrottleResult,
+): string | null {
   return result.ok ? null : String(result.retryAfterSeconds);
 }

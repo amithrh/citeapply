@@ -23,7 +23,25 @@ import { projectHumanSnapshot } from "../../../../server/services/application.ts
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-function failure(status: number, code: string, message: string, safeAction: string) {
+const MAX_BODY_BYTES = 8192;
+
+/** Reads a bounded JSON body; a malformed or oversized body is never thrown. */
+async function readJsonBody(request: Request): Promise<unknown | null> {
+  const raw = await request.text();
+  if (Buffer.byteLength(raw, "utf8") > MAX_BODY_BYTES) return null;
+  try {
+    return JSON.parse(raw) as unknown;
+  } catch {
+    return null;
+  }
+}
+
+function failure(
+  status: number,
+  code: string,
+  message: string,
+  safeAction: string,
+) {
   return privateJsonResponse(
     { ok: false, error: { code, message, safeActions: [safeAction] } },
     { status },
@@ -48,7 +66,10 @@ export async function POST(request: Request): Promise<Response> {
     throw error;
   }
 
-  const throttle = await runPublicTransportThrottle(getDatabasePool(), "actions");
+  const throttle = await runPublicTransportThrottle(
+    getDatabasePool(),
+    "actions",
+  );
   if (!throttle.ok) {
     const response = failure(
       429,
@@ -60,8 +81,9 @@ export async function POST(request: Request): Promise<Response> {
     return response;
   }
 
-  const parsed = HumanActionRequestSchema.safeParse(await request.json());
-  if (!parsed.success) {
+  const body_ = await readJsonBody(request);
+  const parsed = HumanActionRequestSchema.safeParse(body_);
+  if (body_ === null || !parsed.success) {
     return failure(
       400,
       "invalid_request",
@@ -128,12 +150,18 @@ export async function POST(request: Request): Promise<Response> {
         "start_new_synthetic_demo",
       );
     case "stale_page":
-    case "consent_required":
       return failure(
         403,
         "stale_page",
         "This page is no longer current.",
         "reload_current_application",
+      );
+    case "consent_required":
+      return failure(
+        403,
+        "consent_required",
+        "Use the visible CiteApply application to continue.",
+        "use_visible_application",
       );
     case "stale_state":
       return failure(

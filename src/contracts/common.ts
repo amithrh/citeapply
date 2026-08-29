@@ -74,7 +74,9 @@ export const UuidV4Schema = z.string().regex(UUID_V4_PATTERN);
 export const Sha256Schema = z.string().regex(SHA256_PATTERN);
 export const ClaimHandleSchema = z.string().regex(BASE64URL_128_PATTERN);
 export const OpaqueReferenceSchema = z.string().regex(BASE64URL_128_PATTERN);
-export const SupportReferenceSchema = z.string().regex(SUPPORT_REFERENCE_PATTERN);
+export const SupportReferenceSchema = z
+  .string()
+  .regex(SUPPORT_REFERENCE_PATTERN);
 export const Rfc3339InstantSchema = z
   .string()
   .regex(RFC3339_INSTANT_PATTERN)
@@ -207,7 +209,9 @@ const MISSING_EVIDENCE_ORDER = new Map<FieldId, number>(
 
 function blockerOrder(blocker: ReadinessBlockerLike): number {
   if (blocker.code === "missing_evidence" && blocker.field !== undefined) {
-    return MISSING_EVIDENCE_ORDER.get(blocker.field) ?? Number.POSITIVE_INFINITY;
+    return (
+      MISSING_EVIDENCE_ORDER.get(blocker.field) ?? Number.POSITIVE_INFINITY
+    );
   }
   if (blocker.code === "conflict_requires_human") return 20;
   if (blocker.code === "invalid_email") return 21;
@@ -259,7 +263,7 @@ function canonicalBlockerArray<const T extends z.ZodType>(
           blockers as readonly ReadinessBlockerLike[],
         ),
       {
-      message: "Readiness blockers must be unique and in canonical order.",
+        message: "Readiness blockers must be unique and in canonical order.",
       },
     );
 }
@@ -284,12 +288,8 @@ export const NonEmptyAgentReadinessBlockersSchema = canonicalBlockerArray(
 export type DomainReadinessBlocker = z.infer<
   typeof DomainReadinessBlockerSchema
 >;
-export type AgentReadinessBlocker = z.infer<
-  typeof AgentReadinessBlockerSchema
->;
-export type HumanReadinessBlocker = z.infer<
-  typeof HumanReadinessBlockerSchema
->;
+export type AgentReadinessBlocker = z.infer<typeof AgentReadinessBlockerSchema>;
+export type HumanReadinessBlocker = z.infer<typeof HumanReadinessBlockerSchema>;
 
 export const DOCUMENT_METADATA = [
   {
@@ -309,9 +309,9 @@ export const DOCUMENT_METADATA = [
   },
 ] as const;
 
-function agentDocumentSchema<const M extends (typeof DOCUMENT_METADATA)[number]>(
-  metadata: M,
-) {
+function agentDocumentSchema<
+  const M extends (typeof DOCUMENT_METADATA)[number],
+>(metadata: M) {
   return z
     .object({
       code: z.literal(metadata.code),
@@ -363,7 +363,11 @@ function numericEvidenceClaimSchema<
   const K extends "household_size" | "annual_household_income",
   const D extends "household" | "income",
 >(kind: K, document: D) {
-  const value = z.number().int().safe().min(kind === "household_size" ? 1 : 0);
+  const value = z
+    .number()
+    .int()
+    .safe()
+    .min(kind === "household_size" ? 1 : 0);
   return z
     .object({
       ...EvidenceClaimBaseShape,
@@ -433,16 +437,17 @@ export const EvidenceClaimsV1Schema = z
     IncomeStatementEvidenceClaimSchema,
   ])
   .refine(
-    (claims) => new Set(claims.map(({ claimHandle }) => claimHandle)).size === 8,
+    (claims) =>
+      new Set(claims.map(({ claimHandle }) => claimHandle)).size === 8,
     { message: "Evidence claim handles must be unique." },
   );
 
 export type AgentDocument = z.infer<typeof AgentDocumentSchema>;
 export type EvidenceClaim = z.infer<typeof EvidenceClaimSchema>;
 
-function parsedDocumentSchema<const M extends (typeof DOCUMENT_METADATA)[number]>(
-  metadata: M,
-) {
+function parsedDocumentSchema<
+  const M extends (typeof DOCUMENT_METADATA)[number],
+>(metadata: M) {
   return z
     .object({
       code: z.literal(metadata.code),
@@ -455,8 +460,12 @@ function parsedDocumentSchema<const M extends (typeof DOCUMENT_METADATA)[number]
     .strict();
 }
 
-const EnrollmentParsedDocumentSchema = parsedDocumentSchema(DOCUMENT_METADATA[0]);
-const HouseholdParsedDocumentSchema = parsedDocumentSchema(DOCUMENT_METADATA[1]);
+const EnrollmentParsedDocumentSchema = parsedDocumentSchema(
+  DOCUMENT_METADATA[0],
+);
+const HouseholdParsedDocumentSchema = parsedDocumentSchema(
+  DOCUMENT_METADATA[1],
+);
 const IncomeParsedDocumentSchema = parsedDocumentSchema(DOCUMENT_METADATA[2]);
 
 export const ParsedDocumentSchema = z.union([
@@ -515,7 +524,11 @@ function parsedNumericClaimSchema<
     .object({
       ...parsedClaimBase(metadata),
       kind: z.literal(kind),
-      normalizedValue: z.number().int().safe().min(kind === "household_size" ? 1 : 0),
+      normalizedValue: z
+        .number()
+        .int()
+        .safe()
+        .min(kind === "household_size" ? 1 : 0),
     })
     .strict();
 }
@@ -578,11 +591,13 @@ export const ParsedClaimsV1Schema = z
     IncomeStatementParsedClaimSchema,
   ])
   .refine(
-    (claims) => new Set(claims.map(({ claimHandle }) => claimHandle)).size === 8,
+    (claims) =>
+      new Set(claims.map(({ claimHandle }) => claimHandle)).size === 8,
     { message: "Parsed claim handles must be unique." },
   )
   .refine(
-    (claims) => new Set(claims.map(({ fingerprint }) => fingerprint)).size === 8,
+    (claims) =>
+      new Set(claims.map(({ fingerprint }) => fingerprint)).size === 8,
     { message: "Parsed claim fingerprints must be unique." },
   );
 
@@ -596,7 +611,10 @@ export const ParsedPacketV1Schema = z
   .strict()
   .superRefine(({ packet, documents, claims }, context) => {
     if (new Set(documents.map(({ documentHash }) => documentHash)).size !== 3) {
-      context.addIssue({ code: "custom", message: "Document hashes must be unique." });
+      context.addIssue({
+        code: "custom",
+        message: "Document hashes must be unique.",
+      });
     }
     for (const [index, claim] of claims.entries()) {
       const document = documents.find(({ code }) => code === claim.document);
@@ -712,8 +730,12 @@ const ResolvedIncomeContentFieldSchema = z
   .strict()
   .refine(
     ({ evidence, resolution }) =>
-      evidence[0] !== evidence[1] && evidence.includes(resolution.chosenFingerprint),
-    { message: "The chosen income fingerprint must identify one distinct source." },
+      evidence[0] !== evidence[1] &&
+      evidence.includes(resolution.chosenFingerprint),
+    {
+      message:
+        "The chosen income fingerprint must identify one distinct source.",
+    },
   );
 const IncomeContentFieldSchema = z.union([
   SupportedIncomeContentFieldSchema,
@@ -771,9 +793,7 @@ export const ApplicationContentV1Schema = z
 export type ApplicationContentField = z.infer<
   typeof ApplicationContentFieldSchema
 >;
-export type ApplicationContentV1 = z.infer<
-  typeof ApplicationContentV1Schema
->;
+export type ApplicationContentV1 = z.infer<typeof ApplicationContentV1Schema>;
 
 export const AuthorityMetaV1Schema = VersionsSchema.extend({
   pageEpoch: PageEpochSchema,

@@ -8,7 +8,9 @@ import {
 } from "./common.ts";
 
 function failureSchema<const T extends z.ZodRawShape>(error: T) {
-  return z.object({ ok: z.literal(false), error: z.object(error).strict() }).strict();
+  return z
+    .object({ ok: z.literal(false), error: z.object(error).strict() })
+    .strict();
 }
 
 export const SessionExpiredFailureSchema = failureSchema({
@@ -44,7 +46,9 @@ export const RequestReuseMismatchFailureSchema = failureSchema({
 
 export const EvidenceUnavailableFailureSchema = failureSchema({
   code: z.literal("evidence_unavailable"),
-  message: z.literal("That evidence is not currently available for this field."),
+  message: z.literal(
+    "That evidence is not currently available for this field.",
+  ),
   safeActions: z.tuple([z.literal("reread_state_and_requirements")]),
 });
 

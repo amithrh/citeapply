@@ -29,7 +29,8 @@ import {
 } from "./packet-registry.server.ts";
 
 const SYNTHETIC_MARKER = "SYNTHETIC — NOT VALID";
-const SYNTHETIC_CONTEXT = "Horizon Education Aid — fictional demonstration only";
+const SYNTHETIC_CONTEXT =
+  "Horizon Education Aid — fictional demonstration only";
 const SYNTHETIC_DISCLAIMER =
   "Fictional demo. Do not use as an identity, enrollment, or financial record.";
 const MAX_STRING_VALUE_CHARACTERS = 160;
@@ -128,8 +129,14 @@ function readAnchoredValue(
 ): AnchoredValue {
   try {
     const anchor = findUniqueLabelledValue(document.parsed.pageText, label);
-    if (sliceCharacterRange(document.parsed.pageText, anchor.range) !== anchor.value) {
-      extractionFailure("invalid_document_structure", document.parsed.documentClass);
+    if (
+      sliceCharacterRange(document.parsed.pageText, anchor.range) !==
+      anchor.value
+    ) {
+      extractionFailure(
+        "invalid_document_structure",
+        document.parsed.documentClass,
+      );
     }
     return Object.freeze({ value: anchor.value, range: anchor.range });
   } catch (error) {
@@ -391,7 +398,10 @@ async function parseDocument(
     if (error instanceof PdfAdapterError) {
       return extractionFailure("document_unavailable", error.documentClass);
     }
-    return extractionFailure("document_unavailable", registration.documentClass);
+    return extractionFailure(
+      "document_unavailable",
+      registration.documentClass,
+    );
   }
 
   const spec = documentSpec(registration.documentClass);
@@ -406,12 +416,18 @@ async function parseDocument(
   };
   const result = ParsedDocumentSchema.safeParse(candidate);
   if (!result.success) {
-    return extractionFailure("invalid_document_structure", parsed.documentClass);
+    return extractionFailure(
+      "invalid_document_structure",
+      parsed.documentClass,
+    );
   }
   return Object.freeze({ parsed, document: result.data, registration });
 }
 
-function validateIncomeRelationship(packet: PacketCode, claims: readonly ParsedClaim[]): void {
+function validateIncomeRelationship(
+  packet: PacketCode,
+  claims: readonly ParsedClaim[],
+): void {
   const incomeValues: number[] = [];
   for (const claim of claims) {
     if (claim.kind === "annual_household_income") {
@@ -430,7 +446,9 @@ function validateIncomeRelationship(packet: PacketCode, claims: readonly ParsedC
   }
 }
 
-export async function parseRegisteredPacket(packet: PacketCode): Promise<ParsedPacketV1> {
+export async function parseRegisteredPacket(
+  packet: PacketCode,
+): Promise<ParsedPacketV1> {
   if (packet !== "supported" && packet !== "conflict") {
     extractionFailure("invalid_packet");
   }

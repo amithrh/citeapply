@@ -1,3 +1,7 @@
+import {
+  ServerFailureSchema,
+  httpStatusForFailure,
+} from "../../../contracts/outcomes.ts";
 import { ToolNameSchema } from "../../../contracts/webmcp.ts";
 import { getDatabasePool } from "../../../server/db/pool.ts";
 import { privateJsonResponse } from "../../../server/security/headers.ts";
@@ -56,7 +60,10 @@ export async function POST(request: Request): Promise<Response> {
     throw error;
   }
 
-  const throttle = await runPublicTransportThrottle(getDatabasePool(), "webmcp");
+  const throttle = await runPublicTransportThrottle(
+    getDatabasePool(),
+    "webmcp",
+  );
   if (!throttle.ok) {
     const response = toolFailure(
       429,
@@ -118,6 +125,8 @@ export async function POST(request: Request): Promise<Response> {
     },
   );
 
-  const failed = (result as { ok?: unknown }).ok === false;
-  return privateJsonResponse(result, { status: failed ? 409 : 200 });
+  const failure_ = ServerFailureSchema.safeParse(result);
+  return privateJsonResponse(result, {
+    status: failure_.success ? httpStatusForFailure(failure_.data) : 200,
+  });
 }

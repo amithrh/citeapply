@@ -36,7 +36,10 @@ export class PdfAdapterError extends Error {
   readonly code: PdfAdapterErrorCode;
   readonly documentClass: RegisteredDocumentClass;
 
-  constructor(code: PdfAdapterErrorCode, documentClass: RegisteredDocumentClass) {
+  constructor(
+    code: PdfAdapterErrorCode,
+    documentClass: RegisteredDocumentClass,
+  ) {
     super("Registered PDF could not be parsed.");
     this.name = "PdfAdapterError";
     this.code = code;
@@ -102,7 +105,12 @@ async function readBoundedBytes(
     handle = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
     let offset = 0;
     while (offset < capacity) {
-      const { bytesRead } = await handle.read(buffer, offset, capacity - offset, offset);
+      const { bytesRead } = await handle.read(
+        buffer,
+        offset,
+        capacity - offset,
+        offset,
+      );
       if (bytesRead === 0) {
         break;
       }
@@ -136,7 +144,10 @@ function normalizedPageText(
       continue;
     }
     const textItem = item as { str: unknown; hasEOL?: unknown };
-    if (typeof textItem.str !== "string" || typeof textItem.hasEOL !== "boolean") {
+    if (
+      typeof textItem.str !== "string" ||
+      typeof textItem.hasEOL !== "boolean"
+    ) {
       fail("malformed_document", registration);
     }
     rawCharacters += textItem.str.length + (textItem.hasEOL ? 1 : 0);

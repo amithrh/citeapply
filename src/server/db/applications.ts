@@ -6,7 +6,8 @@ const SHA256_BYTES = 32;
 const MAX_APPLICATIONS = 512;
 const PARSED_PACKET_MAX_BYTES = 32 * 1_024;
 const DRAFT_MAX_BYTES = 24 * 1_024;
-const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_V4 =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export type PacketCode = "supported" | "conflict";
 export type ApplicationStage = "draft" | "review" | "submitted";
@@ -91,7 +92,11 @@ function requireDigest(value: Uint8Array, label: string): Buffer {
   return Buffer.from(value);
 }
 
-function requireJsonObject(value: unknown, maximumBytes: number, label: string): void {
+function requireJsonObject(
+  value: unknown,
+  maximumBytes: number,
+  label: string,
+): void {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     throw new DatabaseInvariantError(`${label} must be a JSON object.`);
   }
@@ -112,10 +117,13 @@ function requireJsonObject(value: unknown, maximumBytes: number, label: string):
 }
 
 function databaseDate(value: Date | string, label: string): Date {
-  const date = value instanceof Date ? new Date(value.getTime()) : new Date(value);
+  const date =
+    value instanceof Date ? new Date(value.getTime()) : new Date(value);
 
   if (!Number.isFinite(date.getTime())) {
-    throw new DatabaseInvariantError(`${label} is not a valid database timestamp.`);
+    throw new DatabaseInvariantError(
+      `${label} is not a valid database timestamp.`,
+    );
   }
 
   return date;
@@ -129,7 +137,9 @@ function safeInteger(
   const converted = typeof value === "number" ? value : Number(value);
 
   if (!Number.isSafeInteger(converted) || converted < minimum) {
-    throw new DatabaseInvariantError(`${label} is outside the supported integer range.`);
+    throw new DatabaseInvariantError(
+      `${label} is outside the supported integer range.`,
+    );
   }
 
   return converted;
@@ -166,7 +176,9 @@ function mapApplication(row: ApplicationQueryRow): StoredApplication {
   };
 }
 
-const startParserLeaseBrand: unique symbol = Symbol("citeapply-start-parser-lease");
+const startParserLeaseBrand: unique symbol = Symbol(
+  "citeapply-start-parser-lease",
+);
 
 export type StartParserLease = Readonly<{
   client: PoolClient;
@@ -175,7 +187,9 @@ export type StartParserLease = Readonly<{
 
 function assertLease(client: PoolClient, lease: StartParserLease): void {
   if (lease.client !== client || lease[startParserLeaseBrand] !== true) {
-    throw new DatabaseInvariantError("The Start parser mutex is not held by this client.");
+    throw new DatabaseInvariantError(
+      "The Start parser mutex is not held by this client.",
+    );
   }
 }
 
@@ -223,7 +237,9 @@ export async function findStartCoordinateMatches(
   );
 
   if (result.rows.length > 2) {
-    throw new DatabaseInvariantError("Start coordinates matched too many applications.");
+    throw new DatabaseInvariantError(
+      "Start coordinates matched too many applications.",
+    );
   }
 
   return result.rows.map(mapApplication);
@@ -250,7 +266,9 @@ export async function cleanupOneExpiredApplication(
   );
 
   if (result.rows.length > 1) {
-    throw new DatabaseInvariantError("Expired cleanup deleted more than one application.");
+    throw new DatabaseInvariantError(
+      "Expired cleanup deleted more than one application.",
+    );
   }
 
   return result.rows.length === 1;
@@ -266,7 +284,10 @@ export async function prepareNewApplicationStart(
   lease: StartParserLease,
 ): Promise<StartCapacity> {
   assertLease(client, lease);
-  const deletedExpiredApplication = await cleanupOneExpiredApplication(client, lease);
+  const deletedExpiredApplication = await cleanupOneExpiredApplication(
+    client,
+    lease,
+  );
   const countResult = await client.query<{ application_count: number }>(
     "SELECT count(*)::integer AS application_count FROM applications",
   );
@@ -275,7 +296,10 @@ export async function prepareNewApplicationStart(
     "PostgreSQL did not return the application count.",
   );
 
-  if (!Number.isSafeInteger(row.application_count) || row.application_count < 0) {
+  if (
+    !Number.isSafeInteger(row.application_count) ||
+    row.application_count < 0
+  ) {
     throw new DatabaseInvariantError("The application count is invalid.");
   }
 
@@ -310,7 +334,11 @@ export async function insertApplication(
     "startRequestDigest",
   );
   const sessionDigest = requireDigest(input.sessionDigest, "sessionDigest");
-  requireJsonObject(input.parsedPacket, PARSED_PACKET_MAX_BYTES, "parsedPacket");
+  requireJsonObject(
+    input.parsedPacket,
+    PARSED_PACKET_MAX_BYTES,
+    "parsedPacket",
+  );
   requireJsonObject(input.draft, DRAFT_MAX_BYTES, "draft");
 
   if (input.packetCode !== "supported" && input.packetCode !== "conflict") {
@@ -366,7 +394,10 @@ export async function insertApplication(
     ],
   );
   return mapApplication(
-    requireSingleRow(result.rows, "Application insertion did not return one row."),
+    requireSingleRow(
+      result.rows,
+      "Application insertion did not return one row.",
+    ),
   );
 }
 
@@ -384,7 +415,9 @@ export async function lockApplicationBySessionDigest(
   );
 
   if (result.rows.length > 1) {
-    throw new DatabaseInvariantError("A session digest matched multiple applications.");
+    throw new DatabaseInvariantError(
+      "A session digest matched multiple applications.",
+    );
   }
 
   return result.rows[0] === undefined ? null : mapApplication(result.rows[0]);
@@ -404,7 +437,9 @@ export async function lockApplicationById(
   );
 
   if (result.rows.length > 1) {
-    throw new DatabaseInvariantError("An application ID matched multiple rows.");
+    throw new DatabaseInvariantError(
+      "An application ID matched multiple rows.",
+    );
   }
 
   return result.rows[0] === undefined ? null : mapApplication(result.rows[0]);
@@ -433,7 +468,10 @@ export async function saveLockedApplicationState(
   if (!Number.isSafeInteger(input.revision) || input.revision < 0) {
     throw new DatabaseInvariantError("revision is invalid.");
   }
-  if (!Number.isSafeInteger(input.requirementsVersion) || input.requirementsVersion < 1) {
+  if (
+    !Number.isSafeInteger(input.requirementsVersion) ||
+    input.requirementsVersion < 1
+  ) {
     throw new DatabaseInvariantError("requirementsVersion is invalid.");
   }
   if (!Number.isSafeInteger(input.pageEpoch) || input.pageEpoch < 0) {
@@ -462,13 +500,19 @@ export async function saveLockedApplicationState(
         );
 
   if ((input.pageBootstrapRequestId === null) !== (pageDigest === null)) {
-    throw new DatabaseInvariantError("The page replay coordinate is incomplete.");
+    throw new DatabaseInvariantError(
+      "The page replay coordinate is incomplete.",
+    );
   }
   if (input.stage !== "draft" && input.consentRequestId !== null) {
-    throw new DatabaseInvariantError("Consent cannot remain active outside Draft.");
+    throw new DatabaseInvariantError(
+      "Consent cannot remain active outside Draft.",
+    );
   }
   if ((input.stage === "draft") !== (input.currentReviewId === null)) {
-    throw new DatabaseInvariantError("The Review link does not match the stage.");
+    throw new DatabaseInvariantError(
+      "The Review link does not match the stage.",
+    );
   }
 
   const result = await client.query<ApplicationQueryRow>(
@@ -500,6 +544,9 @@ export async function saveLockedApplicationState(
   );
 
   return mapApplication(
-    requireSingleRow(result.rows, "The locked Application update affected no row."),
+    requireSingleRow(
+      result.rows,
+      "The locked Application update affected no row.",
+    ),
   );
 }

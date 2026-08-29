@@ -47,9 +47,9 @@ function draftOfSnapshot(snapshot: HumanSnapshotV1): HumanDraftV1 | null {
 export default function ApplicationPage() {
   const authorityRef = useRef<Authority>(INITIAL_AUTHORITY);
   const [draft, setDraft] = useState<HumanDraftV1 | null>(null);
-  const [assistance, setAssistance] = useState<"off" | "allowed" | "unavailable">(
-    "off",
-  );
+  const [assistance, setAssistance] = useState<
+    "off" | "allowed" | "unavailable"
+  >("off");
   const [notice, setNotice] = useState("Establishing this application page…");
   const [bridgeStatus, setBridgeStatus] = useState("not registered");
 
@@ -254,9 +254,7 @@ export default function ApplicationPage() {
                   <dt>{field.field.replaceAll("_", " ")}</dt>
                   <dd>
                     {field.status === "ready"
-                      ? String(
-                          "value" in field ? field.value : "linked",
-                        )
+                      ? String("value" in field ? field.value : "linked")
                       : field.status === "conflict"
                         ? "Two accepted sources disagree. You decide."
                         : field.status === "not_required"

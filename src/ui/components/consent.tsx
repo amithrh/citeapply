@@ -122,8 +122,8 @@ export function ConsentDialog({
     >
       <h2 id={headingId}>Allow assisted access?</h2>
       <p id={descriptionId}>
-        CiteApply can let an assistant help link synthetic source records to this
-        draft. Assistance is optional; every application control remains
+        CiteApply can let an assistant help link synthetic source records to
+        this draft. Assistance is optional; every application control remains
         available manually.
       </p>
       <p id={scopeId}>{ASSISTED_ACCESS_CATALOG.purpose}</p>
@@ -148,7 +148,9 @@ export function ConsentDialog({
       </section>
 
       <section aria-labelledby={`${headingId}-excluded-data`}>
-        <h3 id={`${headingId}-excluded-data`}>Information the tools will not receive</h3>
+        <h3 id={`${headingId}-excluded-data`}>
+          Information the tools will not receive
+        </h3>
         <ul>
           {ASSISTED_ACCESS_CATALOG.excludedData.map((category) => (
             <li key={category}>{category}</li>
@@ -157,7 +159,9 @@ export function ConsentDialog({
       </section>
 
       <section aria-labelledby={`${headingId}-excluded-actions`}>
-        <h3 id={`${headingId}-excluded-actions`}>Actions the tools cannot take</h3>
+        <h3 id={`${headingId}-excluded-actions`}>
+          Actions the tools cannot take
+        </h3>
         <ul>
           {ASSISTED_ACCESS_CATALOG.excludedActions.map((action) => (
             <li key={action}>{action}</li>
@@ -173,10 +177,11 @@ export function ConsentDialog({
       <details>
         <summary>Technical details</summary>
         <p>
-          Access is limited to the current application page and session. Refresh,
-          a newer-page takeover, session expiry, or successful Review preparation
-          clears it. A server-authorized in-flight result may arrive after Revoke;
-          an authority loss that wins first returns no protected result.
+          Access is limited to the current application page and session.
+          Refresh, a newer-page takeover, session expiry, or successful Review
+          preparation clears it. A server-authorized in-flight result may arrive
+          after Revoke; an authority loss that wins first returns no protected
+          result.
         </p>
       </details>
 

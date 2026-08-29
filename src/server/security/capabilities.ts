@@ -10,12 +10,11 @@ import {
 } from "./keys.ts";
 
 const BOOTSTRAP_LIFETIME_MS = 5 * 60 * 1_000;
-const BOOTSTRAP_TOKEN = /^b1\.([A-Za-z0-9_-]{22})\.([0-9]{1,13})\.([A-Za-z0-9_-]{43})$/;
+const BOOTSTRAP_TOKEN =
+  /^b1\.([A-Za-z0-9_-]{22})\.([0-9]{1,13})\.([A-Za-z0-9_-]{43})$/;
 
 export type AuthorityFailureCode =
-  | "session_expired"
-  | "stale_page"
-  | "consent_required";
+  "session_expired" | "stale_page" | "consent_required";
 
 export type AuthorityFailure = Readonly<{
   ok: false;
@@ -165,7 +164,9 @@ export function evaluateFinalAuthority(
     return { ok: true, clock };
   }
 
-  if (!pageCapabilityIsCurrent(keyring, application, credentials.pageCapability)) {
+  if (
+    !pageCapabilityIsCurrent(keyring, application, credentials.pageCapability)
+  ) {
     return { ok: false, code: "stale_page" };
   }
 
@@ -225,8 +226,7 @@ export type BootstrapChallenge = Readonly<{
 }>;
 
 export type BootstrapChallengeResult =
-  | Readonly<{ ok: true; data: BootstrapChallenge }>
-  | AuthorityFailure;
+  Readonly<{ ok: true; data: BootstrapChallenge }> | AuthorityFailure;
 
 export async function issueBootstrapChallenge(
   client: PoolClient,
@@ -331,7 +331,9 @@ export async function finalizeBootstrapChallenge(
     return { ok: false, code: "session_expired" };
   }
 
-  if (!verifyBootstrapChallenge(keyring, lockedApplication, challenge, serverNow)) {
+  if (
+    !verifyBootstrapChallenge(keyring, lockedApplication, challenge, serverNow)
+  ) {
     return { ok: false, code: "invalid_challenge" };
   }
 

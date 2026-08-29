@@ -45,9 +45,7 @@ export function requirementForField(field: FieldId): StaticRequirement {
   return requirement;
 }
 
-export function activeFieldIds(
-  dependencyIsSaved: boolean,
-): readonly FieldId[] {
+export function activeFieldIds(dependencyIsSaved: boolean): readonly FieldId[] {
   return FIELD_ORDER.filter(
     (field) => dependencyIsSaved || !isConditionalField(field),
   );

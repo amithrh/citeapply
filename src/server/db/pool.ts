@@ -17,11 +17,7 @@ export type PoolFactoryOptions = Readonly<{
 type ErrorWithCode = Readonly<{ code?: unknown }>;
 
 function safeErrorCode(error: unknown): string | null {
-  if (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error
-  ) {
+  if (typeof error === "object" && error !== null && "code" in error) {
     const code = (error as ErrorWithCode).code;
     if (typeof code !== "string") {
       return null;

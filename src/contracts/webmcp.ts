@@ -99,7 +99,9 @@ export const GetApplicationStateInputSchema = z
   .object({
     mode: z
       .enum(["redacted", "protected"])
-      .describe("Use redacted before consent and protected after visible CiteApply consent."),
+      .describe(
+        "Use redacted before consent and protected after visible CiteApply consent.",
+      ),
   })
   .strict()
   .describe("Choose the disclosure level for the saved application state.");
@@ -108,7 +110,9 @@ export const GetFormRequirementsInputSchema = z
   .object({
     mode: z
       .enum(["all", "active"])
-      .describe("Use all for static rules or active for the current consent-protected fields."),
+      .describe(
+        "Use all for static rules or active for the current consent-protected fields.",
+      ),
   })
   .strict()
   .describe("Choose static all-field rules or current active-field rules.");
@@ -129,16 +133,20 @@ const fieldOrder = new Map<FieldId, number>(
 export const AssistedChangeSchema = z.discriminatedUnion("kind", [
   z
     .object({
-      kind: z.literal("bind_claim").describe("Link one evidence claim to its matching field."),
-      field: z.enum([
-        "legal_name",
-        "student_id",
-        "institution",
-        "dependency",
-        "guardian_name",
-        "household_size",
-        "annual_household_income",
-      ]).describe("Evidence-backed field to link."),
+      kind: z
+        .literal("bind_claim")
+        .describe("Link one evidence claim to its matching field."),
+      field: z
+        .enum([
+          "legal_name",
+          "student_id",
+          "institution",
+          "dependency",
+          "guardian_name",
+          "household_size",
+          "annual_household_income",
+        ])
+        .describe("Evidence-backed field to link."),
       claimHandle: z
         .string()
         .regex(/^[A-Za-z0-9_-]{22}$/)
@@ -147,13 +155,17 @@ export const AssistedChangeSchema = z.discriminatedUnion("kind", [
     .strict(),
   z
     .object({
-      kind: z.literal("propose_email").describe("Propose the fixed synthetic email."),
+      kind: z
+        .literal("propose_email")
+        .describe("Propose the fixed synthetic email."),
       field: z
         .literal("preferred_contact_email")
         .describe("The only field that accepts the synthetic email proposal."),
       value: z
         .literal("anaya.rao@example.test")
-        .describe("The fixed synthetic .test email; the applicant must still declare it."),
+        .describe(
+          "The fixed synthetic .test email; the applicant must still declare it.",
+        ),
     })
     .strict(),
 ]);
@@ -189,22 +201,29 @@ export const AssistedChangesSchema = z
 
 export const ApplyEvidenceBackedAnswersInputSchema = z
   .object({
-    requestId: UuidV4Schema.describe("Fresh lowercase UUID v4 for this atomic request."),
+    requestId: UuidV4Schema.describe(
+      "Fresh lowercase UUID v4 for this atomic request.",
+    ),
     expectedApplicationRevision: SafeRevisionSchema.describe(
       "Application revision returned by the latest protected read.",
     ),
     expectedRequirementsVersion: PositiveRequirementsVersionSchema.describe(
       "Requirements version returned by the latest protected read.",
     ),
-    changes: AssistedChangesSchema
-      .describe("One to eight distinct field changes applied atomically."),
+    changes: AssistedChangesSchema.describe(
+      "One to eight distinct field changes applied atomically.",
+    ),
   })
   .strict()
-  .describe("Apply a bounded evidence-backed batch or fixed synthetic email proposal.");
+  .describe(
+    "Apply a bounded evidence-backed batch or fixed synthetic email proposal.",
+  );
 
 export const PrepareSubmissionReviewInputSchema = z
   .object({
-    requestId: UuidV4Schema.describe("Fresh lowercase UUID v4 for this preparation request."),
+    requestId: UuidV4Schema.describe(
+      "Fresh lowercase UUID v4 for this preparation request.",
+    ),
     expectedApplicationRevision: SafeRevisionSchema.describe(
       "Application revision returned by the latest protected read.",
     ),
@@ -255,8 +274,8 @@ export function canonicalizeAssistedChanges(
     parsed
       .map((change) => Object.freeze({ ...change }))
       .sort(
-      (left, right) =>
-        fieldOrder.get(left.field)! - fieldOrder.get(right.field)!,
+        (left, right) =>
+          fieldOrder.get(left.field)! - fieldOrder.get(right.field)!,
       ),
   ) as CanonicalAssistedChanges;
 }
@@ -268,10 +287,14 @@ export const RedactedStateSchema = z
   })
   .strict();
 
-const optionalAssisted = { updatedThroughAssistance: z.literal(true).optional() };
+const optionalAssisted = {
+  updatedThroughAssistance: z.literal(true).optional(),
+};
 
 function missingAgentFieldSchema<const F extends FieldId>(field: F) {
-  return z.object({ field: z.literal(field), status: z.literal("missing") }).strict();
+  return z
+    .object({ field: z.literal(field), status: z.literal("missing") })
+    .strict();
 }
 
 function stringAgentFieldSchema<
@@ -420,14 +443,16 @@ export const ProtectedStateSchema = z
     if (readyFieldCount !== ready) {
       context.addIssue({
         code: "custom",
-        message: "readyFieldCount must equal the number of ready active fields.",
+        message:
+          "readyFieldCount must equal the number of ready active fields.",
         path: ["readyFieldCount"],
       });
     }
     if (blockerCount !== fields.length - ready) {
       context.addIssue({
         code: "custom",
-        message: "blockerCount must equal the number of non-ready active fields.",
+        message:
+          "blockerCount must equal the number of non-ready active fields.",
         path: ["blockerCount"],
       });
     }
@@ -489,9 +514,7 @@ export const STATIC_REQUIREMENTS = [
   },
 ] as const;
 
-function acceptedDocumentClassesSchema(
-  classes: readonly DocumentClass[],
-) {
+function acceptedDocumentClassesSchema(classes: readonly DocumentClass[]) {
   if (classes.length === 0) return z.tuple([]);
   if (classes.length === 1) return z.tuple([z.literal(classes[0]!)]);
   if (classes.length === 2) {
@@ -504,9 +527,9 @@ function acceptedDocumentClassesSchema(
   ]);
 }
 
-function exactRequirementSchema<const R extends (typeof STATIC_REQUIREMENTS)[number]>(
-  requirement: R,
-) {
+function exactRequirementSchema<
+  const R extends (typeof STATIC_REQUIREMENTS)[number],
+>(requirement: R) {
   const base = {
     field: z.literal(requirement.field),
     label: z.literal(requirement.label),
@@ -527,13 +550,25 @@ function exactRequirementSchema<const R extends (typeof STATIC_REQUIREMENTS)[num
     : z.object(base).strict();
 }
 
-const LegalNameRequirementSchema = exactRequirementSchema(STATIC_REQUIREMENTS[0]);
-const StudentIdRequirementSchema = exactRequirementSchema(STATIC_REQUIREMENTS[1]);
-const InstitutionRequirementSchema = exactRequirementSchema(STATIC_REQUIREMENTS[2]);
+const LegalNameRequirementSchema = exactRequirementSchema(
+  STATIC_REQUIREMENTS[0],
+);
+const StudentIdRequirementSchema = exactRequirementSchema(
+  STATIC_REQUIREMENTS[1],
+);
+const InstitutionRequirementSchema = exactRequirementSchema(
+  STATIC_REQUIREMENTS[2],
+);
 const EmailRequirementSchema = exactRequirementSchema(STATIC_REQUIREMENTS[3]);
-const DependencyRequirementSchema = exactRequirementSchema(STATIC_REQUIREMENTS[4]);
-const GuardianRequirementSchema = exactRequirementSchema(STATIC_REQUIREMENTS[5]);
-const HouseholdSizeRequirementSchema = exactRequirementSchema(STATIC_REQUIREMENTS[6]);
+const DependencyRequirementSchema = exactRequirementSchema(
+  STATIC_REQUIREMENTS[4],
+);
+const GuardianRequirementSchema = exactRequirementSchema(
+  STATIC_REQUIREMENTS[5],
+);
+const HouseholdSizeRequirementSchema = exactRequirementSchema(
+  STATIC_REQUIREMENTS[6],
+);
 const IncomeRequirementSchema = exactRequirementSchema(STATIC_REQUIREMENTS[7]);
 
 export const StaticRequirementSchema = z.union([
@@ -559,30 +594,22 @@ export const StaticRequirementsSchema = z.tuple([
 ]);
 
 const activeRequirement = { active: z.literal(true) } as const;
-const ActiveLegalNameRequirementSchema = LegalNameRequirementSchema.extend(
-  activeRequirement,
-).strict();
-const ActiveStudentIdRequirementSchema = StudentIdRequirementSchema.extend(
-  activeRequirement,
-).strict();
-const ActiveInstitutionRequirementSchema = InstitutionRequirementSchema.extend(
-  activeRequirement,
-).strict();
-const ActiveEmailRequirementSchema = EmailRequirementSchema.extend(
-  activeRequirement,
-).strict();
-const ActiveDependencyRequirementSchema = DependencyRequirementSchema.extend(
-  activeRequirement,
-).strict();
-const ActiveGuardianRequirementSchema = GuardianRequirementSchema.extend(
-  activeRequirement,
-).strict();
-const ActiveHouseholdSizeRequirementSchema = HouseholdSizeRequirementSchema.extend(
-  activeRequirement,
-).strict();
-const ActiveIncomeRequirementSchema = IncomeRequirementSchema.extend(
-  activeRequirement,
-).strict();
+const ActiveLegalNameRequirementSchema =
+  LegalNameRequirementSchema.extend(activeRequirement).strict();
+const ActiveStudentIdRequirementSchema =
+  StudentIdRequirementSchema.extend(activeRequirement).strict();
+const ActiveInstitutionRequirementSchema =
+  InstitutionRequirementSchema.extend(activeRequirement).strict();
+const ActiveEmailRequirementSchema =
+  EmailRequirementSchema.extend(activeRequirement).strict();
+const ActiveDependencyRequirementSchema =
+  DependencyRequirementSchema.extend(activeRequirement).strict();
+const ActiveGuardianRequirementSchema =
+  GuardianRequirementSchema.extend(activeRequirement).strict();
+const ActiveHouseholdSizeRequirementSchema =
+  HouseholdSizeRequirementSchema.extend(activeRequirement).strict();
+const ActiveIncomeRequirementSchema =
+  IncomeRequirementSchema.extend(activeRequirement).strict();
 
 export const ActiveRequirementsSchema = z.union([
   VersionsSchema.extend({
@@ -723,37 +750,43 @@ const prepareServerFailures = z.union([
 
 export const GetApplicationStateRedactedServerResultSchema =
   boundedAgentResultSchema(
-    z.union([successSchema(RedactedStateSchema), unprotectedReadServerFailures]),
+    z.union([
+      successSchema(RedactedStateSchema),
+      unprotectedReadServerFailures,
+    ]),
   );
 export const GetApplicationStateProtectedServerResultSchema =
   boundedAgentResultSchema(
     z.union([successSchema(ProtectedStateSchema), protectedReadServerFailures]),
   );
-export const GetFormRequirementsAllServerResultSchema = boundedAgentResultSchema(
-  z.union([successSchema(StaticRequirementsSchema), unprotectedReadServerFailures]),
-);
+export const GetFormRequirementsAllServerResultSchema =
+  boundedAgentResultSchema(
+    z.union([
+      successSchema(StaticRequirementsSchema),
+      unprotectedReadServerFailures,
+    ]),
+  );
 export const GetFormRequirementsActiveServerResultSchema =
   boundedAgentResultSchema(
-    z.union([successSchema(ActiveRequirementsSchema), protectedReadServerFailures]),
+    z.union([
+      successSchema(ActiveRequirementsSchema),
+      protectedReadServerFailures,
+    ]),
   );
-export const GetEvidenceIndexServerResultSchema = boundedAgentResultSchema(z.union([
-  successSchema(EvidenceIndexSchema),
-  protectedReadServerFailures,
-]));
+export const GetEvidenceIndexServerResultSchema = boundedAgentResultSchema(
+  z.union([successSchema(EvidenceIndexSchema), protectedReadServerFailures]),
+);
 export const ApplyEvidenceBackedAnswersServerResultSchema =
-  boundedAgentResultSchema(z.union([
-  successSchema(ApplySuccessSchema),
-  applyServerFailures,
-]));
-export const GetValidationIssuesServerResultSchema = boundedAgentResultSchema(z.union([
-  successSchema(ValidationIssuesSchema),
-  protectedReadServerFailures,
-]));
+  boundedAgentResultSchema(
+    z.union([successSchema(ApplySuccessSchema), applyServerFailures]),
+  );
+export const GetValidationIssuesServerResultSchema = boundedAgentResultSchema(
+  z.union([successSchema(ValidationIssuesSchema), protectedReadServerFailures]),
+);
 export const PrepareSubmissionReviewServerResultSchema =
-  boundedAgentResultSchema(z.union([
-  successSchema(PrepareSuccessSchema),
-  prepareServerFailures,
-]));
+  boundedAgentResultSchema(
+    z.union([successSchema(PrepareSuccessSchema), prepareServerFailures]),
+  );
 
 export const GetApplicationStateServerResultSchema = boundedAgentResultSchema(
   z.union([
@@ -796,7 +829,10 @@ export const GetValidationIssuesResultSchema = boundedAgentResultSchema(
   z.union([GetValidationIssuesServerResultSchema, BridgeInactiveFailureSchema]),
 );
 export const PrepareSubmissionReviewResultSchema = boundedAgentResultSchema(
-  z.union([PrepareSubmissionReviewServerResultSchema, BridgeInactiveFailureSchema]),
+  z.union([
+    PrepareSubmissionReviewServerResultSchema,
+    BridgeInactiveFailureSchema,
+  ]),
 );
 
 export const TOOL_RESULT_SCHEMAS = {
@@ -854,8 +890,7 @@ export type ToolCallbackResultForInput<
   K extends ToolName,
   I extends ToolInputByName[K],
 > =
-  | ToolServerResultForInput<K, I>
-  | z.infer<typeof BridgeInactiveFailureSchema>;
+  ToolServerResultForInput<K, I> | z.infer<typeof BridgeInactiveFailureSchema>;
 
 export type ToolResultByName = {
   [K in ToolName]: ToolCallbackResultForInput<K, ToolInputByName[K]>;
@@ -879,7 +914,10 @@ export const WebMcpRequestSchema = z.discriminatedUnion("tool", [
     })
     .strict(),
   z
-    .object({ tool: z.literal("get_evidence_index"), input: GetEvidenceIndexInputSchema })
+    .object({
+      tool: z.literal("get_evidence_index"),
+      input: GetEvidenceIndexInputSchema,
+    })
     .strict(),
   z
     .object({
@@ -938,11 +976,7 @@ export function callbackResultSchemaForInvocation(
 export function parseServerToolResult<
   const K extends ToolName,
   const I extends ToolInputByName[K],
->(
-  tool: K,
-  input: I,
-  value: unknown,
-): ToolServerResultForInput<K, I> {
+>(tool: K, input: I, value: unknown): ToolServerResultForInput<K, I> {
   return serverResultSchemaForInvocation(tool, input).parse(
     value,
   ) as ToolServerResultForInput<K, I>;
@@ -951,44 +985,48 @@ export function parseServerToolResult<
 export function parseCallbackToolResult<
   const K extends ToolName,
   const I extends ToolInputByName[K],
->(
-  tool: K,
-  input: I,
-  value: unknown,
-): ToolCallbackResultForInput<K, I> {
+>(tool: K, input: I, value: unknown): ToolCallbackResultForInput<K, I> {
   return callbackResultSchemaForInvocation(tool, input).parse(
     value,
   ) as ToolCallbackResultForInput<K, I>;
 }
 
-const applyAgentOnlyResultSchema = boundedAgentResultSchema(z.union([
-  SessionExpiredFailureSchema,
-  StalePageFailureSchema,
-  ConsentRequiredFailureSchema,
-  InvalidRequestFailureSchema,
-  RateLimitedFailureSchema,
-  MutationUnavailableSchema,
-]));
-const applyCurrentProjectedResultSchema = boundedAgentResultSchema(z.union([
-  successSchema(ApplySuccessSchema),
-  RequestReuseMismatchFailureSchema,
-  StaleStateFailureSchema,
-  EvidenceUnavailableFailureSchema,
-  ConflictRequiresHumanFailureSchema,
-  DemoChangeLimitFailureSchema,
-]));
-const applyHistoricalProjectedResultSchema = boundedAgentResultSchema(z.union([
-  successSchema(ApplySuccessSchema),
-  EvidenceUnavailableFailureSchema,
-  ConflictRequiresHumanFailureSchema,
-]));
+const applyAgentOnlyResultSchema = boundedAgentResultSchema(
+  z.union([
+    SessionExpiredFailureSchema,
+    StalePageFailureSchema,
+    ConsentRequiredFailureSchema,
+    InvalidRequestFailureSchema,
+    RateLimitedFailureSchema,
+    MutationUnavailableSchema,
+  ]),
+);
+const applyCurrentProjectedResultSchema = boundedAgentResultSchema(
+  z.union([
+    successSchema(ApplySuccessSchema),
+    RequestReuseMismatchFailureSchema,
+    StaleStateFailureSchema,
+    EvidenceUnavailableFailureSchema,
+    ConflictRequiresHumanFailureSchema,
+    DemoChangeLimitFailureSchema,
+  ]),
+);
+const applyHistoricalProjectedResultSchema = boundedAgentResultSchema(
+  z.union([
+    successSchema(ApplySuccessSchema),
+    EvidenceUnavailableFailureSchema,
+    ConflictRequiresHumanFailureSchema,
+  ]),
+);
 const prepareAgentOnlyResultSchema = applyAgentOnlyResultSchema;
-const prepareCurrentTerminalSchema = boundedAgentResultSchema(z.union([
-  RequestReuseMismatchFailureSchema,
-  StaleStateFailureSchema,
-  NotReadyForReviewFailureSchema,
-  DemoChangeLimitFailureSchema,
-]));
+const prepareCurrentTerminalSchema = boundedAgentResultSchema(
+  z.union([
+    RequestReuseMismatchFailureSchema,
+    StaleStateFailureSchema,
+    NotReadyForReviewFailureSchema,
+    DemoChangeLimitFailureSchema,
+  ]),
+);
 const historicalNotReadyForReviewFailureSchema = z
   .object({
     ok: z.literal(false),
@@ -1009,7 +1047,10 @@ const prepareSuccessResultSchema = boundedAgentResultSchema(
   successSchema(PrepareSuccessSchema),
 );
 
-function agentOnlyEnvelope<const K extends ToolName>(tool: K, result: z.ZodType) {
+function agentOnlyEnvelope<const K extends ToolName>(
+  tool: K,
+  result: z.ZodType,
+) {
   return z
     .object({
       schema: z.literal("citeapply-webmcp-http-v1"),
@@ -1020,7 +1061,9 @@ function agentOnlyEnvelope<const K extends ToolName>(tool: K, result: z.ZodType)
     .strict();
 }
 
-function resultVersions(value: unknown):
+function resultVersions(
+  value: unknown,
+):
   | Readonly<{ applicationRevision: number; requirementsVersion: number }>
   | undefined {
   if (typeof value !== "object" || value === null) return undefined;
@@ -1069,9 +1112,7 @@ type VersionCoordinates = Readonly<{
 }>;
 
 function expectedInputVersions(
-  input:
-    | ApplyEvidenceBackedAnswersInput
-    | PrepareSubmissionReviewInput,
+  input: ApplyEvidenceBackedAnswersInput | PrepareSubmissionReviewInput,
 ): VersionCoordinates {
   return {
     applicationRevision: input.expectedApplicationRevision,
@@ -1128,7 +1169,9 @@ function inputHasEvidenceBinding(
   return input.changes.some(({ kind }) => kind === "bind_claim");
 }
 
-function inputHasIncomeBinding(input: ApplyEvidenceBackedAnswersInput): boolean {
+function inputHasIncomeBinding(
+  input: ApplyEvidenceBackedAnswersInput,
+): boolean {
   return input.changes.some(
     (change) =>
       change.kind === "bind_claim" &&
@@ -1161,7 +1204,9 @@ function currentApplyProjectionAgrees(
         !versionsEqual(expected, snapshot)
       );
     case "evidence_unavailable":
-      return versionsEqual(expected, snapshot) && inputHasEvidenceBinding(input);
+      return (
+        versionsEqual(expected, snapshot) && inputHasEvidenceBinding(input)
+      );
     case "conflict_requires_human":
       return versionsEqual(expected, snapshot) && inputHasIncomeBinding(input);
     case "demo_change_limit":
@@ -1217,7 +1262,9 @@ function currentPrepareTerminalAgrees(
       if (!versionsEqual(expected, snapshot)) return false;
       const blockers = result.error.blockers;
       if (blockers[0]?.code === "unsaved_changes") return blockers.length === 1;
-      return JSON.stringify(blockers) === JSON.stringify(snapshot.view.blockers);
+      return (
+        JSON.stringify(blockers) === JSON.stringify(snapshot.view.blockers)
+      );
     }
   }
 }
@@ -1257,7 +1304,10 @@ function currentPrepareSuccessAgrees(
 
 function applyEnvelopeSchema(input: ApplyEvidenceBackedAnswersInput) {
   return z.union([
-    agentOnlyEnvelope("apply_evidence_backed_answers", applyAgentOnlyResultSchema),
+    agentOnlyEnvelope(
+      "apply_evidence_backed_answers",
+      applyAgentOnlyResultSchema,
+    ),
     z
       .object({
         schema: z.literal("citeapply-webmcp-http-v1"),
@@ -1292,7 +1342,10 @@ function applyEnvelopeSchema(input: ApplyEvidenceBackedAnswersInput) {
 
 function prepareEnvelopeSchema(input: PrepareSubmissionReviewInput) {
   return z.union([
-    agentOnlyEnvelope("prepare_submission_review", prepareAgentOnlyResultSchema),
+    agentOnlyEnvelope(
+      "prepare_submission_review",
+      prepareAgentOnlyResultSchema,
+    ),
     z
       .object({
         schema: z.literal("citeapply-webmcp-http-v1"),
@@ -1307,7 +1360,8 @@ function prepareEnvelopeSchema(input: PrepareSubmissionReviewInput) {
         message: "Current terminal versions must match the UI snapshot.",
       })
       .refine((value) => currentPrepareTerminalAgrees(input, value), {
-        message: "Current Prepare terminal does not match its input and snapshot.",
+        message:
+          "Current Prepare terminal does not match its input and snapshot.",
       }),
     z
       .object({
@@ -1320,16 +1374,15 @@ function prepareEnvelopeSchema(input: PrepareSubmissionReviewInput) {
       })
       .strict()
       .refine(historicalPrepareBlockersAgree, {
-        message: "Historical blocked preparation must match current Draft blockers.",
+        message:
+          "Historical blocked preparation must match current Draft blockers.",
       })
       .refine(
         (value) =>
-          versionsNotOlder(
-            value.uiSnapshot,
-            expectedInputVersions(input),
-          ),
+          versionsNotOlder(value.uiSnapshot, expectedInputVersions(input)),
         {
-          message: "Historical blocked preparation cannot be newer than its snapshot.",
+          message:
+            "Historical blocked preparation cannot be newer than its snapshot.",
         },
       ),
     z
@@ -1354,16 +1407,11 @@ function prepareEnvelopeSchema(input: PrepareSubmissionReviewInput) {
 export function webMcpHttpEnvelopeSchema<
   const K extends ToolName,
   const I extends ToolInputByName[K],
->(
-  tool: K,
-  input: I,
-): z.ZodType {
+>(tool: K, input: I): z.ZodType {
   const parsedInput = TOOL_INPUT_SCHEMAS[tool].parse(input);
   const serverResult = serverResultSchemaForInvocation(tool, parsedInput);
   if (tool === "apply_evidence_backed_answers") {
-    return applyEnvelopeSchema(
-      parsedInput as ApplyEvidenceBackedAnswersInput,
-    );
+    return applyEnvelopeSchema(parsedInput as ApplyEvidenceBackedAnswersInput);
   }
   if (tool === "prepare_submission_review") {
     return prepareEnvelopeSchema(parsedInput as PrepareSubmissionReviewInput);
@@ -1374,11 +1422,7 @@ export function webMcpHttpEnvelopeSchema<
 export function parseWebMcpHttpEnvelope<
   const K extends ToolName,
   const I extends ToolInputByName[K],
->(
-  tool: K,
-  input: I,
-  value: unknown,
-): WebMcpHttpEnvelopeV1<K, I> {
+>(tool: K, input: I, value: unknown): WebMcpHttpEnvelopeV1<K, I> {
   return webMcpHttpEnvelopeSchema(tool, input).parse(
     value,
   ) as WebMcpHttpEnvelopeV1<K, I>;

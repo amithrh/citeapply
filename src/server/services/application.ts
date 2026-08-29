@@ -29,7 +29,10 @@ import {
 } from "../../domain/draft.ts";
 import { evaluateDraftReadiness } from "../../domain/readiness.ts";
 import type { StoredApplication } from "../db/applications.ts";
-import { derivePageCapability, type SessionClock } from "../security/capabilities.ts";
+import {
+  derivePageCapability,
+  type SessionClock,
+} from "../security/capabilities.ts";
 import type { Keyring } from "../security/keys.ts";
 
 export const EMPTY_ACTIVITY: HumanActivitySummaryV1 =
@@ -308,6 +311,7 @@ export async function lockCurrentApplication(
   client: PoolClient,
   sessionDigest: Uint8Array,
 ): Promise<StoredApplication | null> {
-  const { lockApplicationBySessionDigest } = await import("../db/applications.ts");
+  const { lockApplicationBySessionDigest } =
+    await import("../db/applications.ts");
   return lockApplicationBySessionDigest(client, sessionDigest);
 }

@@ -26,6 +26,19 @@ import {
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
+const MAX_BODY_BYTES = 8192;
+
+/** Reads a bounded JSON body; a malformed or oversized body is never thrown. */
+async function readJsonBody(request: Request): Promise<unknown | null> {
+  const raw = await request.text();
+  if (Buffer.byteLength(raw, "utf8") > MAX_BODY_BYTES) return null;
+  try {
+    return JSON.parse(raw) as unknown;
+  } catch {
+    return null;
+  }
+}
+
 function refused(status: number, body: unknown): Response {
   return privateJsonResponse(body, { status });
 }
@@ -76,7 +89,10 @@ export async function GET(request: Request): Promise<Response> {
     throw error;
   }
 
-  const throttle = await runPublicTransportThrottle(getDatabasePool(), "demo_get");
+  const throttle = await runPublicTransportThrottle(
+    getDatabasePool(),
+    "demo_get",
+  );
   if (!throttle.ok) {
     return throttled(throttle.retryAfterSeconds, false);
   }
@@ -109,8 +125,9 @@ export async function POST(request: Request): Promise<Response> {
     return throttled(throttle.retryAfterSeconds, true);
   }
 
-  const parsed = DemoStartRequestSchema.safeParse(await request.json());
-  if (!parsed.success) {
+  const body_ = await readJsonBody(request);
+  const parsed = DemoStartRequestSchema.safeParse(body_);
+  if (body_ === null || !parsed.success) {
     return refused(400, {
       ok: false,
       error: {

@@ -46,7 +46,9 @@ export type {
  */
 export type AssistedAttribution = ReadonlySet<FieldId>;
 
-const EMPTY_ATTRIBUTION: AssistedAttribution = Object.freeze(new Set<FieldId>());
+const EMPTY_ATTRIBUTION: AssistedAttribution = Object.freeze(
+  new Set<FieldId>(),
+);
 
 function assistedMarker(
   field: FieldId,
@@ -210,7 +212,8 @@ export function projectApplySuccess(
   updatedFields: readonly FieldId[],
 ): ApplySuccess {
   const canonical = [...new Set(updatedFields)].sort(
-    (left, right) => (FIELD_INDEX.get(left) ?? -1) - (FIELD_INDEX.get(right) ?? -1),
+    (left, right) =>
+      (FIELD_INDEX.get(left) ?? -1) - (FIELD_INDEX.get(right) ?? -1),
   );
   return ApplySuccessSchema.parse({
     applicationRevision: versions.applicationRevision,

@@ -31,11 +31,7 @@ function missingFieldSchema<const F extends FieldId>(field: F) {
 }
 
 function readyStringEvidenceFieldSchema<
-  const F extends
-    | "legal_name"
-    | "student_id"
-    | "institution"
-    | "guardian_name",
+  const F extends "legal_name" | "student_id" | "institution" | "guardian_name",
 >(field: F) {
   return z
     .object({
@@ -138,10 +134,13 @@ const SupportedIncomeDraftFieldSchema = z
     bindings: z.tuple([EvidenceBindingSchema, EvidenceBindingSchema]),
   })
   .strict()
-  .refine(({ bindings }) => bindings[0].fingerprint !== bindings[1].fingerprint, {
-    message: "Supported income bindings must identify two distinct claims.",
-    path: ["bindings"],
-  });
+  .refine(
+    ({ bindings }) => bindings[0].fingerprint !== bindings[1].fingerprint,
+    {
+      message: "Supported income bindings must identify two distinct claims.",
+      path: ["bindings"],
+    },
+  );
 
 const ResolvedIncomeDraftFieldSchema = z
   .object({
@@ -351,8 +350,7 @@ function readyOrdinaryFieldMatchesPacket(
   packet: Readonly<ParsedPacketV1>,
   field: Exclude<
     DraftFieldV1,
-    | { field: "preferred_contact_email" }
-    | { field: "annual_household_income" }
+    { field: "preferred_contact_email" } | { field: "annual_household_income" }
   >,
 ): boolean {
   if (field.status === "missing") return true;
@@ -482,9 +480,10 @@ export function activeDraftFieldIds(
   return Object.freeze([...activeFieldIds(dependencyIsSaved(draft))]);
 }
 
-function initialIncomeState(
-  packet: Readonly<ParsedPacketV1>,
-): { field: "annual_household_income"; status: "missing" | "conflict" } {
+function initialIncomeState(packet: Readonly<ParsedPacketV1>): {
+  field: "annual_household_income";
+  status: "missing" | "conflict";
+} {
   const claims = incomeClaims(packet);
   if (claims === null) {
     throw new TypeError("The parsed packet has no coherent income sources.");
@@ -621,9 +620,7 @@ function evidenceUnavailable(
   });
 }
 
-function conflictRequiresHuman(
-  draft: DraftAggregateV1,
-): DraftTransitionResult {
+function conflictRequiresHuman(draft: DraftAggregateV1): DraftTransitionResult {
   return Object.freeze({
     outcome: "conflict_requires_human",
     field: "annual_household_income",
@@ -705,6 +702,9 @@ function proposeAssistedEmail(
   value: string,
 ): DraftAggregateV1 | null {
   const current = draft.fields[3];
+  // A declared email is a completed human decision; assistance cannot replace
+  // it or revert it to an undeclared assisted value.
+  if (current.status === "ready") return null;
   if (current.status !== "missing" && current.value === value) return null;
   const candidate = PreferredContactEmailDraftFieldSchema.parse({
     field: "preferred_contact_email",

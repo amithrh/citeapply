@@ -123,7 +123,9 @@ export async function startSyntheticDemo(
   }
 
   const startNonceHash = sha256(token.nonce);
-  const startRequestDigest = sha256(`${requestId} ${packetCode} ${token.nonce}`);
+  const startRequestDigest = sha256(
+    `${requestId} ${packetCode} ${token.nonce}`,
+  );
 
   let parsedPacket;
   try {
@@ -144,18 +146,22 @@ export async function startSyntheticDemo(
       requestId,
     );
 
-    for (const existing of matches) {
-      const sameIdentity =
+    // The coordinate query can match two rows; an exact identity anywhere in
+    // the set is an idempotent retry, not a reuse mismatch.
+    const sameIdentity = matches.find(
+      (existing) =>
         existing.startRequestId === requestId &&
-        existing.startRequestDigest.equals(Buffer.from(startRequestDigest));
-      if (sameIdentity) {
-        return {
-          kind: "started",
-          application: existing,
-          sessionCredential,
-          expiresAt: existing.expiresAt.toISOString(),
-        } as const;
-      }
+        existing.startRequestDigest.equals(Buffer.from(startRequestDigest)),
+    );
+    if (sameIdentity !== undefined) {
+      return {
+        kind: "started",
+        application: sameIdentity,
+        sessionCredential,
+        expiresAt: sameIdentity.expiresAt.toISOString(),
+      } as const;
+    }
+    if (matches.length > 0) {
       return { kind: "request_reuse_mismatch" } as const;
     }
 

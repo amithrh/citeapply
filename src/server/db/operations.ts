@@ -7,7 +7,8 @@ import { DatabaseInvariantError, requireSingleRow } from "./transactions.ts";
 const SHA256_BYTES = 32;
 const MAX_OPERATION_ROWS = 128;
 const MAX_OUTCOME_BYTES = 8 * 1_024;
-const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+const UUID_V4 =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
 const FIELD_IDS = [
   "legal_name",
@@ -109,10 +110,15 @@ function isPlainObject(value: unknown): value is JsonObject {
 }
 
 function own(value: JsonObject, key: string): unknown {
-  return Object.prototype.hasOwnProperty.call(value, key) ? value[key] : undefined;
+  return Object.prototype.hasOwnProperty.call(value, key)
+    ? value[key]
+    : undefined;
 }
 
-function requireExactKeys(value: JsonObject, expectedKeys: readonly string[]): void {
+function requireExactKeys(
+  value: JsonObject,
+  expectedKeys: readonly string[],
+): void {
   const actualKeys = Object.keys(value);
   const expected = new Set(expectedKeys);
   if (
@@ -132,7 +138,11 @@ function requireExactKeys(value: JsonObject, expectedKeys: readonly string[]): v
   }
 }
 
-function requireSafeInteger(value: unknown, minimum: number, label: string): number {
+function requireSafeInteger(
+  value: unknown,
+  minimum: number,
+  label: string,
+): number {
   if (!Number.isSafeInteger(value) || (value as number) < minimum) {
     throw new DatabaseInvariantError(`${label} is invalid.`);
   }
@@ -141,7 +151,9 @@ function requireSafeInteger(value: unknown, minimum: number, label: string): num
 
 function requireVersions(value: unknown): void {
   if (!isPlainObject(value)) {
-    throw new DatabaseInvariantError("The stored operation versions are invalid.");
+    throw new DatabaseInvariantError(
+      "The stored operation versions are invalid.",
+    );
   }
   const keys = Object.keys(value);
   if (
@@ -149,23 +161,46 @@ function requireVersions(value: unknown): void {
     !keys.includes("applicationRevision") ||
     !keys.includes("requirementsVersion")
   ) {
-    throw new DatabaseInvariantError("The stored operation versions are not closed.");
+    throw new DatabaseInvariantError(
+      "The stored operation versions are not closed.",
+    );
   }
-  requireSafeInteger(own(value, "applicationRevision"), 0, "applicationRevision");
-  requireSafeInteger(own(value, "requirementsVersion"), 1, "requirementsVersion");
+  requireSafeInteger(
+    own(value, "applicationRevision"),
+    0,
+    "applicationRevision",
+  );
+  requireSafeInteger(
+    own(value, "requirementsVersion"),
+    1,
+    "requirementsVersion",
+  );
 }
 
-function requireField(value: unknown, evidenceOnly: boolean, label: string): string {
+function requireField(
+  value: unknown,
+  evidenceOnly: boolean,
+  label: string,
+): string {
   const allowed = evidenceOnly ? EVIDENCE_FIELD_IDS : FIELD_IDS;
-  if (typeof value !== "string" || !(allowed as readonly string[]).includes(value)) {
+  if (
+    typeof value !== "string" ||
+    !(allowed as readonly string[]).includes(value)
+  ) {
     throw new DatabaseInvariantError(`${label} is invalid.`);
   }
   return value;
 }
 
 function requireFields(value: unknown, minimum: number): void {
-  if (!Array.isArray(value) || value.length < minimum || value.length > FIELD_IDS.length) {
-    throw new DatabaseInvariantError("The stored operation fields are invalid.");
+  if (
+    !Array.isArray(value) ||
+    value.length < minimum ||
+    value.length > FIELD_IDS.length
+  ) {
+    throw new DatabaseInvariantError(
+      "The stored operation fields are invalid.",
+    );
   }
   let previousIndex = -1;
   for (const field of value) {
@@ -182,31 +217,49 @@ function requireFields(value: unknown, minimum: number): void {
 
 function requireEmptyFields(value: unknown): void {
   if (!Array.isArray(value) || value.length !== 0) {
-    throw new DatabaseInvariantError("The stored no-change fields must be empty.");
+    throw new DatabaseInvariantError(
+      "The stored no-change fields must be empty.",
+    );
   }
 }
 
 function requireBlockers(value: unknown): void {
-  if (!Array.isArray(value) || value.length < 1 || value.length > FIELD_IDS.length) {
-    throw new DatabaseInvariantError("The stored operation blockers are invalid.");
+  if (
+    !Array.isArray(value) ||
+    value.length < 1 ||
+    value.length > FIELD_IDS.length
+  ) {
+    throw new DatabaseInvariantError(
+      "The stored operation blockers are invalid.",
+    );
   }
 
   const seenFields = new Set<string>();
   let previousOrder = -1;
   for (const blocker of value) {
     if (!isPlainObject(blocker)) {
-      throw new DatabaseInvariantError("A stored operation blocker is invalid.");
+      throw new DatabaseInvariantError(
+        "A stored operation blocker is invalid.",
+      );
     }
     const keys = Object.keys(blocker);
-    if (keys.length !== 2 || !keys.includes("code") || !keys.includes("field")) {
-      throw new DatabaseInvariantError("A stored operation blocker is not closed.");
+    if (
+      keys.length !== 2 ||
+      !keys.includes("code") ||
+      !keys.includes("field")
+    ) {
+      throw new DatabaseInvariantError(
+        "A stored operation blocker is not closed.",
+      );
     }
     const code = own(blocker, "code");
     if (
       typeof code !== "string" ||
       !(BLOCKER_CODES as readonly string[]).includes(code)
     ) {
-      throw new DatabaseInvariantError("A stored operation blocker code is invalid.");
+      throw new DatabaseInvariantError(
+        "A stored operation blocker code is invalid.",
+      );
     }
     const field = requireField(own(blocker, "field"), false, "A blocker field");
     if (
@@ -216,7 +269,9 @@ function requireBlockers(value: unknown): void {
         field !== "preferred_contact_email") ||
       (code === "missing_evidence" && field === "preferred_contact_email")
     ) {
-      throw new DatabaseInvariantError("A stored operation blocker pair is invalid.");
+      throw new DatabaseInvariantError(
+        "A stored operation blocker pair is invalid.",
+      );
     }
     const order =
       code === "missing_evidence"
@@ -335,7 +390,11 @@ function requireExactOutcomeCoordinates(
       }
       if (outcome === "evidence_unavailable") {
         requireOutcomeShape(value, action, outcome, ["field"]);
-        requireField(own(value, "field"), true, "The unavailable evidence field");
+        requireField(
+          own(value, "field"),
+          true,
+          "The unavailable evidence field",
+        );
         return;
       }
       if (outcome === "conflict_requires_human") {
@@ -428,7 +487,10 @@ function requireExactOutcomeCoordinates(
         return;
       }
       if (outcome === "no_change") {
-        requireOutcomeShape(value, action, outcome, ["consentCoordinate", "fields"]);
+        requireOutcomeShape(value, action, outcome, [
+          "consentCoordinate",
+          "fields",
+        ]);
         requireUuidCoordinate(value, "consentCoordinate");
         requireEmptyFields(own(value, "fields"));
         return;
@@ -517,7 +579,9 @@ function requireUuidV4(value: string, label: string): void {
 
 function requireDigest(value: Uint8Array): Buffer {
   if (value.byteLength !== SHA256_BYTES) {
-    throw new DatabaseInvariantError("keyedIntentDigest must be a 32-byte digest.");
+    throw new DatabaseInvariantError(
+      "keyedIntentDigest must be a 32-byte digest.",
+    );
   }
 
   return Buffer.from(value);
@@ -528,7 +592,9 @@ function requireOutcome(
   expectedAction: OperationAction,
 ): void {
   if (!isPlainObject(value)) {
-    throw new DatabaseInvariantError("The stored operation outcome must be an object.");
+    throw new DatabaseInvariantError(
+      "The stored operation outcome must be an object.",
+    );
   }
 
   const outcome = own(value, "outcome");
@@ -536,11 +602,15 @@ function requireOutcome(
     typeof outcome !== "string" ||
     !(STORED_OUTCOME_CODES as readonly string[]).includes(outcome)
   ) {
-    throw new DatabaseInvariantError("The stored operation outcome code is invalid.");
+    throw new DatabaseInvariantError(
+      "The stored operation outcome code is invalid.",
+    );
   }
   const action = own(value, "action");
   if (action !== expectedAction) {
-    throw new DatabaseInvariantError("The stored outcome action does not match its operation.");
+    throw new DatabaseInvariantError(
+      "The stored outcome action does not match its operation.",
+    );
   }
   requireExactOutcomeCoordinates(
     value,
@@ -552,19 +622,24 @@ function requireOutcome(
   try {
     serialized = JSON.stringify(value);
   } catch {
-    throw new DatabaseInvariantError("The stored operation outcome is not serializable.");
+    throw new DatabaseInvariantError(
+      "The stored operation outcome is not serializable.",
+    );
   }
 
   if (
     typeof serialized !== "string" ||
     Buffer.byteLength(serialized, "utf8") > MAX_OUTCOME_BYTES
   ) {
-    throw new DatabaseInvariantError("The stored operation outcome exceeds its byte limit.");
+    throw new DatabaseInvariantError(
+      "The stored operation outcome exceeds its byte limit.",
+    );
   }
 }
 
 function databaseDate(value: Date | string): Date {
-  const date = value instanceof Date ? new Date(value.getTime()) : new Date(value);
+  const date =
+    value instanceof Date ? new Date(value.getTime()) : new Date(value);
   if (!Number.isFinite(date.getTime())) {
     throw new DatabaseInvariantError("An Operation timestamp is invalid.");
   }
@@ -603,7 +678,9 @@ export async function findOperation(
   );
 
   if (result.rows.length > 1) {
-    throw new DatabaseInvariantError("An operation identity matched multiple rows.");
+    throw new DatabaseInvariantError(
+      "An operation identity matched multiple rows.",
+    );
   }
 
   return result.rows[0] === undefined ? null : mapOperation(result.rows[0]);
@@ -657,7 +734,9 @@ export async function countOperations(
     row.operation_count < 0 ||
     row.operation_count > MAX_OPERATION_ROWS
   ) {
-    throw new DatabaseInvariantError("The operation count violates the hard limit.");
+    throw new DatabaseInvariantError(
+      "The operation count violates the hard limit.",
+    );
   }
 
   return row.operation_count;
@@ -678,7 +757,9 @@ export async function listOperations(
   );
 
   if (result.rows.length > MAX_OPERATION_ROWS) {
-    throw new DatabaseInvariantError("The operation history violates the hard limit.");
+    throw new DatabaseInvariantError(
+      "The operation history violates the hard limit.",
+    );
   }
 
   return result.rows.map(mapOperation);
@@ -749,7 +830,9 @@ export async function insertOperation(
     return { kind: "inserted", operation: mapOperation(result.rows[0]!) };
   }
   if (result.rows.length > 1) {
-    throw new DatabaseInvariantError("One operation insertion returned multiple rows.");
+    throw new DatabaseInvariantError(
+      "One operation insertion returned multiple rows.",
+    );
   }
 
   const replay = await classifyOperationReplay(
@@ -767,7 +850,9 @@ export async function insertOperation(
 
   const currentCount = await countOperations(client, input.applicationId);
   if (currentCount !== MAX_OPERATION_ROWS) {
-    throw new DatabaseInvariantError("Operation insertion failed without a conflict or hard limit.");
+    throw new DatabaseInvariantError(
+      "Operation insertion failed without a conflict or hard limit.",
+    );
   }
 
   return { kind: "hard_limit" };

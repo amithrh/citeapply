@@ -75,7 +75,9 @@ export default function LandingPage() {
       </header>
 
       <aside aria-labelledby="synthetic-data-warning">
-        <h2 id="synthetic-data-warning">Keep real information out of this demo</h2>
+        <h2 id="synthetic-data-warning">
+          Keep real information out of this demo
+        </h2>
         <p>
           Do not enter real personal or financial information. This does not
           submit a real scholarship application.
@@ -84,9 +86,7 @@ export default function LandingPage() {
 
       <section aria-labelledby="demo-paths-heading">
         <h2 id="demo-paths-heading">Two bounded synthetic paths</h2>
-        {error === null ? null : (
-          <p role="alert">{error}</p>
-        )}
+        {error === null ? null : <p role="alert">{error}</p>}
         <article>
           <h3>Supported packet</h3>
           <p>
@@ -118,7 +118,9 @@ export default function LandingPage() {
       </section>
 
       <section aria-labelledby="session-boundary-heading">
-        <h2 id="session-boundary-heading">A time-bounded local demonstration</h2>
+        <h2 id="session-boundary-heading">
+          A time-bounded local demonstration
+        </h2>
         <p>
           A synthetic session lasts 60 minutes after it starts. Assisted access
           is optional, and the complete application remains available through

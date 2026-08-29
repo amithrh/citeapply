@@ -48,17 +48,25 @@ type RateCounterRow = QueryResultRow & {
 
 export type RatePreflightResult =
   | Readonly<{ admitted: true }>
-  | Readonly<{ admitted: false; retryAfterSeconds: number; reason: "limit" | "capacity" | "busy" }>;
+  | Readonly<{
+      admitted: false;
+      retryAfterSeconds: number;
+      reason: "limit" | "capacity" | "busy";
+    }>;
 
 function databaseDate(value: Date | string, label: string): Date {
-  const date = value instanceof Date ? new Date(value.getTime()) : new Date(value);
+  const date =
+    value instanceof Date ? new Date(value.getTime()) : new Date(value);
   if (!Number.isFinite(date.getTime())) {
     throw new DatabaseInvariantError(`${label} is not a valid timestamp.`);
   }
   return date;
 }
 
-function windowFor(now: Date, key: CounterKey): Readonly<{ start: Date; end: Date }> {
+function windowFor(
+  now: Date,
+  key: CounterKey,
+): Readonly<{ start: Date; end: Date }> {
   const windowMilliseconds = POLICIES[key].windowSeconds * 1_000;
   const startMilliseconds =
     Math.floor(now.getTime() / windowMilliseconds) * windowMilliseconds;
@@ -100,7 +108,10 @@ async function readSingleClock(client: PoolClient): Promise<Date> {
   const result = await client.query<{ server_now: Date | string }>(
     "SELECT clock_timestamp() AS server_now",
   );
-  const row = requireSingleRow(result.rows, "The rate preflight clock is unavailable.");
+  const row = requireSingleRow(
+    result.rows,
+    "The rate preflight clock is unavailable.",
+  );
   return databaseDate(row.server_now, "server_now");
 }
 
@@ -151,7 +162,10 @@ async function readCounter(
   return result.rows[0] ?? null;
 }
 
-async function capacityRetryAfter(client: PoolClient, now: Date): Promise<number> {
+async function capacityRetryAfter(
+  client: PoolClient,
+  now: Date,
+): Promise<number> {
   const result = await client.query<{
     has_expired_backlog: boolean;
     earliest_future_expiry: Date | string | null;
@@ -164,7 +178,10 @@ async function capacityRetryAfter(client: PoolClient, now: Date): Promise<number
        FROM rate_buckets`,
     [now],
   );
-  const row = requireSingleRow(result.rows, "Rate capacity could not be projected.");
+  const row = requireSingleRow(
+    result.rows,
+    "Rate capacity could not be projected.",
+  );
 
   if (row.has_expired_backlog || row.earliest_future_expiry === null) {
     return 1;
@@ -232,7 +249,10 @@ async function executePreflight(
 
   const limitingExpiries: Date[] = [];
   for (const [key, counter] of locked) {
-    if (!Number.isSafeInteger(counter.request_count) || counter.request_count < 0) {
+    if (
+      !Number.isSafeInteger(counter.request_count) ||
+      counter.request_count < 0
+    ) {
       throw new DatabaseInvariantError("A rate counter is invalid.");
     }
     if (counter.request_count >= POLICIES[key].limit) {
@@ -280,7 +300,9 @@ async function executePreflight(
       [key, window.start],
     );
     if (update.rowCount !== 1) {
-      throw new DatabaseInvariantError("A required rate counter was not incremented.");
+      throw new DatabaseInvariantError(
+        "A required rate counter was not incremented.",
+      );
     }
   }
 

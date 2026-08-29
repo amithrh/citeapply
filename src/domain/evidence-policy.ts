@@ -29,10 +29,7 @@ export type EvidencePolicyDecision =
   | Readonly<{ outcome: "evidence_unavailable" }>
   | Readonly<{ outcome: "conflict_requires_human" }>;
 
-type IncomeClaim = Extract<
-  ParsedClaim,
-  { kind: "annual_household_income" }
->;
+type IncomeClaim = Extract<ParsedClaim, { kind: "annual_household_income" }>;
 
 const EVIDENCE_UNAVAILABLE = Object.freeze({
   outcome: "evidence_unavailable",

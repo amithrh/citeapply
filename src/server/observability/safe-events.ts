@@ -107,7 +107,8 @@ type RouteValidatedFinalPublicResult =
     }>;
 
 export type RecordFinalPublicResultInput<
-  FinalResult extends RouteValidatedFinalPublicResult = RouteValidatedFinalPublicResult,
+  FinalResult extends RouteValidatedFinalPublicResult =
+    RouteValidatedFinalPublicResult,
 > = Readonly<{
   route: SafeRouteCode;
   finalResult: FinalResult;
@@ -290,7 +291,9 @@ export function assertSafeEvent(event: unknown): SafeEvent {
     !timestamp.endsWith("Z") ||
     !Rfc3339InstantSchema.safeParse(timestamp).success
   ) {
-    throw new TypeError("Safe event timestamp must be an RFC 3339 UTC instant.");
+    throw new TypeError(
+      "Safe event timestamp must be an RFC 3339 UTC instant.",
+    );
   }
   if (
     !SAFE_EVENT_COORDINATES.some(

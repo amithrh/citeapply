@@ -19,10 +19,7 @@ import {
 } from "../db/operations.ts";
 import { deriveConsentCapability } from "../security/capabilities.ts";
 import { operationIntentDigest, type Keyring } from "../security/keys.ts";
-import {
-  draftOf,
-  parsedPacketOf,
-} from "./application.ts";
+import { draftOf, parsedPacketOf } from "./application.ts";
 
 /**
  * The W0 kernel commits the visible spine: evidence binding and the two
@@ -88,35 +85,150 @@ function coordinatesAreCurrent(
   );
 }
 
-type SaveInput = Readonly<{
-  draft: unknown;
-  revision: number;
-  requirementsVersion: number;
-  consentRequestId: string | null;
-}>;
+/**
+ * A plan is pure: it decides the exact next saved state without writing it, so
+ * the operation row can be committed first and no effect can outlive its
+ * ledger entry.
+ */
+type EffectPlan =
+  | Readonly<{
+      kind: "commit";
+      outcome: StoredOutcomeCode;
+      draft: unknown;
+      revision: number;
+      requirementsVersion: number;
+      consentRequestId: string | null;
+      updatedField: string | null;
+    }>
+  | Readonly<{
+      kind: "no_change";
+      consentCoordinate: string | null;
+      updatedField: string | null;
+    }>
+  | Readonly<{ kind: "evidence_unavailable"; field: string }>
+  | Readonly<{ kind: "conflict_requires_human" }>
+  | Readonly<{ kind: "unavailable_at_w0" }>;
 
-async function commit(
-  client: PoolClient,
-  application: StoredApplication,
-  input: SaveInput,
-): Promise<StoredApplication> {
-  return saveLockedApplicationState(client, {
-    id: application.id,
-    draft: input.draft,
-    stage: application.stage,
-    revision: input.revision,
-    requirementsVersion: input.requirementsVersion,
-    pageEpoch: application.pageEpoch,
-    pageBootstrapRequestId: application.pageBootstrapRequestId,
-    pageBootstrapRequestDigest: application.pageBootstrapRequestDigest,
-    consentRequestId: input.consentRequestId,
-    currentReviewId: application.currentReviewId,
+function planEffect(
+  locked: StoredApplication,
+  action: HumanAction,
+): EffectPlan {
+  if (action.action === "allow_assisted_access") {
+    if (locked.consentRequestId !== null) {
+      return {
+        kind: "no_change",
+        consentCoordinate: locked.consentRequestId,
+        updatedField: null,
+      };
+    }
+    return {
+      kind: "commit",
+      outcome: "assistance_allowed",
+      draft: locked.draft,
+      revision: locked.revision + 1,
+      requirementsVersion: locked.requirementsVersion,
+      consentRequestId: action.requestId,
+      updatedField: null,
+    };
+  }
+
+  if (action.action === "revoke_assisted_access") {
+    if (locked.consentRequestId === null) {
+      return { kind: "no_change", consentCoordinate: null, updatedField: null };
+    }
+    return {
+      kind: "commit",
+      outcome: "assistance_revoked",
+      draft: locked.draft,
+      revision: locked.revision + 1,
+      requirementsVersion: locked.requirementsVersion,
+      consentRequestId: null,
+      updatedField: null,
+    };
+  }
+
+  if (action.action !== "bind_evidence") {
+    return { kind: "unavailable_at_w0" };
+  }
+
+  const packet = parsedPacketOf(locked);
+  const transition = bindDraftEvidence({
+    draft: draftOf(locked, packet),
+    packet,
+    field: action.field,
+    claimHandle: action.claimHandle,
+    origin: "manual",
   });
+
+  if (transition.outcome === "evidence_unavailable") {
+    return { kind: "evidence_unavailable", field: transition.field };
+  }
+  if (transition.outcome === "conflict_requires_human") {
+    return { kind: "conflict_requires_human" };
+  }
+  if (transition.outcome === "no_change") {
+    return {
+      kind: "no_change",
+      consentCoordinate: null,
+      updatedField: action.field,
+    };
+  }
+
+  return {
+    kind: "commit",
+    outcome: "action_applied",
+    draft: transition.draft,
+    revision: locked.revision + transition.applicationRevisionDelta,
+    requirementsVersion:
+      locked.requirementsVersion + transition.requirementsVersionDelta,
+    consentRequestId: locked.consentRequestId,
+    updatedField: action.field,
+  };
+}
+
+function storedOutcome(
+  action: HumanAction,
+  plan: EffectPlan,
+  versions: Readonly<{
+    applicationRevision: number;
+    requirementsVersion: number;
+  }>,
+): StoredOperationOutcome {
+  if (plan.kind === "no_change") {
+    if (action.action === "allow_assisted_access") {
+      return {
+        outcome: "no_change",
+        action: action.action,
+        consentCoordinate: plan.consentCoordinate ?? action.requestId,
+        fields: [],
+        versions,
+      };
+    }
+    return {
+      outcome: "no_change",
+      action: action.action,
+      fields: [],
+      versions,
+    };
+  }
+  if (plan.kind !== "commit") {
+    throw new TypeError("Only committed or no-change plans carry an outcome.");
+  }
+  if (plan.outcome === "action_applied") {
+    return {
+      outcome: "action_applied",
+      action: action.action,
+      fields: plan.updatedField === null ? [] : [plan.updatedField],
+      versions,
+    };
+  }
+  return { outcome: plan.outcome, action: action.action, versions };
 }
 
 /**
- * Runs one human action under an already-held Application row lock. Every exit
- * either commits exactly one effect with its operation row or commits nothing.
+ * Runs one human action under an already-held Application row lock. The
+ * operation row is inserted before the state save, and a refused insert throws
+ * so the surrounding transaction rolls the state change back with it.
  */
 export async function runHumanAction(
   client: PoolClient,
@@ -146,45 +258,80 @@ export async function runHumanAction(
     return { kind: "stale_state" };
   }
 
-  const effect = await computeEffect(client, keyring, locked, action);
+  const plan = planEffect(locked, action);
+  if (plan.kind === "unavailable_at_w0") {
+    return { kind: "unavailable_at_w0" };
+  }
   if (
-    effect.kind === "evidence_unavailable" ||
-    effect.kind === "conflict_requires_human"
+    plan.kind === "evidence_unavailable" ||
+    plan.kind === "conflict_requires_human"
   ) {
-    // A refusal is still a committed decision: it is recorded so a replayed
-    // identity returns the same refusal instead of retrying the effect.
+    // A refusal is a committed decision: it is recorded so a replayed identity
+    // returns the same refusal instead of retrying the effect.
     await recordOperation(client, locked, action, digest, {
-      outcome: effect.kind,
+      outcome: plan.kind,
       action: action.action,
       field:
-        effect.kind === "conflict_requires_human"
+        plan.kind === "conflict_requires_human"
           ? "annual_household_income"
-          : effect.field,
+          : plan.field,
       versions: versionsOf(locked),
     });
-    return effect.kind === "evidence_unavailable"
+    return plan.kind === "evidence_unavailable"
       ? { kind: "evidence_unavailable" }
       : { kind: "conflict_requires_human" };
   }
-  if (effect.kind === "unavailable_at_w0") {
-    return effect;
-  }
 
-  const recorded = await recordOperation(
+  const versions =
+    plan.kind === "commit"
+      ? {
+          applicationRevision: plan.revision,
+          requirementsVersion: plan.requirementsVersion,
+        }
+      : versionsOf(locked);
+
+  await recordOperation(
     client,
-    effect.application,
+    locked,
     action,
     digest,
-    storedOutcome(action, effect),
+    storedOutcome(action, plan, versions),
   );
-  if (recorded.kind === "request_reuse_mismatch") {
-    return { kind: "request_reuse_mismatch" };
-  }
-  if (recorded.kind === "hard_limit") {
-    return { kind: "unavailable_at_w0" };
+
+  if (plan.kind === "no_change") {
+    return {
+      kind: "applied",
+      outcome: "no_change",
+      application: locked,
+      consentCapability:
+        action.action === "allow_assisted_access"
+          ? deriveConsentCapability(keyring, locked)
+          : null,
+    };
   }
 
-  return effect;
+  const application = await saveLockedApplicationState(client, {
+    id: locked.id,
+    draft: plan.draft,
+    stage: locked.stage,
+    revision: plan.revision,
+    requirementsVersion: plan.requirementsVersion,
+    pageEpoch: locked.pageEpoch,
+    pageBootstrapRequestId: locked.pageBootstrapRequestId,
+    pageBootstrapRequestDigest: locked.pageBootstrapRequestDigest,
+    consentRequestId: plan.consentRequestId,
+    currentReviewId: locked.currentReviewId,
+  });
+
+  return {
+    kind: "applied",
+    outcome: plan.outcome,
+    application,
+    consentCapability:
+      plan.outcome === "assistance_allowed"
+        ? deriveConsentCapability(keyring, application)
+        : null,
+  };
 }
 
 function versionsOf(application: StoredApplication) {
@@ -194,170 +341,37 @@ function versionsOf(application: StoredApplication) {
   };
 }
 
-function storedOutcome(
-  action: HumanAction,
-  effect: Extract<ComputedEffect, { kind: "applied" }>,
-): StoredOperationOutcome {
-  const versions = versionsOf(effect.application);
-
-  if (action.action === "allow_assisted_access") {
-    if (effect.outcome === "no_change") {
-      return {
-        outcome: "no_change",
-        action: action.action,
-        consentCoordinate: effect.application.consentRequestId ?? action.requestId,
-        fields: [],
-        versions,
-      };
-    }
-    return { outcome: "assistance_allowed", action: action.action, versions };
+export class OperationLedgerError extends Error {
+  constructor(reason: "request_reuse_mismatch" | "hard_limit") {
+    super(`The operation ledger refused this effect: ${reason}.`);
+    this.name = "OperationLedgerError";
   }
-
-  if (action.action === "revoke_assisted_access") {
-    if (effect.outcome === "no_change") {
-      return {
-        outcome: "no_change",
-        action: action.action,
-        fields: [],
-        versions,
-      };
-    }
-    return { outcome: "assistance_revoked", action: action.action, versions };
-  }
-
-  if (effect.outcome === "no_change") {
-    return { outcome: "no_change", action: action.action, fields: [], versions };
-  }
-  return {
-    outcome: "action_applied",
-    action: action.action,
-    fields: [effect.updatedField],
-    versions,
-  };
 }
 
-type ComputedEffect =
-  | (Extract<ActionEffect, { kind: "applied" }> &
-      Readonly<{ updatedField: string }>)
-  | Readonly<{ kind: "evidence_unavailable"; field: string }>
-  | Readonly<{ kind: "conflict_requires_human" }>
-  | Readonly<{ kind: "unavailable_at_w0" }>;
-
-async function computeEffect(
-  client: PoolClient,
-  keyring: Keyring,
-  locked: StoredApplication,
-  action: HumanAction,
-): Promise<ComputedEffect> {
-  if (action.action === "allow_assisted_access") {
-    if (locked.consentRequestId !== null) {
-      return {
-        kind: "applied",
-        outcome: "no_change",
-        application: locked,
-        consentCapability: deriveConsentCapability(keyring, locked),
-        updatedField: "",
-      };
-    }
-    const application = await commit(client, locked, {
-      draft: locked.draft,
-      revision: locked.revision + 1,
-      requirementsVersion: locked.requirementsVersion,
-      consentRequestId: action.requestId,
-    });
-    return {
-      kind: "applied",
-      outcome: "assistance_allowed",
-      application,
-      consentCapability: deriveConsentCapability(keyring, application),
-      updatedField: "",
-    };
-  }
-
-  if (action.action === "revoke_assisted_access") {
-    if (locked.consentRequestId === null) {
-      return {
-        kind: "applied",
-        outcome: "no_change",
-        application: locked,
-        consentCapability: null,
-        updatedField: "",
-      };
-    }
-    const application = await commit(client, locked, {
-      draft: locked.draft,
-      revision: locked.revision + 1,
-      requirementsVersion: locked.requirementsVersion,
-      consentRequestId: null,
-    });
-    return {
-      kind: "applied",
-      outcome: "assistance_revoked",
-      application,
-      consentCapability: null,
-      updatedField: "",
-    };
-  }
-
-  if (action.action !== "bind_evidence") {
-    return { kind: "unavailable_at_w0" };
-  }
-
-  const packet = parsedPacketOf(locked);
-  const transition = bindDraftEvidence({
-    draft: draftOf(locked, packet),
-    packet,
-    field: action.field,
-    claimHandle: action.claimHandle,
-    origin: "manual",
-  });
-
-  if (transition.outcome === "evidence_unavailable") {
-    return { kind: "evidence_unavailable", field: transition.field };
-  }
-  if (transition.outcome === "conflict_requires_human") {
-    return { kind: "conflict_requires_human" };
-  }
-  if (transition.outcome === "no_change") {
-    return {
-      kind: "applied",
-      outcome: "no_change",
-      application: locked,
-      consentCapability: null,
-      updatedField: action.field,
-    };
-  }
-
-  const application = await commit(client, locked, {
-    draft: transition.draft,
-    revision: locked.revision + transition.applicationRevisionDelta,
-    requirementsVersion:
-      locked.requirementsVersion + transition.requirementsVersionDelta,
-    consentRequestId: locked.consentRequestId,
-  });
-  return {
-    kind: "applied",
-    outcome: "action_applied",
-    application,
-    consentCapability: null,
-    updatedField: action.field,
-  };
-}
-
+/**
+ * A refused ledger insert throws rather than returning, so the caller's
+ * transaction can never commit an effect the ledger does not record.
+ */
 async function recordOperation(
   client: PoolClient,
   application: StoredApplication,
   action: HumanAction,
   keyedIntentDigest: Uint8Array,
   outcome: StoredOperationOutcome,
-) {
-  return insertOperation(client, {
+): Promise<void> {
+  const recorded = await insertOperation(client, {
     applicationId: application.id,
     requestId: action.requestId,
     action: action.action as OperationAction,
     keyedIntentDigest,
     outcome,
   });
+  if (recorded.kind === "request_reuse_mismatch") {
+    throw new OperationLedgerError("request_reuse_mismatch");
+  }
+  if (recorded.kind === "hard_limit") {
+    throw new OperationLedgerError("hard_limit");
+  }
 }
 
 /**
