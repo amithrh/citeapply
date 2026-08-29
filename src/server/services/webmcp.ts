@@ -561,7 +561,7 @@ async function prepareForReview(
       outcome: {
         outcome: "not_ready_for_review",
         action: "prepare_submission_review",
-        blockers,
+        blockers: blockers.map(({ code, field }) => ({ code, field })),
         versions: versionsOf(application),
       },
     });

@@ -249,6 +249,16 @@ export async function loadCurrentReview(
  * every other human action: current coordinates, one recorded operation per
  * request identity, and the ledger row committed before the effect.
  */
+/**
+ * The operation ledger stores blockers as bare coordinates. The response keeps
+ * the full blocker objects; only the stored form is reduced.
+ */
+function storedBlockerCoordinates(
+  blockers: readonly { code: string; field: string }[],
+): readonly { code: string; field: string }[] {
+  return blockers.map(({ code, field }) => ({ code, field }));
+}
+
 export type StageTransitionOutcome =
   | Readonly<{
       kind: "review_prepared";
@@ -327,7 +337,7 @@ export async function runStageTransition(
         outcome: {
           outcome: "not_ready_for_review",
           action: "prepare_review",
-          blockers,
+          blockers: storedBlockerCoordinates(blockers),
           versions: {
             applicationRevision: application.revision,
             requirementsVersion: application.requirementsVersion,
