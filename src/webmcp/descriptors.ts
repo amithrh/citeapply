@@ -1,0 +1,140 @@
+import type { BridgeInactiveFailure } from "../contracts/outcomes.ts";
+import {
+  TOOL_ANNOTATIONS,
+  TOOL_DESCRIPTIONS,
+  TOOL_INPUT_SCHEMAS,
+  TOOL_NAMES,
+  closedJsonSchema,
+  parseCallbackToolResult,
+  parseServerToolResult,
+  type ToolInputByName,
+  type ToolName,
+  type ToolServerResultForInput,
+} from "../contracts/webmcp.ts";
+
+export type BridgeInvocation = Readonly<{
+  generation: number;
+}>;
+
+export type CiteApplyToolDispatch = <
+  K extends ToolName,
+  I extends ToolInputByName[K],
+>(
+  name: K,
+  input: I,
+  options: Readonly<{ signal: AbortSignal }>,
+  invocation: BridgeInvocation,
+) => Promise<ToolServerResultForInput<K, I>>;
+
+export type CallbackLifecycle = Readonly<{
+  captureInvocation(): BridgeInvocation | null;
+  isInvocationCurrent(invocation: BridgeInvocation): boolean;
+  inactiveResult(): BridgeInactiveFailure;
+}>;
+
+export type CiteApplyDescriptor = Readonly<{
+  name: ToolName;
+  description: string;
+  inputSchema: object;
+  annotations: Readonly<{
+    readOnlyHint: boolean;
+    untrustedContentHint: boolean;
+  }>;
+}>;
+
+function assertDescriptor(descriptor: CiteApplyDescriptor): void {
+  if (descriptor.description.length >= 500) {
+    throw new Error(`WebMCP description is too long: ${descriptor.name}`);
+  }
+  const schema = descriptor.inputSchema as {
+    additionalProperties?: unknown;
+    properties?: Record<string, { description?: unknown }>;
+  };
+  if (schema.additionalProperties !== false) {
+    throw new Error(`WebMCP input schema is not closed: ${descriptor.name}`);
+  }
+  for (const [parameter, value] of Object.entries(schema.properties ?? {})) {
+    if (typeof value.description !== "string" || value.description.length >= 150) {
+      throw new Error(
+        `WebMCP parameter description is missing or too long: ${descriptor.name}.${parameter}`,
+      );
+    }
+  }
+}
+
+function deepFreezeJson<const T>(value: T): T {
+  if (typeof value !== "object" || value === null || Object.isFrozen(value)) {
+    return value;
+  }
+  for (const child of Object.values(value)) deepFreezeJson(child);
+  return Object.freeze(value);
+}
+
+function throwIfAborted(signal: AbortSignal): void {
+  if (signal.aborted) {
+    throw new DOMException("The operation was aborted.", "AbortError");
+  }
+}
+
+export const CITEAPPLY_DESCRIPTORS: readonly CiteApplyDescriptor[] = Object.freeze(
+  TOOL_NAMES.map((name) => {
+    const descriptor: CiteApplyDescriptor = Object.freeze({
+      name,
+      description: TOOL_DESCRIPTIONS[name],
+      inputSchema: deepFreezeJson(closedJsonSchema(TOOL_INPUT_SCHEMAS[name])),
+      annotations: Object.freeze({ ...TOOL_ANNOTATIONS[name] }),
+    });
+    assertDescriptor(descriptor);
+    return descriptor;
+  }),
+);
+
+export function materializeModelContextTools(
+  dispatch: CiteApplyToolDispatch,
+  lifecycle: CallbackLifecycle,
+): readonly WebMCP.ModelContextTool[] {
+  return Object.freeze(
+    CITEAPPLY_DESCRIPTORS.map((descriptor) =>
+      Object.freeze({
+        ...descriptor,
+        execute: async (
+          rawInput: Record<string, unknown>,
+          options: WebMCP.ToolExecuteCallbackOptions,
+        ) => {
+          throwIfAborted(options.signal);
+
+          const invocation = lifecycle.captureInvocation();
+          if (invocation === null) return lifecycle.inactiveResult();
+
+          const parsedInput = TOOL_INPUT_SCHEMAS[descriptor.name].parse(
+            rawInput,
+          ) as never;
+
+          throwIfAborted(options.signal);
+          if (!lifecycle.isInvocationCurrent(invocation)) {
+            return lifecycle.inactiveResult();
+          }
+
+          const rawServerResult = await dispatch(
+            descriptor.name,
+            parsedInput,
+            { signal: options.signal },
+            invocation,
+          );
+
+          throwIfAborted(options.signal);
+          const serverProjection = parseServerToolResult(
+            descriptor.name,
+            parsedInput,
+            rawServerResult,
+          );
+          return parseCallbackToolResult(
+            descriptor.name,
+            parsedInput,
+            serverProjection,
+          );
+        },
+      }),
+    ),
+  );
+}

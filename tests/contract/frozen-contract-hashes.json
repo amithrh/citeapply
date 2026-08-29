@@ -1,0 +1,81 @@
+{
+  "schema": "citeapply-frozen-contract-hashes-v2",
+  "gate": "W0-CONTRACTS",
+  "digestAlgorithm": "SHA-256",
+  "setDigestPreimage": "UTF8(citeapply-w0-contracts-v1) || 0x00 || for each listed file: UTF8(path) || 0x00 || UTF8(sha256) || 0x00 || UTF8(byteLength) || 0x0a",
+  "setSha256": "f24a8e2994cc04108f83a1c107b9bc93f03877422d729c693a4ec14ee2478f24",
+  "runtime": {
+    "node": "24.20.0",
+    "npm": "11.19.0",
+    "typescript": "6.0.3",
+    "zod": "4.4.3"
+  },
+  "files": [
+    {
+      "path": "src/contracts/common.ts",
+      "sha256": "227a5b28466f214b390d781373f1848f3f54a3053bc9ce6228ee046bf9ab5ba2",
+      "bytes": 24074
+    },
+    {
+      "path": "src/contracts/outcomes.ts",
+      "sha256": "f066b82125b28d978eb10c8689cb7d6862e66ea6ffaf88baf499b44fa141dbf0",
+      "bytes": 9685
+    },
+    {
+      "path": "src/contracts/http.ts",
+      "sha256": "36e88a1eeb3c654d547bf1e5aaae907d81b4ee9f3f1317e1506c9efc8eee23b6",
+      "bytes": 87841
+    },
+    {
+      "path": "src/contracts/webmcp.ts",
+      "sha256": "756296841b557b79cf1d87674610c4be3ee0068be473a499ea16c6886b6c3dbb",
+      "bytes": 48724
+    },
+    {
+      "path": "tests/contract/webmcp.schema.json",
+      "sha256": "5b410fc26deb52500beef43ee73ba24111e1cb41258747761aa278d02c790e66",
+      "bytes": 262847
+    }
+  ],
+  "erratumProof": {
+    "setDigestPreimage": "UTF8(citeapply-w0-erratum-proof-v1) || 0x00 || for each listed file: UTF8(path) || 0x00 || UTF8(sha256) || 0x00 || UTF8(byteLength) || 0x0a",
+    "setSha256": "afb11ba21d2abc9b6b3490667da165d17f72e86613c4b1db593bcafffe6175c6",
+    "files": [
+      {
+        "path": "scripts/verify-file-structure.mjs",
+        "sha256": "09a4ff8dfb252473987bb35e24bdbafef58aebf6cc0e5f33468fb0b303eaf83d",
+        "bytes": 22136
+      },
+      {
+        "path": "src/server/observability/safe-events.ts",
+        "sha256": "175d5503c494d1731e7f9fc78b9a22e140476448d7c4ce1a35b383bede4c5be2",
+        "bytes": 12041
+      },
+      {
+        "path": "src/ui/components/consent.tsx",
+        "sha256": "0dd2977527a49bc5efb4923a508fe2610a8b5db66911ab67d4865e2878827308",
+        "bytes": 6866
+      },
+      {
+        "path": "tests/accessibility/consent-kernel.test.ts",
+        "sha256": "1e2e93a94ec1d5be46a916e4a809c3883606e8dc1c228c1ddc708e5f444481e6",
+        "bytes": 29165
+      },
+      {
+        "path": "tests/contract/http-contract.test.ts",
+        "sha256": "13e6124711b42ef561873f44a710fceb1c53061a6015c79217a0b423e47de68d",
+        "bytes": 193810
+      },
+      {
+        "path": "tests/security/safe-events.test.ts",
+        "sha256": "be3982f9816168c6bef1c7e488fdb726486ec461eb1d012b85fb8b90b56c3a1c",
+        "bytes": 70979
+      }
+    ]
+  },
+  "producerManifest": {
+    "path": "tests/contract/file-structure-producers.json",
+    "sha256": "42f69d1d0ac8ca8b0eebefe229cd42f36e12cfd078cb8663ea0a52db2b2905a6",
+    "bytes": 320270
+  }
+}

@@ -1,9 +1,9 @@
 # CiteApply Product Requirements Document
 
-Status: Approved and locked at G2 local-first upstream alignment; product requirements and release acceptance remain unchanged
+Status: G2 consent-disclosure second-replacement locked; product requirements and release acceptance unchanged
 Date: 2026-08-27
 Product: CiteApply (working codename)
-Upstream contract candidate: `scope.md`, SHA-256 `26b8b0fb1a68a2131a6d654198cb93f8c4bc32363e559a1d7a65747db642aa1a`
+Upstream contract candidate: `scope.md`, SHA-256 `199196c77d5f8b0a9c6c58b6c8d0751e2a269d80df42f020479044fcc91a6f29`
 
 ## Product Summary
 
@@ -386,7 +386,7 @@ Acceptance criteria:
 
 - Draft presents **Allow assisted access?** before any protected value-bearing tool result can be released.
 - The disclosure identifies this current synthetic application, this current page, and this 60-minute session as the maximum authority boundary.
-- The primary disclosure uses applicant language, not protocol terms, and includes this literal substance: **The assistant may receive your saved form answers—including the preferred contact email—and values extracted from the three synthetic records, including name, student ID, institution, household details and income. It may also receive document names/pages, which questions currently apply and their source rules, current blockers and limited review status. CiteApply's assisted tools may link allowed sources to draft answers and propose the synthetic email.**
+- The primary disclosure uses applicant language, not protocol terms, and includes this literal substance: **The assistant may receive your saved form answers—including the preferred contact email—and values extracted from the three synthetic records, including name, student ID, institution, household details and income. It may also receive document names/pages, which questions currently apply and their source rules, current blockers and limited review status. CiteApply's assisted tools may link allowed sources to draft answers and propose the synthetic email. They may also create a Review for you to inspect, but only from a ready Draft with no unsaved changes. If Review creation succeeds, it keeps that exact saved content and CiteApply turns assisted access off.**
 - It then states: **CiteApply's six assisted tools will not receive full PDFs, complete excerpts, your declaration record, conflict choice or reason, full review, confirmation, submission or exports. Those tools cannot choose a packet, make your declaration, resolve the income conflict, return from Review, confirm, submit or export. Because current blockers and limited readiness are included, the assistant may learn that a required human step is complete, but not the private conflict choice or reason.**
 - It also states: **This choice controls only CiteApply's six assisted tools. It does not change permissions you separately grant your browser, extension or assistant.**
 - Its revocation limitation states: **Revoking blocks new access, but an action CiteApply already accepted may still finish, and information already returned cannot be recalled. If a request stops waiting after CiteApply received it, the page checks the saved application instead of promising that the action was cancelled.**
@@ -1035,4 +1035,4 @@ This PRD may move from Draft to Approved only when all of the following are true
 - `reviews/02b-prd.md`, `build-notes.md`, `status.md`, `learner-profile.md`, `.devpost-hackathon-state.json`, and `AGENTS.md` identify the same gate result and next command;
 - the final metadata-only status change is hash-checked again so that **Approved** never refers to an unreviewed byte sequence.
 
-Status remains Draft until that review process completes. Approval authorizes only replacement technical specification work; it does not authorize implementation, deployment, external provisioning, publication, outreach, video upload, or Devpost submission.
+Status remains Draft until that review process completes. Initial approval authorizes only replacement technical specification work. For this post-start erratum, approval keeps existing Item-1 bytes frozen until a separately declared and reviewed local-only A0 rebind records `local_ready`. It then authorizes only the enumerated existing-file repairs, contract refreeze, remaining Wave-0 producers, and full W0 closure in checklist order; it never authorizes deployment, external provisioning, publication, outreach, video upload, or Devpost submission.

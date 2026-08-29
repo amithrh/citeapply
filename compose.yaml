@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:17.6-alpine
+    environment:
+      POSTGRES_USER: citeapply
+      POSTGRES_PASSWORD: citeapply
+      POSTGRES_DB: citeapply
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./db/migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U citeapply -d citeapply"]
+      interval: 5s
+      timeout: 5s
+      retries: 20

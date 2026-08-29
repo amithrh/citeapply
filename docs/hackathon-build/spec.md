@@ -1,12 +1,12 @@
 # CiteApply Replacement Technical Specification
 
-Status: Approved and locked at G3 local-first execution amendment; implementation remains prohibited until A0L.2 records local_ready
+Status: G3 consent-disclosure second-replacement locked; implementation paused pending A0 rebind
 
 Date: 2026-08-27
 
-G1 local-first scope candidate input: SHA-256 `26b8b0fb1a68a2131a6d654198cb93f8c4bc32363e559a1d7a65747db642aa1a`
+G1 consent-disclosure second-replacement candidate input: SHA-256 `199196c77d5f8b0a9c6c58b6c8d0751e2a269d80df42f020479044fcc91a6f29`
 
-G2 local-first PRD candidate input: SHA-256 `be037cbb876385174347624105a4ab96090ebba4257efd5856e167526a54dd37`
+G2 consent-disclosure second-replacement candidate input: SHA-256 `643b21aa5f12653a1c91022a9653d23bf76a40cbfa2cae7145b56f27ba36567a`
 
 ## Overview
 
@@ -336,7 +336,7 @@ Exact response-loss replay returns the same page capability only while that stor
 
 The page capability stays in the controller closure and is sent in `X-CiteApply-Page`. New takeover broadcasts only `{type:"citeapply-page-taken"}`; older pages become read-only. Without prior `pagehide`, delayed/missing broadcast makes focus/visibility run authenticated snapshot, whose old capability gets `stale_page`. After `pagehide`, persisted `pageshow` instead uses challenge→takeover with callbacks dormant. The channel is only a hint; tests cover direct/back Application/Receipt restore, stale, expiry, and delayed callbacks.
 
-Visible Allow is an idempotent `/api/application/actions` mutation. It requires current page, Draft, expected revisions, and the exact locked disclosure presentation. It sets `consent_request_id`, records the operation, and returns a derived consent capability to browser memory. The WebMCP bridge adds it as `X-CiteApply-Consent`, outside agent-visible schemas. Revoke clears the coordinate under the same application lock. Takeover, successful Review preparation, Return, submission, and expiry also make consent invalid. Exact lost-response Allow replay can reissue the capability only if the same consent coordinate remains current; a later Revoke or Allow is never undone by replay.
+Visible Allow is an idempotent `/api/application/actions` mutation. It requires current page, Draft, expected revisions, and the exact locked disclosure presentation. Before Allow, the accessible permitted-action catalog enumerates in canonical order: link policy-allowed sources; propose the synthetic `.test` email; and create a Review only from a ready Draft with no unsaved changes. It states that successful Review creation keeps that exact saved content and turns assisted access off; the separate prohibited-action catalog says the tools cannot Return from Review, confirm, or submit. Allow sets `consent_request_id`, records the operation, and returns a derived consent capability to browser memory. The WebMCP bridge adds it as `X-CiteApply-Consent`, outside agent-visible schemas. Revoke clears the coordinate under the same application lock. Takeover, successful Review preparation, Return, submission, and expiry also make consent invalid. Exact lost-response Allow replay can reissue the capability only if the same consent coordinate remains current; a later Revoke or Allow is never undone by replay.
 
 ### Final protected precedence
 
@@ -1166,4 +1166,4 @@ Editing preserves captured session/request causality and labels compressed waits
 
 G3 requires fewer than 15,000 words, exact capped surfaces, all 40 stories, mechanical preflight, and same-SHA passes from product/accessibility, engineering/security, and WebMCP/judge lanes. Every P0/P1 is fixed and rechecked; every P2 is fixed or accepted. A status-only lock then needs three candidate-hash reproductions.
 
-Until then this is a candidate and application code is prohibited. After G3, `build-checklist` must sequence every behavior, rebase capacity, and pass exact-hash review before local implementation; it never authorizes external mutation.
+Until planning review completes, application bytes remain frozen at the v1 witness. Replacement G3/G4L lock is followed by a declared private-ledger rebind; only its exact three-lane pass establishes `local_ready`. Declared HTTP, safe-event, consent, executable-test, mirror, verifier, and manifest units may then run. Their v2 witness, separate erratum-proof digest, and non-vacuous W0-CONTRACTS review precede the 17 absent producers and full W0-C0 closure. No pass is reused or external mutation authorized.

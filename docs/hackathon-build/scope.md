@@ -1,6 +1,6 @@
 # CiteApply Replacement Scope
 
-Status: Approved and locked at G1 local-first delivery amendment; product boundary unchanged
+Status: G1 consent-disclosure second-replacement locked; product boundary unchanged
 Date: 2026-08-27
 Working codename: CiteApply
 
@@ -125,8 +125,8 @@ Before **Allow assisted access**, visible and screen-reader-accessible copy stat
 
 - the purpose and scope: help with this synthetic application in the current page/session;
 - included categories: current application state and values, program requirements, normalized evidence claims and source metadata, validation results, and bounded review metadata;
-- permitted actions: request policy-allowed source bindings and propose the synthetic `.test` email;
-- excluded data/actions: raw PDFs, complete source excerpts, the complete review diff, packet selection, applicant declaration, conflict resolution, confirmation, submission, and export;
+- permitted actions: request policy-allowed source bindings, propose the synthetic `.test` email, and create a Review for the applicant to inspect—but only from a ready Draft with no unsaved changes; successful Review creation keeps that exact saved content and turns assisted access off;
+- excluded data/actions: raw PDFs, complete source excerpts, the complete review diff, packet selection, applicant declaration, conflict resolution, Return from Review, confirmation, submission, and export;
 - Revoke stops future operations that have not already passed final server authorization, but cannot erase returned or already-authorized in-flight data and cannot govern separate privileged-browser access; and
 - refresh, newer-page takeover, session expiry, and successful review preparation clear assisted access.
 
@@ -440,6 +440,6 @@ G1 passes only when:
 - reviewers agree that the exact committed loop remains competitive under all four official judging criteria;
 - the six-tool/one-registration/real-parser decisions and every named cut are reflected consistently in the agent contract, learner profile, status, build notes, and saved guided-build state;
 - the prior PRD and specification are marked historical and no longer appear as implementation contracts; and
-- no application code has started.
+- before initial implementation, no application code has started; for a bounded post-start erratum, every existing implementation byte is instead inventoried and held unchanged through planning review, and the local-authority rebind plus every affected downstream contract/freeze is explicitly reopened and revalidated in an executable order before broader work resumes.
 
-Only then may G2 be regenerated from this scope.
+Only then may G2 be regenerated from this scope. A post-start erratum may rebind G2 only through that review path: lock planning; review an explicit local-only A0 rebind; run only declared existing-file repairs; capture their new witness and refreeze the affected contracts; then create still-absent Wave-0 files and close full W0-C0. It never treats existing bytes as absent, permits mutation while A0 is pending, or reuses an affected pass.

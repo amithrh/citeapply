@@ -37,12 +37,14 @@
     ],
     "plan_file": "docs/hackathon-build/scope.md",
     "checklist_file": "docs/hackathon-build/checklist.md",
-    "checklist_sha256": "d7bef6a37eb58dd1a6f624a33c2ab28bd5df407a364774fa1a2ac02af70aff08",
-    "checklist_candidate_sha256": "18f886b89d7b467e028dbb294011d3f877d889962328bae9c56255f7725930e3",
+    "checklist_sha256": "1e85453fe55c3e5f61bd7a7ab33ff63eb3828c7eaeba2bdc40f98fa92c0d0918",
+    "checklist_candidate_sha256": "2290460db2ceb10e9db0838609d0c843de3c7012c2ff89e5526a93a7cc21c82f",
+    "checklist_candidate_status": "passed-and-status-only-locked",
     "producer_manifest_file": "docs/hackathon-build/file-producers.json",
-    "producer_manifest_sha256": "24c9499fe57830d5b09367389e0f4da5344f21bf048e68969954d39f2f10d335",
-    "producer_manifest_candidate_sha256": "24c9499fe57830d5b09367389e0f4da5344f21bf048e68969954d39f2f10d335",
-    "gate_status": "a0l-passed-item1-local-foundation-active"
+    "producer_manifest_sha256": "42f69d1d0ac8ca8b0eebefe229cd42f36e12cfd078cb8663ea0a52db2b2905a6",
+    "producer_manifest_candidate_sha256": "42f69d1d0ac8ca8b0eebefe229cd42f36e12cfd078cb8663ea0a52db2b2905a6",
+    "producer_manifest_candidate_status": "passed-unchanged-at-lock",
+    "gate_status": "a0e1-local-ready-g4e1-through-g4e15-w0-contracts-units-1-68-and-1-69-passed-unit-1-70-active-public-actions-denied"
   },
   "submission": {
     "draft_file": "devpost-submission.md",
