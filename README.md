@@ -54,9 +54,43 @@ All six register once when the application page loads.
 | `get_validation_issues` | Ordered readiness blockers | Change anything |
 | `prepare_submission_review` | Freezes a ready Draft into an immutable Review | Reveal the Review contents, confirm, or submit |
 
-Authority never travels in tool arguments. The page injects its current
-capabilities as request headers; the server re-validates every tool input against
-the same Zod schema the descriptor was generated from.
+### Authority never travels in tool arguments
+
+This is the pattern most worth copying. A tool call carries only its arguments.
+The *page* injects its current capabilities as request headers, and the server
+re-validates every tool input against the same Zod schema the descriptor was
+generated from.
+
+```
+agent ──tool args──▶ page bridge ──args + X-CiteApply-Page ─────▶ /api/webmcp
+                     (holds the             + X-CiteApply-Consent      │
+                      capabilities                                    ▼
+                      in page memory,                        re-parse args,
+                      never exposes                          verify capabilities,
+                      them as a tool)                        then decide
+```
+
+An agent holding a valid session cookie but no live page capability gets
+`stale_page` from all six tools. Revoking assisted access clears the consent
+capability in page memory *before* the network call, so no in-flight tool call
+can outlive the revocation.
+
+### Retries are safe, and a stale agent is told what changed
+
+Every mutation carries a `requestId` plus the revision and requirements version
+the agent last read. Idempotency is keyed on an HMAC of the *canonicalized*
+change set, so a semantically identical retry replays its recorded effect
+instead of applying twice, and reusing one identity for different content is
+refused as `request_reuse_mismatch`. A stale attempt returns `stale_state`
+carrying the current versions, so the agent can re-read rather than guess.
+
+### A displayed excerpt cannot be fabricated
+
+Claims store the document hash and the exact page span they came from. Every
+excerpt shown in the evidence drawer and in the frozen Review is *reconstructed
+by slicing stored page text at those offsets* — the UI never renders remembered
+or model-supplied text, so it cannot display a quote the source does not
+contain.
 
 ## The demonstration
 
@@ -115,9 +149,20 @@ over the session and registers the tools.
 
 ### Trying the agent side
 
-The page registers against `document.modelContext`. In a browser without WebMCP
-the page says so and the complete application remains usable through the visible
-manual controls — assistance is always optional, never required.
+The page registers all six tools against `document.modelContext` when the
+application page loads. In a browser without WebMCP the page says so plainly and
+the complete application remains usable through the visible manual controls —
+assistance is always optional, never required.
+
+**What has and has not been verified.** The registration path is proven
+automatically in `tests/contract/webmcp-registration.test.ts` against a
+spec-shaped `ModelContext` stand-in: all six tools register with one shared
+abort signal, an inactive or deactivated bridge refuses to dispatch at all, and
+a malformed tool argument never reaches the server. The server side is proven
+against a real database in `tests/integration/minimum-client-spine.test.ts`.
+What is *not* yet proven is a session driven by a genuine external WebMCP
+client build; `tests/e2e/raw-genuine-client-chronology.spec.ts` exists to
+validate exactly that and skips until real client traces are supplied.
 
 ## Verifying it
 
@@ -159,6 +204,13 @@ is hardcoded anywhere in `src/`.
   measured result. There are no adoption or ROI claims.
 - WebMCP is a Community Group draft, not a W3C standard, and support varies by
   browser build.
+
+## Deploying and submitting
+
+- [docs/DEPLOYING.md](docs/DEPLOYING.md) — environment, migrations, platform
+  notes, and post-deploy checks.
+- [docs/SUBMISSION.md](docs/SUBMISSION.md) — the hackathon submission draft,
+  video script, and pre-submission checklist.
 
 ## License
 
