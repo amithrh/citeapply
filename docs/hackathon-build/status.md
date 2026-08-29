@@ -1,12 +1,34 @@
 # CiteApply Implementation Status
 
-Last updated: 2026-08-29
+Last updated: 2026-08-29 (running product)
 
 ## Goal
 
 Build and verify a winning-quality CiteApply WebMCP product with stage-gated implementation, independent multi-agent review, complete-flow testing, remediation before progression, and durable documentation.
 
 ## Current Position
+
+- **The product runs.** Landing, application page, four W0 API routes plus
+  `/api/submission` and `/api/receipt`, all four services, the six WebMCP tools,
+  and the complete applicant journey through submission and receipt.
+- Verified under pinned Node 24.20.0: typecheck, lint at zero warnings, 43
+  tests, production-import boundary, fixture hashes, and `verify:file-structure`
+  at gate W0-C0 at the moment W0 closed.
+- Both packets driven end to end over HTTP and in a browser. The conflict packet
+  refuses the agent's income binding and requires a visible applicant choice;
+  that resolution is carried as a warning into the frozen Review and the receipt.
+- Two independent reviews ran against the W0 kernel; every accepted finding was
+  repaired in commit `d2e0a32`, including an empty-500 crash on malformed tool
+  input and an effect that could commit without its operation row.
+- Tree position: between W0-C0 and W1-C1. Every W1 product file is
+  ledger-declared; what remains for W1-C1 is additional test files. Deviations
+  are recorded in the build notes rather than left implicit.
+- User authority unchanged: local implementation and testing only. Deployment,
+  the public repository, Devpost, upload, outreach, monitoring, and submission
+  remain disabled and untaken.
+
+## Prior Position (superseded)
+
 
 - Active stage: A0E.1, G4E.1–G4E.15, corrected-state W0-CONTRACTS, the exact status-only promotion, and units 1.68–1.69 passed. Both rejected W0 candidates, rejected Draft candidate `6d838cee…c070`, and every discarded/interrupted verdict remain recorded. Exact remediated `src/domain/draft.ts` `320489ed…c070` passed its executable runtime/type oracles and three fresh unconditional `0/0/0/0` reviews. Only unit 1.70 / `src/domain/readiness.ts` is active; the other 14 baseline producers remain gated.
 - User authority: local implementation/testing only; every provider, deployment, public repository, Devpost, upload, outreach, monitoring, and submission action is disabled

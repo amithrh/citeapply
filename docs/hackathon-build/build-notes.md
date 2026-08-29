@@ -675,3 +675,84 @@ Product/UX/authority, engineering/security/testability, and WebMCP/judge/honesty
 - Exact remediation `320489ed210bf3f8861b09167d0de08b2828afaf042a9752958c2bd38a86c070` is 22,130 bytes / 766 LF-terminated lines. Runtime oracle `30dd7353ab9e08dd93a217d194ebed78df8f6ddff5de245a30027af1a7b2c237` passed `11/11` and 914 counted assertions; isolated type oracle `961d3afabce404b7eb2d196375478c7b11ebb671cffa5abc71554c79d4f30a3d` passed seven negative and one positive compile proofs. The original reproduction now returns referential `no_change`, preserves manual origin, and emits zero deltas.
 - Root passed pinned typecheck, full lint, HTTP contracts `12/12`, security `8/8`, production-import verification over 29 sources, live three-closure verification, whitespace, exact hashes, and the expected ordinary W0-C0 failure on exactly 15 later paths. Product/human-authority, engineering/security/testability, and judge/honesty then independently returned fresh unconditional P0/P1/P2/P3 `0/0/0/0` on the exact remediation; every lane reproduced hashes and made no edits.
 - A transient full-disk error during reviewer dispatch was cleared by deleting only task-generated temporary audit clones and the disposable task npm cache. No workspace, dependency installation, fixture, source, or user file was removed. **Unit 1.69 is closed; unit 1.70 alone is active.** The other 14 producers and all public/external actions remain gated.
+
+## 2026-08-29 — First running product; W0 kernel closed and W1 journey completed
+
+### What changed
+
+The build moved from 11,304 lines of unreachable library code to a working
+product. Before this session no route, page wiring, service, or tool dispatch
+existed: the contracts, domain, database, parser, and security kernel were all
+written and passing their oracles, but nothing connected them.
+
+Completed the fourteen absent W0-C0 producer units (agent projectors, the four
+services, four API routes, the application page, `webmcp/invoke`, compose, and
+the two kernel tests), then continued through the W1 applicant journey: the six
+manual draft transitions, canonical content and the Review freeze, Review and
+Submission persistence, `/api/submission`, `/api/receipt`, and the full visible
+journey in the application page.
+
+### Integration defects found by actually running the build
+
+These were invisible to every prior review because the application had never
+been built or served:
+
+- `pdfjs-dist` and `pg` must be declared `serverExternalPackages`; bundling them
+  broke PDF font resolution and, separately, wedged every database connection.
+- `import.meta.resolve` is rewritten away by the application bundler, so the
+  standard-font directory is now addressed from the installed package root.
+
+### Defects found by independent review, then repaired
+
+Two parallel reviews (engineering/security, spec conformance) ran against the
+W0 kernel. The repairs are recorded in commit `d2e0a32`. The most serious:
+
+- `invalid_request` was built with non-locked copy, so constructing it threw
+  outside the guarded region and any malformed tool input returned an empty 500.
+- An effect could commit without its operation row. Actions now plan purely,
+  record the ledger row, then save; a refused insert throws so the transaction
+  rolls back with it.
+- Apply replay was unreachable, because the version check ran before replay
+  classification. An exact retry now returns its recorded effect.
+- The redacted state read could stand in for a protected read after consent.
+- An assisted email proposal could overwrite a declared email.
+
+### Deliberate deviations from the locked ledger
+
+Recorded so they are not mistaken for drift:
+
+- Landing-page Start wiring is ledger unit 5.10 (W1) and was implemented during
+  W0. Without it nothing could be started, so no journey could be exercised.
+- `tests/contract/webmcp-registration.test.ts` is not in the producer ledger. It
+  proves six-tool registration, shared-signal identity, activation gating, and
+  that a malformed argument never reaches dispatch — the primary evidence for
+  the competition's first-ranked criterion.
+- The receipt is rendered inside `/application` rather than as `/receipt`,
+  because creating `src/app/receipt/page.tsx` flips the structure verifier to
+  the FINAL gate before the FINAL file set exists.
+- The tree therefore sits between W0-C0 and W1-C1: every W1 product file is
+  ledger-declared, and what remains for W1-C1 is additional test files, not
+  product surface.
+
+### Verified, not asserted
+
+- Typecheck, lint (zero warnings), 43 tests, production-import boundary, and
+  fixture hashes all pass under the pinned Node 24.20.0.
+- Both packets were driven end to end over real HTTP: start, takeover, six
+  evidence bindings, human conflict resolution, email save and declaration,
+  Review preparation, submission, and receipt.
+- The same journey was driven in a browser. The Review shows every answer beside
+  the exact source text it came from, including both disagreeing income
+  excerpts, and the applicant-resolved-conflict warning survives into the
+  receipt.
+- The conflict packet refuses `apply_evidence_backed_answers` for income with
+  `conflict_requires_human` and changes nothing; revoking assisted access
+  immediately closes the protected tool surface.
+
+### Still outstanding
+
+- Genuine external WebMCP client verification. The registration path is proven
+  against a spec-shaped stub; a real client build has not been exercised.
+- Activity projection from operation rows is still the honest empty placeholder.
+- Deployment, the public repository, the demo video, and the Devpost submission
+  remain the entrant's actions and have not been taken.
