@@ -202,6 +202,7 @@ export default function ApplicationPage() {
       const result = await runAction({ action: "allow_assisted_access" });
       if (result.ok === true) {
         setAssistance("allowed");
+        setNotice("This page is current. Assisted access is allowed.");
         return { ok: true as const, assistance: "allowed" as const };
       }
       return {
@@ -216,6 +217,7 @@ export default function ApplicationPage() {
         consentCapability: null,
       };
       setAssistance("off");
+      setNotice("This page is current. Assisted access is off.");
       const result = await runAction({ action: "revoke_assisted_access" });
       return result.ok === true
         ? { ok: true as const, assistance: "off" as const }

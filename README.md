@@ -154,15 +154,24 @@ application page loads. In a browser without WebMCP the page says so plainly and
 the complete application remains usable through the visible manual controls —
 assistance is always optional, never required.
 
+**Verified against Chrome 151.** With
+`chrome://flags/#enable-webmcp-testing` enabled, all six tools register and are
+invocable through the browser's own `document.modelContext.executeTool`. The
+consent boundary, a permitted binding, and the `conflict_requires_human` refusal
+were all exercised from the client side. The full transcript, including Chrome's
+actual invocation contract, is in
+[docs/verification/genuine-chrome-webmcp.md](docs/verification/genuine-chrome-webmcp.md).
+
 **What has and has not been verified.** The registration path is proven
 automatically in `tests/contract/webmcp-registration.test.ts` against a
 spec-shaped `ModelContext` stand-in: all six tools register with one shared
 abort signal, an inactive or deactivated bridge refuses to dispatch at all, and
 a malformed tool argument never reaches the server. The server side is proven
 against a real database in `tests/integration/minimum-client-spine.test.ts`.
-What is *not* yet proven is a session driven by a genuine external WebMCP
-client build; `tests/e2e/raw-genuine-client-chronology.spec.ts` exists to
-validate exactly that and skips until real client traces are supplied.
+What is *not* yet proven is a session in which an autonomous agent chooses the
+calls itself: the Chrome verification above was driven by scripted calls to the
+browser's WebMCP API. `tests/e2e/raw-genuine-client-chronology.spec.ts` exists to
+validate full agent-client chronologies and skips until such traces are supplied.
 
 ## Verifying it
 

@@ -12,7 +12,7 @@ type RegisteredTool = {
   annotations: { readOnlyHint: boolean; untrustedContentHint: boolean };
   execute: (
     input: Record<string, unknown>,
-    options: { signal: AbortSignal },
+    options?: { signal: AbortSignal },
   ) => Promise<unknown>;
 };
 
@@ -199,4 +199,31 @@ test("a malformed tool argument never reaches dispatch", async () => {
     ),
   );
   assert.equal(recorder.calls.length, 0);
+});
+
+test("a client that passes no options object can still invoke a tool", async () => {
+  // Chrome 151 invokes the callback with the parsed arguments only. A bridge
+  // that assumes `options.signal` exists registers fine and then fails every
+  // call, so the no-options path is exercised explicitly.
+  const recorder = { calls: [] as unknown[] };
+  const stub = createStubModelContext();
+  const bridge = createCiteApplyBridge(
+    stubDispatch(recorder),
+    stub.context as never,
+  );
+  await bridge.registerOnce();
+  const token = bridge.beginActivation();
+  assert.ok(token !== null);
+  bridge.activate(token);
+
+  const tool = stub.tools.get("get_application_state");
+  assert.ok(tool !== undefined);
+  const result = (await tool.execute({ mode: "redacted" })) as {
+    ok: boolean;
+    data?: { access: string };
+  };
+
+  assert.equal(result.ok, true);
+  assert.equal(result.data?.access, "consent_required");
+  assert.equal(recorder.calls.length, 1);
 });

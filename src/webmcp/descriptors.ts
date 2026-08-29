@@ -73,10 +73,22 @@ function deepFreezeJson<const T>(value: T): T {
   return Object.freeze(value);
 }
 
-function throwIfAborted(signal: AbortSignal): void {
-  if (signal.aborted) {
+function throwIfAborted(signal: AbortSignal | undefined): void {
+  if (signal?.aborted === true) {
     throw new DOMException("The operation was aborted.", "AbortError");
   }
+}
+
+/**
+ * Chrome 151 invokes the callback with the parsed arguments only; it passes no
+ * options object, so cancellation is unavailable there. Later builds and the
+ * current draft supply `{ signal }`. Read it defensively and fall back to a
+ * signal that never aborts, so a client that omits it can still call the tool.
+ */
+function executionSignal(
+  options: WebMCP.ToolExecuteCallbackOptions | undefined,
+): AbortSignal | undefined {
+  return options?.signal;
 }
 
 export const CITEAPPLY_DESCRIPTORS: readonly CiteApplyDescriptor[] =
@@ -103,9 +115,10 @@ export function materializeModelContextTools(
         ...descriptor,
         execute: async (
           rawInput: Record<string, unknown>,
-          options: WebMCP.ToolExecuteCallbackOptions,
+          options?: WebMCP.ToolExecuteCallbackOptions,
         ) => {
-          throwIfAborted(options.signal);
+          const signal = executionSignal(options);
+          throwIfAborted(signal);
 
           const invocation = lifecycle.captureInvocation();
           if (invocation === null) return lifecycle.inactiveResult();
@@ -114,7 +127,7 @@ export function materializeModelContextTools(
             rawInput,
           ) as never;
 
-          throwIfAborted(options.signal);
+          throwIfAborted(signal);
           if (!lifecycle.isInvocationCurrent(invocation)) {
             return lifecycle.inactiveResult();
           }
@@ -122,11 +135,11 @@ export function materializeModelContextTools(
           const rawServerResult = await dispatch(
             descriptor.name,
             parsedInput,
-            { signal: options.signal },
+            { signal: signal ?? new AbortController().signal },
             invocation,
           );
 
-          throwIfAborted(options.signal);
+          throwIfAborted(signal);
           const serverProjection = parseServerToolResult(
             descriptor.name,
             parsedInput,
