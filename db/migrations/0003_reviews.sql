@@ -35,3 +35,28 @@ CREATE UNIQUE INDEX reviews_one_current_per_application_idx
 
 CREATE INDEX reviews_application_history_idx
   ON reviews (application_id, created_at, id);
+
+-- A frozen Review is immutable. The only permitted update is the one-way
+-- invalidation stamp written when the applicant returns to Draft.
+CREATE FUNCTION reviews_reject_mutation() RETURNS trigger AS $$
+BEGIN
+  IF NEW.id IS DISTINCT FROM OLD.id
+     OR NEW.short_id IS DISTINCT FROM OLD.short_id
+     OR NEW.application_id IS DISTINCT FROM OLD.application_id
+     OR NEW.source_application_revision IS DISTINCT FROM OLD.source_application_revision
+     OR NEW.source_requirements_version IS DISTINCT FROM OLD.source_requirements_version
+     OR NEW.content_hash IS DISTINCT FROM OLD.content_hash
+     OR NEW.review_snapshot IS DISTINCT FROM OLD.review_snapshot
+     OR NEW.created_at IS DISTINCT FROM OLD.created_at THEN
+    RAISE EXCEPTION 'A frozen Review cannot be modified.';
+  END IF;
+  IF OLD.invalidated_at IS NOT NULL AND NEW.invalidated_at IS DISTINCT FROM OLD.invalidated_at THEN
+    RAISE EXCEPTION 'A Review invalidation cannot be changed.';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER reviews_immutable
+  BEFORE UPDATE ON reviews
+  FOR EACH ROW EXECUTE FUNCTION reviews_reject_mutation();

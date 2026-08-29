@@ -1,4 +1,4 @@
-import { randomBytes } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 
 import type { Pool, PoolClient } from "pg";
 
@@ -34,6 +34,7 @@ import {
   projectValidationIssues,
 } from "../../domain/agent-projectors.ts";
 import { applyAssistedDraftChanges } from "../../domain/draft.ts";
+import { evaluateDraftReadiness } from "../../domain/readiness.ts";
 import {
   lockApplicationBySessionDigest,
   saveLockedApplicationState,
@@ -45,7 +46,11 @@ import {
   finalizeAuthority,
   type AuthorityMode,
 } from "../security/capabilities.ts";
-import { operationIntentDigest, type Keyring } from "../security/keys.ts";
+import {
+  deriveOpaqueCapability,
+  operationIntentDigest,
+  type Keyring,
+} from "../security/keys.ts";
 import { draftOf, parsedPacketOf } from "./application.ts";
 import { prepareApplicationReview } from "./submission.ts";
 
@@ -494,9 +499,14 @@ function canonicalPrepareIntent(input: PrepareInput): string {
   ]);
 }
 
-/** An opaque 22-character handle for the frozen Review. */
-function reviewReference(reviewId: string): string {
-  return Buffer.from(reviewId.replaceAll("-", ""), "hex").toString("base64url");
+/**
+ * A keyed, one-way handle for the frozen Review. The agent can compare it
+ * across calls but cannot recover the Review identity or its short id from it.
+ */
+function reviewReference(keyring: Keyring, reviewId: string): string {
+  return deriveOpaqueCapability(keyring.operation, "reviewref", [
+    reviewId,
+  ]).slice(0, 22);
 }
 
 async function prepareForReview(
@@ -512,42 +522,87 @@ async function prepareForReview(
     return staleState(application);
   }
 
-  const prepared = await prepareApplicationReview(client, application);
-  if (prepared.kind === "stale_state") {
-    return staleState(application);
+  const digest = operationIntentDigest(
+    keyring,
+    Buffer.from(canonicalPrepareIntent(input), "utf8"),
+  );
+  const replay = await classifyOperationReplay(
+    client,
+    application.id,
+    input.requestId,
+    digest,
+  );
+  if (replay.kind === "mismatch") return requestReuseMismatch();
+  if (replay.kind === "exact") {
+    const stored = replay.operation.outcome as { reviewId?: string };
+    return stored.reviewId === undefined
+      ? staleState(application)
+      : {
+          ok: true,
+          data: projectPrepareSuccess(
+            versionsOf(application),
+            reviewReference(keyring, stored.reviewId),
+          ),
+        };
   }
-  if (prepared.kind === "not_ready") {
+
+  // Readiness is decided before anything is written, so a refusal can never
+  // follow a committed freeze.
+  const packet = parsedPacketOf(application);
+  const blockers = evaluateDraftReadiness(
+    draftOf(application, packet),
+  ).blockers;
+  if (blockers.length > 0) {
+    await insertOperation(client, {
+      applicationId: application.id,
+      requestId: input.requestId,
+      action: "prepare_submission_review",
+      keyedIntentDigest: digest,
+      outcome: {
+        outcome: "not_ready_for_review",
+        action: "prepare_submission_review",
+        blockers,
+        versions: versionsOf(application),
+      },
+    });
     return NotReadyForReviewFailureSchema.parse({
       ok: false,
       error: {
         code: "not_ready_for_review",
         message: "The application is not ready for Review.",
         safeActions: ["use_visible_application"],
-        blockers: prepared.blockers,
+        blockers,
       },
     });
   }
 
-  const recorded = await insertOperation(client, {
+  const reviewId = randomUUID();
+  await insertOperation(client, {
     applicationId: application.id,
     requestId: input.requestId,
     action: "prepare_submission_review",
-    keyedIntentDigest: operationIntentDigest(
-      keyring,
-      Buffer.from(canonicalPrepareIntent(input), "utf8"),
-    ),
+    keyedIntentDigest: digest,
     outcome: {
       outcome: "assisted_review_prepared",
       action: "prepare_submission_review",
-      reviewId: prepared.review.id,
+      reviewId,
       versions: {
-        applicationRevision: prepared.application.revision,
-        requirementsVersion: prepared.application.requirementsVersion,
+        applicationRevision: application.revision + 1,
+        requirementsVersion: application.requirementsVersion,
       },
     },
   });
-  if (recorded.kind === "request_reuse_mismatch") return requestReuseMismatch();
-  if (recorded.kind === "hard_limit") return demoChangeLimit();
+
+  const prepared = await prepareApplicationReview(
+    client,
+    application,
+    reviewId,
+  );
+  if (prepared.kind !== "prepared") {
+    throw new Error(
+      "A guarded Review preparation failed after its ledger row.",
+    );
+  }
 
   return {
     ok: true,
@@ -556,7 +611,7 @@ async function prepareForReview(
         applicationRevision: prepared.application.revision,
         requirementsVersion: prepared.application.requirementsVersion,
       },
-      reviewReference(prepared.review.id),
+      reviewReference(keyring, prepared.review.id),
     ),
   };
 }

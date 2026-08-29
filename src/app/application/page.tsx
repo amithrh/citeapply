@@ -258,6 +258,27 @@ export default function ApplicationPage() {
     }
   };
 
+  const submitted =
+    snapshot !== null && snapshot.stage === "submitted" ? snapshot : null;
+
+  useEffect(() => {
+    if (submitted === null || receipt !== null) return;
+    let cancelled = false;
+    void (async () => {
+      const loaded = (await postJson(
+        "/api/receipt",
+        { mode: "load" },
+        authorityRef.current.pageCapability,
+      )) as { ok?: boolean; data?: { delivery: { receipt: ReceiptRecord } } };
+      if (!cancelled && loaded.ok === true && loaded.data !== undefined) {
+        setReceipt(loaded.data.delivery.receipt);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [submitted, receipt]);
+
   const draft: HumanDraftV1 | null =
     snapshot !== null && snapshot.stage === "draft" ? snapshot.view : null;
   const review: HumanReviewV1 | null =
@@ -349,6 +370,8 @@ export default function ApplicationPage() {
             Return to draft
           </button>
         </section>
+      ) : submitted !== null ? (
+        <p>Loading your receipt…</p>
       ) : draft === null ? (
         <p>Loading the saved application…</p>
       ) : (

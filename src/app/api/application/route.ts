@@ -1,7 +1,11 @@
 import { randomUUID } from "node:crypto";
 
+import type { PoolClient } from "pg";
+
 import { ApplicationRequestSchema } from "../../../contracts/http.ts";
 import { lockApplicationBySessionDigest } from "../../../server/db/applications.ts";
+import { listOperations } from "../../../server/db/operations.ts";
+import { findCurrentReview } from "../../../server/db/reviews.ts";
 import { getDatabasePool } from "../../../server/db/pool.ts";
 import { withReadCommittedTransaction } from "../../../server/db/transactions.ts";
 import {
@@ -26,6 +30,7 @@ import { runPublicTransportThrottle } from "../../../server/security/throttle.ts
 import { runPageTakeover } from "../../../server/services/actions.ts";
 import {
   currentPageCapability,
+  projectActivity,
   parsedPacketOf,
   projectEvidenceExcerpt,
   projectHumanSnapshot,
@@ -83,6 +88,16 @@ function invalidRequest(): Response {
       safeActions: ["reread_state_and_requirements"],
     },
   });
+}
+
+async function currentReviewSnapshot(
+  client: PoolClient,
+  application: Readonly<{ id: string; stage: string }>,
+): Promise<unknown> {
+  if (application.stage === "draft") return null;
+  return (
+    (await findCurrentReview(client, application.id))?.reviewSnapshot ?? null
+  );
 }
 
 export async function POST(request: Request): Promise<Response> {
@@ -183,7 +198,12 @@ export async function POST(request: Request): Promise<Response> {
           data: {
             kind: "takeover",
             pageCapability: currentPageCapability(keyring, taken),
-            snapshot: projectTakeoverSnapshot(taken, authority.clock),
+            snapshot: projectTakeoverSnapshot(
+              taken,
+              authority.clock,
+              projectActivity(await listOperations(client, taken.id)),
+              await currentReviewSnapshot(client, taken),
+            ),
           },
         } as const;
       }
@@ -209,7 +229,12 @@ export async function POST(request: Request): Promise<Response> {
           status: "snapshot",
           data: {
             kind: "snapshot",
-            snapshot: projectHumanSnapshot(application, authority.clock),
+            snapshot: projectHumanSnapshot(
+              application,
+              authority.clock,
+              projectActivity(await listOperations(client, application.id)),
+              await currentReviewSnapshot(client, application),
+            ),
           },
         } as const;
       }

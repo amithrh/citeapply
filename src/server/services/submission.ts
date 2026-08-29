@@ -4,9 +4,17 @@ import type { PoolClient } from "pg";
 
 import {
   ReceiptRecordV1Schema,
+  type HumanAction,
   type SubmitIntentV1,
 } from "../../contracts/http.ts";
 import { prepareReview } from "../../domain/review.ts";
+import { evaluateDraftReadiness } from "../../domain/readiness.ts";
+import {
+  classifyOperationReplay,
+  insertOperation,
+  type StoredOperation,
+} from "../db/operations.ts";
+import { operationIntentDigest, type Keyring } from "../security/keys.ts";
 import {
   saveLockedApplicationState,
   type StoredApplication,
@@ -18,7 +26,8 @@ import {
   type StoredReview,
 } from "../db/reviews.ts";
 import { findSubmission, insertSubmission } from "../db/submissions.ts";
-import { EMPTY_ACTIVITY, draftOf, parsedPacketOf } from "./application.ts";
+import { listOperations } from "../db/operations.ts";
+import { draftOf, parsedPacketOf, projectActivity } from "./application.ts";
 
 export type PrepareOutcome =
   | Readonly<{
@@ -37,6 +46,7 @@ export type PrepareOutcome =
 export async function prepareApplicationReview(
   client: PoolClient,
   application: StoredApplication,
+  reviewId: string = randomUUID(),
 ): Promise<PrepareOutcome> {
   if (application.stage !== "draft") {
     return { kind: "stale_state" };
@@ -51,7 +61,8 @@ export async function prepareApplicationReview(
       applicationRevision: application.revision,
       requirementsVersion: application.requirementsVersion,
     },
-    EMPTY_ACTIVITY,
+    projectActivity(await listOperations(client, application.id)),
+    reviewId,
   );
   if (frozen.kind !== "ready") {
     return { kind: "not_ready", blockers: frozen.blockers };
@@ -231,4 +242,152 @@ export async function loadCurrentReview(
   application: StoredApplication,
 ): Promise<StoredReview | null> {
   return findCurrentReview(client, application.id);
+}
+
+/**
+ * Stage transitions the applicant owns. They run under the same guards as
+ * every other human action: current coordinates, one recorded operation per
+ * request identity, and the ledger row committed before the effect.
+ */
+export type StageTransitionOutcome =
+  | Readonly<{
+      kind: "review_prepared";
+      application: StoredApplication;
+      review: StoredReview;
+    }>
+  | Readonly<{ kind: "returned_to_draft"; application: StoredApplication }>
+  | Readonly<{ kind: "replayed"; operation: StoredOperation }>
+  | Readonly<{ kind: "not_ready"; blockers: readonly unknown[] }>
+  | Readonly<{ kind: "request_reuse_mismatch" }>
+  | Readonly<{ kind: "stale_state" }>;
+
+function stageIntentDigest(keyring: Keyring, action: HumanAction): Uint8Array {
+  const entries = Object.entries(action as Record<string, unknown>).sort(
+    ([left], [right]) => (left < right ? -1 : left > right ? 1 : 0),
+  );
+  return operationIntentDigest(
+    keyring,
+    Buffer.from(JSON.stringify(entries), "utf8"),
+  );
+}
+
+export async function runStageTransition(
+  client: PoolClient,
+  keyring: Keyring,
+  application: StoredApplication,
+  action: HumanAction,
+): Promise<StageTransitionOutcome> {
+  if (
+    action.action !== "prepare_review" &&
+    action.action !== "return_to_draft"
+  ) {
+    return { kind: "stale_state" };
+  }
+
+  const digest = stageIntentDigest(keyring, action);
+  const replay = await classifyOperationReplay(
+    client,
+    application.id,
+    action.requestId,
+    digest,
+  );
+  if (replay.kind === "mismatch") return { kind: "request_reuse_mismatch" };
+  if (replay.kind === "exact") {
+    return { kind: "replayed", operation: replay.operation };
+  }
+
+  if (
+    application.pageEpoch !== action.expectedPageEpoch ||
+    application.revision !== action.expectedApplicationRevision ||
+    application.requirementsVersion !== action.expectedRequirementsVersion
+  ) {
+    return { kind: "stale_state" };
+  }
+
+  const versions = {
+    applicationRevision: application.revision + 1,
+    requirementsVersion: application.requirementsVersion,
+  };
+
+  if (action.action === "prepare_review") {
+    if (application.stage !== "draft") return { kind: "stale_state" };
+
+    // Readiness is decided before anything is written, so a refusal records a
+    // refusal and a preparation records a preparation.
+    const packet = parsedPacketOf(application);
+    const blockers = evaluateDraftReadiness(
+      draftOf(application, packet),
+    ).blockers;
+    if (blockers.length > 0) {
+      await insertOperation(client, {
+        applicationId: application.id,
+        requestId: action.requestId,
+        action: "prepare_review",
+        keyedIntentDigest: digest,
+        outcome: {
+          outcome: "not_ready_for_review",
+          action: "prepare_review",
+          blockers,
+          versions: {
+            applicationRevision: application.revision,
+            requirementsVersion: application.requirementsVersion,
+          },
+        },
+      });
+      return { kind: "not_ready", blockers };
+    }
+
+    const reviewId = randomUUID();
+    await insertOperation(client, {
+      applicationId: application.id,
+      requestId: action.requestId,
+      action: "prepare_review",
+      keyedIntentDigest: digest,
+      outcome: {
+        outcome: "review_prepared",
+        action: "prepare_review",
+        reviewId,
+        versions,
+      },
+    });
+
+    const prepared = await prepareApplicationReview(
+      client,
+      application,
+      reviewId,
+    );
+    if (prepared.kind !== "prepared") {
+      throw new Error(
+        "A guarded Review preparation failed after its ledger row.",
+      );
+    }
+    return {
+      kind: "review_prepared",
+      application: prepared.application,
+      review: prepared.review,
+    };
+  }
+
+  if (application.stage !== "review" || application.currentReviewId === null) {
+    return { kind: "stale_state" };
+  }
+
+  await insertOperation(client, {
+    applicationId: application.id,
+    requestId: action.requestId,
+    action: "return_to_draft",
+    keyedIntentDigest: digest,
+    outcome: {
+      outcome: "returned_to_draft",
+      action: "return_to_draft",
+      invalidatedReviewId: application.currentReviewId,
+      versions,
+    },
+  });
+
+  const returned = await returnApplicationToDraft(client, application);
+  if (returned.kind !== "returned") {
+    throw new Error("A guarded Return failed after its ledger row.");
+  }
+  return { kind: "returned_to_draft", application: returned.application };
 }

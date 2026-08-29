@@ -872,9 +872,9 @@ export function declareDraftEmail(
 ): DraftTransitionResult {
   const current = currentDraftForTransition(draft, packet);
   const existing = current.fields[3];
-  if (existing.status === "missing") {
-    return evidenceUnavailable(current, "legal_name");
-  }
+  // Nothing is saved to declare yet; this is a no-op, not an evidence failure
+  // attributed to some unrelated field.
+  if (existing.status === "missing") return noChange(current);
   if (existing.status === "ready") return noChange(current);
 
   const candidate = PreferredContactEmailDraftFieldSchema.parse({

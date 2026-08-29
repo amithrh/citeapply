@@ -1,5 +1,6 @@
 import { HumanActionRequestSchema } from "../../../../contracts/http.ts";
 import { lockApplicationBySessionDigest } from "../../../../server/db/applications.ts";
+import { listOperations } from "../../../../server/db/operations.ts";
 import { getDatabasePool } from "../../../../server/db/pool.ts";
 import { withReadCommittedTransaction } from "../../../../server/db/transactions.ts";
 import { finalizeAuthority } from "../../../../server/security/capabilities.ts";
@@ -18,11 +19,13 @@ import {
 } from "../../../../server/security/session.ts";
 import { runPublicTransportThrottle } from "../../../../server/security/throttle.ts";
 import { runHumanAction } from "../../../../server/services/actions.ts";
-import { projectHumanSnapshot } from "../../../../server/services/application.ts";
+import {
+  projectActivity,
+  projectHumanSnapshot,
+} from "../../../../server/services/application.ts";
 import {
   loadCurrentReview,
-  prepareApplicationReview,
-  returnApplicationToDraft,
+  runStageTransition,
 } from "../../../../server/services/submission.ts";
 
 export const dynamic = "force-dynamic";
@@ -130,34 +133,41 @@ export async function POST(request: Request): Promise<Response> {
       if (application === null) return { kind: "session_expired" } as const;
 
       // Review preparation and Return change stage, so they are owned by the
-      // Review service rather than the Draft action spine.
-      if (parsed.data.action === "prepare_review") {
-        const prepared = await prepareApplicationReview(client, application);
-        if (prepared.kind === "not_ready") {
-          return { kind: "not_ready", blockers: prepared.blockers } as const;
+      // Review service — but they run under the same coordinate and ledger
+      // guards as every other human action.
+      if (
+        parsed.data.action === "prepare_review" ||
+        parsed.data.action === "return_to_draft"
+      ) {
+        const transition = await runStageTransition(
+          client,
+          keyring,
+          application,
+          parsed.data,
+        );
+        if (
+          transition.kind === "stale_state" ||
+          transition.kind === "request_reuse_mismatch" ||
+          transition.kind === "replayed"
+        ) {
+          return transition;
         }
-        if (prepared.kind === "stale_state") {
-          return { kind: "stale_state" } as const;
+        if (transition.kind === "not_ready") {
+          return { kind: "not_ready", blockers: transition.blockers } as const;
         }
         return {
-          kind: "review_prepared",
+          kind:
+            transition.kind === "review_prepared"
+              ? "review_prepared"
+              : "returned_to_draft",
           snapshot: projectHumanSnapshot(
-            prepared.application,
+            transition.application,
             authority.clock,
-            undefined,
-            prepared.review.reviewSnapshot,
+            projectActivity(await listOperations(client, application.id)),
+            transition.kind === "review_prepared"
+              ? transition.review.reviewSnapshot
+              : null,
           ),
-        } as const;
-      }
-
-      if (parsed.data.action === "return_to_draft") {
-        const returned = await returnApplicationToDraft(client, application);
-        if (returned.kind === "stale_state") {
-          return { kind: "stale_state" } as const;
-        }
-        return {
-          kind: "returned_to_draft",
-          snapshot: projectHumanSnapshot(returned.application, authority.clock),
         } as const;
       }
 
@@ -182,7 +192,7 @@ export async function POST(request: Request): Promise<Response> {
         snapshot: projectHumanSnapshot(
           effect.application,
           authority.clock,
-          undefined,
+          projectActivity(await listOperations(client, effect.application.id)),
           review,
         ),
       } as const;

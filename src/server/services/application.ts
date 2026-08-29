@@ -29,6 +29,7 @@ import {
 } from "../../domain/draft.ts";
 import { evaluateDraftReadiness } from "../../domain/readiness.ts";
 import type { StoredApplication } from "../db/applications.ts";
+import type { StoredOperation } from "../db/operations.ts";
 import {
   derivePageCapability,
   type SessionClock,
@@ -48,6 +49,97 @@ export const EMPTY_ACTIVITY: HumanActivitySummaryV1 =
   });
 
 const MAX_PROJECTION_SEQUENCE = 128;
+const MAX_VISIBLE_ACTIVITY = 8;
+
+type ActivityCounts = {
+  allowed: number;
+  revoked: number;
+  acceptedBatches: number;
+  refusals: number;
+  assistedReviewsPrepared: number;
+};
+
+/**
+ * Projects the assisted-activity record the applicant sees. It is built from
+ * committed operation rows only, so the page cannot show assistance that never
+ * actually happened, nor hide assistance that did.
+ */
+export function projectActivity(
+  operations: readonly StoredOperation[],
+): HumanActivitySummaryV1 {
+  const totals: ActivityCounts = {
+    allowed: 0,
+    revoked: 0,
+    acceptedBatches: 0,
+    refusals: 0,
+    assistedReviewsPrepared: 0,
+  };
+  const events: {
+    kind: string;
+    at: string;
+    revision: number;
+    fields?: readonly string[];
+    field?: string;
+  }[] = [];
+
+  for (const operation of operations) {
+    const outcome = operation.outcome as {
+      outcome: string;
+      fields?: readonly string[];
+      versions?: { applicationRevision?: number };
+    };
+    const revision = outcome.versions?.applicationRevision;
+    if (typeof revision !== "number") continue;
+    const at = operation.createdAt.toISOString();
+
+    if (outcome.outcome === "assistance_allowed") {
+      totals.allowed += 1;
+      events.push({ kind: "assistance_allowed", at, revision });
+    } else if (outcome.outcome === "assistance_revoked") {
+      totals.revoked += 1;
+      events.push({ kind: "assistance_revoked", at, revision });
+    } else if (outcome.outcome === "answers_applied") {
+      totals.acceptedBatches += 1;
+      const fields = outcome.fields ?? [];
+      if (fields.length > 0) {
+        events.push({ kind: "answers_applied", at, revision, fields });
+      }
+    } else if (outcome.outcome === "conflict_requires_human") {
+      totals.refusals += 1;
+      events.push({
+        kind: "income_refused",
+        at,
+        revision,
+        field: "annual_household_income",
+      });
+    } else if (outcome.outcome === "assisted_review_prepared") {
+      totals.assistedReviewsPrepared += 1;
+      events.push({ kind: "assisted_review_prepared", at, revision });
+    }
+  }
+
+  // Newest first, and only entries that remain distinct once serialized.
+  events.sort((left, right) =>
+    right.revision !== left.revision
+      ? right.revision - left.revision
+      : right.at < left.at
+        ? -1
+        : right.at > left.at
+          ? 1
+          : 0,
+  );
+  const seen = new Set<string>();
+  const latest: unknown[] = [];
+  for (const event of events) {
+    const identity = JSON.stringify(event);
+    if (seen.has(identity)) continue;
+    seen.add(identity);
+    latest.push(event);
+    if (latest.length === MAX_VISIBLE_ACTIVITY) break;
+  }
+
+  return HumanActivitySummaryV1Schema.parse({ totals, latest });
+}
 
 export function parsedPacketOf(application: StoredApplication): ParsedPacketV1 {
   return ParsedPacketV1Schema.parse(application.parsedPacket);
