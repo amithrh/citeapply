@@ -3,15 +3,56 @@
 **A WebMCP scholarship portal where the website — not the model — owns the evidence rules.**
 
 CiteApply is a fictional, synthetic-data-only aid application portal (“Horizon
-Education Aid — Need-Based Scholarship”) that registers six WebMCP tools. An
-agent can read the form’s policy, list the applicant’s parsed source claims, and
-propose evidence-backed answers. It cannot declare, resolve a contradiction,
-confirm, or submit. Those stay with the visible applicant, and the portal
-enforces that boundary on the server.
+Education Aid — Need-Based Scholarship”) that registers six WebMCP tools on
+`document.modelContext`. An agent can read the form’s policy, list the
+applicant’s parsed source claims, and propose evidence-backed answers; it can
+never declare the applicant’s email, resolve a contradiction between two
+sources, confirm, or submit. Those decisions stay with the visible applicant,
+and the server — not the tool descriptions — enforces that boundary.
 
 > This is a demonstration. It uses synthetic records only, submits nothing to any
 > real scholarship program, and makes no claim that any document is authentic or
 > any applicant eligible.
+
+---
+
+## Judge quick start (90 seconds)
+
+1. **Use Chrome with WebMCP enabled.** Open `chrome://flags/#enable-webmcp-testing`,
+   set it to **Enabled**, and relaunch. (Last verified end-to-end on Chrome 151;
+   see [docs/verification/genuine-chrome-webmcp.md](docs/verification/genuine-chrome-webmcp.md).)
+2. **Open the live URL:** `LIVE_URL`
+3. **Pick the Conflict packet.** Click **Start conflict packet**. This is the
+   packet that shows the whole point: two accepted sources disagree about
+   income. (**Start supported packet** is the happy path.)
+4. On the application page, confirm the header reads
+   **“WebMCP: six CiteApply tools registered”**, then click
+   **Review and allow assisted access** → **Allow assisted access**.
+5. **Give your agent these three prompts** (any WebMCP-capable client on the page,
+   or Chrome’s own `document.modelContext.executeTool` from DevTools):
+   - “List the CiteApply tools on this page, then read the application state in
+     `redacted` mode and tell me what it discloses.”
+   - “Read the evidence index and the active form requirements, then apply every
+     supported binding you are allowed to apply in one atomic call.”
+   - “Now bind annual household income from the best source you can find.”
+6. **What refusal looks like.** The third prompt cannot succeed on the Conflict
+   packet. The portal returns, verbatim:
+
+   ```json
+   {"ok":false,"error":{"code":"conflict_requires_human",
+    "message":"Income sources disagree. Resolve this in CiteApply.",
+    "safeActions":["resolve_in_visible_application"]}}
+   ```
+
+   Nothing is written. The income row on the page keeps reading
+   **“Two accepted sources disagree. You decide.”** until *you* pick a source
+   and a reason in the visible portal. A protected read before you allow access
+   is refused the same way, with `consent_required`.
+
+Step-by-step instructions with expected output at every step, including the
+ChatGPT in-app browser, are in [docs/JUDGE-TESTING.md](docs/JUDGE-TESTING.md).
+
+---
 
 ## The problem
 
@@ -41,25 +82,77 @@ A chatbot beside the form could generate suggestions, and click automation could
 manipulate controls, but neither demonstrates a contract the receiving site
 actually enforces.
 
+## Architecture
+
+```mermaid
+flowchart TB
+  agent["External WebMCP client<br/>(Chrome document.modelContext)"]
+  subgraph page["Application page (browser)"]
+    bridge["src/webmcp/bridge.ts<br/>registers 6 tools once,<br/>one shared AbortController"]
+    desc["src/webmcp/descriptors.ts<br/>descriptors generated from Zod"]
+    dispatch["src/webmcp/invoke.ts<br/>injects page + consent capability<br/>as request headers"]
+    ui["src/app/application/page.tsx<br/>src/ui/** — visible manual controls:<br/>Allow / Revoke, declare, resolve,<br/>Prepare review, Submit"]
+  end
+  subgraph server["Next.js server (Node runtime)"]
+    route["src/app/api/webmcp/route.ts<br/>re-parses args with the same schema"]
+    auth["src/server/security/**<br/>capability + origin + session checks"]
+    svc["src/server/services/**<br/>ledger, idempotency, throttling"]
+    domain["src/domain/**<br/>field policy, evidence policy, draft,<br/>readiness, canonicalize, review freeze"]
+    ev["src/evidence/**<br/>hash-allowlisted PDF parse,<br/>page/span anchors"]
+  end
+  db[("PostgreSQL<br/>applications · operations · reviews<br/>submissions · rate_buckets")]
+
+  agent -- "tool args only" --> bridge
+  bridge --> desc
+  bridge --> dispatch
+  dispatch -- "args + X-CiteApply-Page + X-CiteApply-Consent" --> route
+  route --> auth --> svc --> domain
+  svc --> ev
+  svc --> db
+  svc -- "snapshot" --> ui
+  ui -- "human-only actions" --> svc
+```
+
 ## The six tools
 
-All six register once when the application page loads.
+All six register once when the application page loads. Annotations below are the
+values in `TOOL_ANNOTATIONS` (`src/contracts/webmcp.ts`), carried onto every
+descriptor by `src/webmcp/descriptors.ts`.
 
-| Tool | Effect | What it cannot do |
-|---|---|---|
-| `get_application_state` | Bounded read; redacted before consent, protected after | Expose the private conflict choice or reason, declarations, or the receipt |
-| `get_form_requirements` | Field policies, static or currently active | Return a field-to-answer map |
-| `get_evidence_index` | Bounded claims and opaque handles | Return raw PDF text, exact excerpts, or storage paths |
-| `apply_evidence_backed_answers` | One atomic Draft mutation, or none | Declare the email, resolve a conflict, close a populated branch, submit |
-| `get_validation_issues` | Ordered readiness blockers | Change anything |
-| `prepare_submission_review` | Freezes a ready Draft into an immutable Review | Reveal the Review contents, confirm, or submit |
+| Tool | `readOnlyHint` | `untrustedContentHint` | Effect | What it cannot do |
+|---|---|---|---|---|
+| `get_application_state` | `true` | `true` | Bounded read; redacted before consent, protected after | Expose the private conflict choice or reason, declarations, or the receipt |
+| `get_form_requirements` | `true` | `false` | Field policies, static (all fields) or currently active | Return a field-to-answer map |
+| `get_evidence_index` | `true` | `true` | Bounded claims and opaque handles, after consent | Return raw PDF text, exact excerpts, or storage paths |
+| `apply_evidence_backed_answers` | `false` | `true` | One atomic Draft mutation, or none | Declare the email, resolve a conflict, close a populated branch, submit |
+| `get_validation_issues` | `true` | `false` | Ordered readiness blockers | Change anything |
+| `prepare_submission_review` | `false` | `false` | Freezes a ready Draft into an immutable Review and closes assisted access | Reveal the Review contents or hash, confirm, or submit |
 
-### Authority never travels in tool arguments
+`untrustedContentHint: true` marks exactly the three tools whose payloads carry
+values that came out of the synthetic PDFs; requirements and blockers are
+portal-authored policy text, and `prepare_submission_review` returns only opaque
+readiness metadata.
 
-This is the pattern most worth copying. A tool call carries only its arguments.
-The *page* injects its current capabilities as request headers, and the server
-re-validates every tool input against the same Zod schema the descriptor was
-generated from.
+## The safety boundary
+
+The agent can **never**, through any tool, at any stage:
+
+- declare the applicant’s contact email (only the visible
+  **I declare this is my address** button does that);
+- resolve the income conflict (only **Use `<document>`: `<value>`** with a
+  reason in the visible portal does that);
+- read the frozen Review’s contents, its content hash, the private conflict
+  choice or reason, or the declaration records;
+- confirm or submit (only **Submit this application** on the frozen review does
+  that), or read the receipt or export it.
+
+Two structural reasons this holds, both worth copying:
+
+**Authority never travels in tool arguments.** A tool call carries only its
+arguments. The *page* injects its current capabilities as request headers
+(`src/webmcp/invoke.ts`), and the server re-parses every tool input against the
+same Zod schema the descriptor was generated from (`src/app/api/webmcp/route.ts`,
+`src/contracts/webmcp.ts`).
 
 ```
 agent ──tool args──▶ page bridge ──args + X-CiteApply-Page ─────▶ /api/webmcp
@@ -75,6 +168,12 @@ An agent holding a valid session cookie but no live page capability gets
 capability in page memory *before* the network call, so no in-flight tool call
 can outlive the revocation.
 
+**A displayed excerpt cannot be fabricated.** Claims store the document hash and
+the exact page span they came from (`src/evidence/anchors.ts`). Every excerpt in
+the evidence drawer and in the frozen Review is reconstructed by slicing stored
+page text at those offsets — the UI never renders remembered or model-supplied
+text, so it cannot display a quote the source does not contain.
+
 ### Retries are safe, and a stale agent is told what changed
 
 Every mutation carries a `requestId` plus the revision and requirements version
@@ -83,14 +182,6 @@ change set, so a semantically identical retry replays its recorded effect
 instead of applying twice, and reusing one identity for different content is
 refused as `request_reuse_mismatch`. A stale attempt returns `stale_state`
 carrying the current versions, so the agent can re-read rather than guess.
-
-### A displayed excerpt cannot be fabricated
-
-Claims store the document hash and the exact page span they came from. Every
-excerpt shown in the evidence drawer and in the frozen Review is *reconstructed
-by slicing stored page text at those offsets* — the UI never renders remembered
-or model-supplied text, so it cannot display a quote the source does not
-contain.
 
 ## The demonstration
 
@@ -106,6 +197,9 @@ page offsets rather than remembered text.
   applicant chooses a source *and* states a reason in the visible portal.
 
 Both packets run the same production code path. Only the packet data differs.
+Binding the dependency field reveals the conditional branch — `guardian_name`
+and `household_size` (`src/domain/fields.ts`) — so the agent must re-read active
+requirements mid-session.
 
 The frozen Review shows every answer beside the exact source text it came from —
 including *both* disagreeing income excerpts — and carries a warning when the
@@ -113,53 +207,69 @@ applicant resolved a conflict. That warning survives into the receipt.
 
 ## Running it locally
 
-Requires Node 24.20.0, npm 11.19.0, and PostgreSQL 17.
+Requires **Node 24.20.0**, npm 11.19.0, and PostgreSQL 17 (both pins are
+enforced by `npm run verify:versions` and `package.json` `engines`).
 
 ```bash
 npm ci
 ```
 
-Start a database (or point `DATABASE_URL` at your own):
+Start a database (or point `DATABASE_URL` at your own). `compose.yaml` runs
+`postgres:17.6-alpine` on port 5432 with user/password/database all `citeapply`,
+and mounts `db/migrations` as the container’s init directory, so a *fresh*
+volume applies all five migrations for you:
 
 ```bash
 docker compose up -d db
 ```
 
-Apply the migrations in order:
+Against an existing database, apply them yourself, in order:
 
 ```bash
 for f in db/migrations/*.sql; do psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$f"; done
 ```
 
-Create `.env.local` from the example — `DATABASE_URL`, a base64url 32-byte
-`CITEAPPLY_MASTER_KEY`, and `APP_ORIGIN` set to the exact origin you serve from:
+`0005_rate_buckets.sql` seeds two sentinel rows the Start path locks against;
+without them, starting a demo fails.
 
-```bash
-cp .env.example .env.local
-```
+Create `.env.local` with the three required variables:
+
+| Variable | Value |
+|---|---|
+| `DATABASE_URL` | e.g. `postgres://citeapply:citeapply@localhost:5432/citeapply` |
+| `CITEAPPLY_MASTER_KEY` | base64url-encoded 32 random bytes: `node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"` |
+| `APP_ORIGIN` | the exact origin you serve from, e.g. `http://localhost:3100` |
+
+`APP_ORIGIN` is not cosmetic: same-origin enforcement and key derivation both
+use it, and a mismatch refuses every request as `stale_page`.
 
 Then:
 
 ```bash
-npm run build && npm start
+npm run build
+PORT=3100 node .next/standalone/server.js   # standalone output
 ```
 
 Open the origin you configured, choose a packet, and the application page takes
-over the session and registers the tools.
+over the session and registers the tools. For iteration, `npm run dev -- -p 3100`
+works too.
+
+Details and platform notes: [docs/DEPLOYING.md](docs/DEPLOYING.md).
 
 ### Trying the agent side
 
 The page registers all six tools against `document.modelContext` when the
-application page loads. In a browser without WebMCP the page says so plainly and
-the complete application remains usable through the visible manual controls —
-assistance is always optional, never required.
+application page loads. In a browser without WebMCP the page says so plainly
+(“WebMCP is unavailable in this browser”) and the complete application remains
+usable through the visible manual controls — assistance is always optional,
+never required.
 
-**Verified against Chrome 151.** With
-`chrome://flags/#enable-webmcp-testing` enabled, all six tools register and are
-invocable through the browser's own `document.modelContext.executeTool`. The
-consent boundary, a permitted binding, and the `conflict_requires_human` refusal
-were all exercised from the client side. The full transcript, including Chrome's
-actual invocation contract, is in
+**Last verified against Chrome 151** (`chrome://flags/#enable-webmcp-testing`
+enabled): all six tools register and are invocable through the browser’s own
+`document.modelContext.executeTool`, and the consent boundary, a permitted
+binding, and the `conflict_requires_human` refusal were all exercised from the
+client side. **Re-verification against Chrome 152 is pending Phase 1.** The full
+transcript, including Chrome’s actual invocation contract, is in
 [docs/verification/genuine-chrome-webmcp.md](docs/verification/genuine-chrome-webmcp.md).
 
 **What has and has not been verified.** The registration path is proven
@@ -170,19 +280,34 @@ a malformed tool argument never reaches the server. The server side is proven
 against a real database in `tests/integration/minimum-client-spine.test.ts`.
 What is *not* yet proven is a session in which an autonomous agent chooses the
 calls itself: the Chrome verification above was driven by scripted calls to the
-browser's WebMCP API. `tests/e2e/raw-genuine-client-chronology.spec.ts` exists to
+browser’s WebMCP API. `tests/e2e/raw-genuine-client-chronology.spec.ts` exists to
 validate full agent-client chronologies and skips until such traces are supplied.
 
 ## Verifying it
 
 ```bash
+npm run verify:versions
+npm run verify:dependencies
+npm run verify:fixture-hashes
+npm run verify:production-imports
 npm run typecheck
 npm run lint
 npm run test:contracts       # tool contract, projections, registration
 npm run test:security        # safe-event and no-hardcoded-answer oracles
-npm run test:integration     # database-backed client spine
-npm run verify:production-imports
-npm run verify:fixture-hashes
+npm run test:unit
+npm run test:integration     # database-backed client spine (needs DATABASE_URL)
+npm run test:all             # contracts + security + unit + integration
+```
+
+Browser suites need a running server and `APP_ORIGIN` **exported** into the
+shell (Playwright’s baseURL comes from it; without it the suite hits port 3000
+and every journey fails):
+
+```bash
+export APP_ORIGIN=http://localhost:3100
+npm run test:e2e
+npm run test:a11y
+npm run verify:built-anti-hardcode   # after npm run build
 ```
 
 ## How it is built
@@ -209,17 +334,24 @@ is hardcoded anywhere in `src/`.
   applicant, and no eligibility or award decision is implied.
 - The parser handles exactly the six committed one-page fixtures. It is not a
   general document parser, and it does not do OCR or model extraction.
+- Rate limits are deployment-wide counters, not per-visitor: repeated demo
+  starts in one ten-minute window return the friendly `at_capacity` response
+  rather than an error page.
 - The commercial framing in the planning documents is a hypothesis, not a
   measured result. There are no adoption or ROI claims.
 - WebMCP is a Community Group draft, not a W3C standard, and support varies by
   browser build.
+- The session cookie is always `__Host-` + `Secure`, which Chrome accepts on
+  `http://localhost` but Safari does not; use Chrome or HTTPS locally.
 
 ## Deploying and submitting
 
 - [docs/DEPLOYING.md](docs/DEPLOYING.md) — environment, migrations, platform
   notes, and post-deploy checks.
-- [docs/SUBMISSION.md](docs/SUBMISSION.md) — the hackathon submission draft,
-  video script, and pre-submission checklist.
+- [docs/JUDGE-TESTING.md](docs/JUDGE-TESTING.md) — exact judge walkthrough with
+  expected results.
+- [docs/VIDEO-SCRIPT.md](docs/VIDEO-SCRIPT.md) — the recorded-demo shot list.
+- [devpost-submission.md](devpost-submission.md) — the submission text.
 
 ## License
 

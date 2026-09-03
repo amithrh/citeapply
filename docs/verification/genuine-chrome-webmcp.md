@@ -3,6 +3,12 @@
 Captured 2026-08-29 against a locally running build, driven from the browser's
 own `document.modelContext` API rather than from CiteApply's internals.
 
+> **Status: last verified Chrome 151. Re-verification against Chrome 152 is
+> pending Phase 1.** The machine used for the hackathon run carries Google
+> Chrome 152.0.7977.66; everything below describes the Chrome 151 contract and
+> has not yet been re-executed on 152. Treat the invocation-contract table as
+> Chrome-151-specific until that re-run lands.
+
 - **Client:** Google Chrome 151.0.7922.175 (stable), with
   `chrome://flags/#enable-webmcp-testing` set to Enabled.
 - **Origin under test:** `http://localhost:3100`

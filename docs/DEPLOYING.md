@@ -70,7 +70,10 @@ nothing in the app uses an edge-only or platform-specific API.
 
 ## Docker
 
-`compose.yaml` starts only a local database for development. For a container
+`compose.yaml` starts only a local database for development (postgres:17.6-alpine,
+user/password/database all `citeapply`, port 5432). It mounts `db/migrations`
+as the container's init directory, so a fresh volume applies all five migrations
+automatically; an existing volume does not, and you must apply them yourself. For a container
 image, build with `npm ci && npm run build` and run `.next/standalone/server.js`
 with `PORT` set, copying `.next/static`, `public` (if present), and `fixtures/`
 alongside it.
