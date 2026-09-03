@@ -1,0 +1,355 @@
+{
+  "schema": "citeapply-receipt-v1",
+  "receiptId": "0cd40137-e5a2-42bd-b59e-4da410b5203d",
+  "submittedAt": "2026-09-03T03:48:37.721Z",
+  "acceptedReview": {
+    "diffs": [
+      {
+        "field": "legal_name",
+        "final": {
+          "field": "legal_name",
+          "value": "Anaya Rao",
+          "active": true,
+          "origin": "assisted",
+          "status": "ready",
+          "bindings": [
+            {
+              "page": 1,
+              "document": "enrollment",
+              "claimHandle": "7gKtuuua-BIisFCUpA8bAQ"
+            }
+          ]
+        },
+        "initial": null,
+        "excerpts": [
+          {
+            "kind": "legal_name",
+            "page": 1,
+            "title": "Synthetic Enrollment Record",
+            "excerpt": "Anaya Rao",
+            "claimHandle": "7gKtuuua-BIisFCUpA8bAQ",
+            "normalizedValue": "Anaya Rao"
+          }
+        ]
+      },
+      {
+        "field": "student_id",
+        "final": {
+          "field": "student_id",
+          "value": "HZN-2026-0142",
+          "active": true,
+          "origin": "assisted",
+          "status": "ready",
+          "bindings": [
+            {
+              "page": 1,
+              "document": "enrollment",
+              "claimHandle": "b5XRlf_a28qmgh_qCUK-bA"
+            }
+          ]
+        },
+        "initial": null,
+        "excerpts": [
+          {
+            "kind": "student_id",
+            "page": 1,
+            "title": "Synthetic Enrollment Record",
+            "excerpt": "HZN-2026-0142",
+            "claimHandle": "b5XRlf_a28qmgh_qCUK-bA",
+            "normalizedValue": "HZN-2026-0142"
+          }
+        ]
+      },
+      {
+        "field": "institution",
+        "final": {
+          "field": "institution",
+          "value": "Northstar Community College",
+          "active": true,
+          "origin": "assisted",
+          "status": "ready",
+          "bindings": [
+            {
+              "page": 1,
+              "document": "enrollment",
+              "claimHandle": "S5eIJfI3NYbr3FYHI3sE_w"
+            }
+          ]
+        },
+        "initial": null,
+        "excerpts": [
+          {
+            "kind": "institution",
+            "page": 1,
+            "title": "Synthetic Enrollment Record",
+            "excerpt": "Northstar Community College",
+            "claimHandle": "S5eIJfI3NYbr3FYHI3sE_w",
+            "normalizedValue": "Northstar Community College"
+          }
+        ]
+      },
+      {
+        "field": "preferred_contact_email",
+        "final": {
+          "field": "preferred_contact_email",
+          "value": "anaya.rao@example.test",
+          "active": true,
+          "origin": "assisted",
+          "status": "ready",
+          "declaredByApplicant": true
+        },
+        "initial": null,
+        "excerpts": []
+      },
+      {
+        "field": "dependency",
+        "final": {
+          "field": "dependency",
+          "value": true,
+          "active": true,
+          "origin": "assisted",
+          "status": "ready",
+          "bindings": [
+            {
+              "page": 1,
+              "document": "household",
+              "claimHandle": "AwVKdXvSCKV5Tr5Nv1rQ-g"
+            }
+          ]
+        },
+        "initial": null,
+        "excerpts": [
+          {
+            "kind": "dependency",
+            "page": 1,
+            "title": "Synthetic Household Statement",
+            "excerpt": "Yes",
+            "claimHandle": "AwVKdXvSCKV5Tr5Nv1rQ-g",
+            "normalizedValue": true
+          }
+        ]
+      },
+      {
+        "field": "guardian_name",
+        "final": {
+          "field": "guardian_name",
+          "value": "Meera Rao",
+          "active": true,
+          "origin": "assisted",
+          "status": "ready",
+          "bindings": [
+            {
+              "page": 1,
+              "document": "household",
+              "claimHandle": "eEdQO-J0x3NciTvbMAEoBA"
+            }
+          ]
+        },
+        "initial": null,
+        "excerpts": [
+          {
+            "kind": "guardian_name",
+            "page": 1,
+            "title": "Synthetic Household Statement",
+            "excerpt": "Meera Rao",
+            "claimHandle": "eEdQO-J0x3NciTvbMAEoBA",
+            "normalizedValue": "Meera Rao"
+          }
+        ]
+      },
+      {
+        "field": "household_size",
+        "final": {
+          "field": "household_size",
+          "value": 4,
+          "active": true,
+          "origin": "assisted",
+          "status": "ready",
+          "bindings": [
+            {
+              "page": 1,
+              "document": "household",
+              "claimHandle": "9oWFv0gDvzvC7XUWqG_0NQ"
+            }
+          ]
+        },
+        "initial": null,
+        "excerpts": [
+          {
+            "kind": "household_size",
+            "page": 1,
+            "title": "Synthetic Household Statement",
+            "excerpt": "4",
+            "claimHandle": "9oWFv0gDvzvC7XUWqG_0NQ",
+            "normalizedValue": 4
+          }
+        ]
+      },
+      {
+        "field": "annual_household_income",
+        "final": {
+          "field": "annual_household_income",
+          "value": 540000,
+          "active": true,
+          "origin": "manual",
+          "status": "ready",
+          "resolution": {
+            "chosen": {
+              "page": 1,
+              "document": "income",
+              "claimHandle": "4c4-K8cqCUvM-SCG3O5lDQ"
+            },
+            "reason": "more_recent"
+          }
+        },
+        "initial": null,
+        "excerpts": [
+          {
+            "kind": "annual_household_income",
+            "page": 1,
+            "title": "Synthetic Income Statement",
+            "excerpt": "INR 540,000",
+            "claimHandle": "4c4-K8cqCUvM-SCG3O5lDQ",
+            "normalizedValue": 540000
+          },
+          {
+            "kind": "annual_household_income",
+            "page": 1,
+            "title": "Synthetic Household Statement",
+            "excerpt": "INR 480,000",
+            "claimHandle": "o1Qv4Zw3cjSfJ9KLNghC0g",
+            "normalizedValue": 480000
+          }
+        ]
+      }
+    ],
+    "content": {
+      "fields": [
+        {
+          "field": "legal_name",
+          "value": "Anaya Rao",
+          "evidence": [
+            "b9e94d4309c04e81c32b441770322a287974212faca1ec661d2b2ebd32e97615"
+          ]
+        },
+        {
+          "field": "student_id",
+          "value": "HZN-2026-0142",
+          "evidence": [
+            "039b1a842a37463ef9bf67ff125970cb4a1df9a2b1bbed854432e75fb8ad45cf"
+          ]
+        },
+        {
+          "field": "institution",
+          "value": "Northstar Community College",
+          "evidence": [
+            "bf84a1fb2c471cb6367b316923f783ed37d5ccbd1cf0356059059312a9c63c0d"
+          ]
+        },
+        {
+          "field": "preferred_contact_email",
+          "value": "anaya.rao@example.test",
+          "declaration": {
+            "email": "anaya.rao@example.test",
+            "declaredByApplicant": true
+          }
+        },
+        {
+          "field": "dependency",
+          "value": true,
+          "evidence": [
+            "c8a668568b08027259edf06fd7a54b6c445eaca9b3bee39691a955176c82a69a"
+          ]
+        },
+        {
+          "field": "guardian_name",
+          "value": "Meera Rao",
+          "evidence": [
+            "2f5062b85a7957d3176cac99c47f4917e2f570c7c58c75d97f8a89d3822d7e79"
+          ]
+        },
+        {
+          "field": "household_size",
+          "value": 4,
+          "evidence": [
+            "aa37202fcc64f869bd27774b28780bcd5026c9e3bafa3721420570406c98b895"
+          ]
+        },
+        {
+          "field": "annual_household_income",
+          "value": 540000,
+          "evidence": [
+            "5df8d95851f9673106634bbd10974ae19b04580d42d31ffe5d0efda2b37aa74e",
+            "f96e7e83b72346392bd774ecc94728bf1d1e405eaa09e4474c5dbb2940db0b6c"
+          ],
+          "resolution": {
+            "reason": "more_recent",
+            "chosenFingerprint": "5df8d95851f9673106634bbd10974ae19b04580d42d31ffe5d0efda2b37aa74e"
+          }
+        }
+      ],
+      "schema": "citeapply-application-content-v1",
+      "activeFields": [
+        "legal_name",
+        "student_id",
+        "institution",
+        "preferred_contact_email",
+        "dependency",
+        "guardian_name",
+        "household_size",
+        "annual_household_income"
+      ]
+    },
+    "shortId": "ZSJEVG9M11",
+    "activity": {
+      "latest": [
+        {
+          "at": "2026-09-03T03:45:45.020Z",
+          "kind": "answers_applied",
+          "fields": [
+            "guardian_name",
+            "household_size"
+          ],
+          "revision": 4
+        },
+        {
+          "at": "2026-09-03T03:45:24.199Z",
+          "kind": "answers_applied",
+          "fields": [
+            "legal_name",
+            "student_id",
+            "institution",
+            "preferred_contact_email",
+            "dependency"
+          ],
+          "revision": 3
+        },
+        {
+          "at": "2026-09-03T03:45:05.361Z",
+          "kind": "assistance_allowed",
+          "revision": 2
+        }
+      ],
+      "totals": {
+        "allowed": 1,
+        "revoked": 0,
+        "refusals": 0,
+        "acceptedBatches": 2,
+        "assistedReviewsPrepared": 0
+      }
+    },
+    "reviewId": "3fd952ae-7b90-4914-a101-67fdb5509a3a",
+    "warnings": [
+      {
+        "code": "conflicting_income_resolved",
+        "message": "Income evidence differed and was resolved by the applicant."
+      }
+    ],
+    "contentHash": "2d06473cf309a5309c611fb503800d0d4675e251bfcddbd31c1cc311a8c00f4e",
+    "sourceVersions": {
+      "applicationRevision": 8,
+      "requirementsVersion": 2
+    }
+  },
+  "acceptedApplicationRevision": 8
+}
