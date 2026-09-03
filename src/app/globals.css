@@ -553,3 +553,49 @@ dialog > div:last-child {
     animation-duration: 0.01ms !important;
   }
 }
+
+/* ---- Assisted activity: what the agent asked for, and what it got ------- */
+
+.activity {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border-left: 3px solid var(--seal);
+  font-size: 0.9rem;
+}
+
+.activity li {
+  padding: 0.3rem 0 0.3rem calc(var(--step) * 1.75);
+  border-bottom: 1px solid var(--rule);
+}
+
+.activity li:last-child {
+  border-bottom: none;
+}
+
+.activity code {
+  font-family: var(--mono);
+  font-size: 0.85rem;
+}
+
+.activity strong {
+  color: var(--seal);
+}
+
+/* A refusal is the product working, so it is marked, not hidden. */
+.activity li[data-outcome="conflict_requires_human"] strong,
+.activity li[data-outcome="consent_required"] strong,
+.activity li[data-outcome="not_ready_for_review"] strong,
+.activity li[data-outcome="assistance_unavailable"] strong,
+.activity li[data-outcome="stale_state"] strong,
+.activity li[data-outcome="evidence_unavailable"] strong,
+.activity li[data-outcome="temporarily_unavailable"] strong {
+  color: var(--decide);
+}
+
+.activity .meta {
+  display: block;
+  color: var(--quiet);
+  font-family: var(--mono);
+  font-size: 0.75rem;
+}

@@ -23,6 +23,33 @@ export type InvocationAuthority = Readonly<{
 
 export type AuthorityReader = () => InvocationAuthority;
 
+/**
+ * Outcome of one bridge invocation, as the page observed it. This is a
+ * projection of the response the page already received; it carries no
+ * capability and grants the agent nothing.
+ */
+export type AssistedActivityEntry = Readonly<{
+  sequence: number;
+  tool: ToolName;
+  outcome: string;
+  at: string;
+  applicationRevision: number | null;
+  requirementsVersion: number | null;
+}>;
+
+/**
+ * The page's reconciliation sink. `onMutationProjection` receives the raw
+ * `uiSnapshot` from a `mutation_projection` envelope so the visible form can
+ * follow server truth without a reload; `onMutationUnprojected` fires when a
+ * mutating call returned no projection, so the page can re-read the snapshot
+ * the same way it does on load. Both are read-only observers.
+ */
+export type DispatchObserver = Readonly<{
+  onActivity?: (entry: AssistedActivityEntry) => void;
+  onMutationProjection?: (uiSnapshot: unknown) => void;
+  onMutationUnprojected?: () => void;
+}>;
+
 const MUTATING_TOOLS = [
   "apply_evidence_backed_answers",
   "prepare_submission_review",
@@ -64,6 +91,46 @@ function unavailableResult(tool: ToolName): unknown {
   });
 }
 
+type Envelope = Readonly<{
+  kind?: unknown;
+  uiSnapshot?: unknown;
+  callbackResult?: unknown;
+}>;
+
+function asEnvelope(value: unknown): Envelope | null {
+  return typeof value === "object" && value !== null
+    ? (value as Envelope)
+    : null;
+}
+
+/** Names the outcome a judge sees in the activity list: "ok" or the code. */
+function outcomeOf(payload: unknown): string {
+  const envelope = asEnvelope(payload);
+  const result = asEnvelope(envelope?.callbackResult) ?? asEnvelope(payload);
+  if (result === null) return "unknown";
+  const candidate = result as { ok?: unknown; error?: { code?: unknown } };
+  if (candidate.ok === true) return "ok";
+  const code = candidate.error?.code;
+  return typeof code === "string" ? code : "unknown";
+}
+
+function versionsOf(
+  payload: unknown,
+): Readonly<{ applicationRevision: number | null; requirementsVersion: number | null }> {
+  const snapshot = asEnvelope(asEnvelope(payload)?.uiSnapshot) as {
+    applicationRevision?: unknown;
+    requirementsVersion?: unknown;
+  } | null;
+  const applicationRevision = snapshot?.applicationRevision;
+  const requirementsVersion = snapshot?.requirementsVersion;
+  return {
+    applicationRevision:
+      typeof applicationRevision === "number" ? applicationRevision : null,
+    requirementsVersion:
+      typeof requirementsVersion === "number" ? requirementsVersion : null,
+  };
+}
+
 function requestHeaders(authority: InvocationAuthority): Headers {
   const headers = new Headers({
     "content-type": "application/json",
@@ -86,7 +153,39 @@ function requestHeaders(authority: InvocationAuthority): Headers {
 export function createCiteApplyDispatch(
   readAuthority: AuthorityReader,
   fetchImplementation: typeof fetch = fetch,
+  observer: DispatchObserver = {},
 ): CiteApplyToolDispatch {
+  let sequence = 0;
+
+  /**
+   * Records the call for the visible Assisted activity list and, for a
+   * mutating call, hands the page whatever server truth came back so the
+   * visible form can reconcile before the tool result reaches the agent.
+   */
+  const report = (tool: ToolName, payload: unknown): unknown => {
+    sequence += 1;
+    const versions = versionsOf(payload);
+    observer.onActivity?.({
+      sequence,
+      tool,
+      outcome: outcomeOf(payload),
+      at: new Date().toISOString(),
+      ...versions,
+    });
+    if ((MUTATING_TOOLS as readonly string[]).includes(tool)) {
+      const envelope = asEnvelope(payload);
+      if (
+        envelope?.kind === "mutation_projection" &&
+        envelope.uiSnapshot !== undefined
+      ) {
+        observer.onMutationProjection?.(envelope.uiSnapshot);
+      } else {
+        observer.onMutationUnprojected?.();
+      }
+    }
+    return payload;
+  };
+
   return (async <K extends ToolName, I extends ToolInputByName[K]>(
     name: K,
     input: I,
@@ -94,7 +193,7 @@ export function createCiteApplyDispatch(
   ): Promise<unknown> => {
     const body = JSON.stringify({ tool: name, input });
     if (new TextEncoder().encode(body).byteLength > MAX_REQUEST_BYTES) {
-      return unavailableResult(name);
+      return report(name, unavailableResult(name));
     }
 
     let response: Response;
@@ -110,18 +209,18 @@ export function createCiteApplyDispatch(
       });
     } catch (error) {
       if (options.signal.aborted) throw error;
-      return unavailableResult(name);
+      return report(name, unavailableResult(name));
     }
 
     const contentType = response.headers.get("content-type") ?? "";
     if (!contentType.startsWith("application/json")) {
-      return unavailableResult(name);
+      return report(name, unavailableResult(name));
     }
 
     try {
-      return (await response.json()) as unknown;
+      return report(name, (await response.json()) as unknown);
     } catch {
-      return unavailableResult(name);
+      return report(name, unavailableResult(name));
     }
   }) as CiteApplyToolDispatch;
 }

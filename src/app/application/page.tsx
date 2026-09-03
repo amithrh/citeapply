@@ -2,14 +2,18 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import type {
-  HumanDraftV1,
-  HumanReviewV1,
-  HumanSnapshotV1,
+import {
+  HumanSnapshotV1Schema,
+  type HumanDraftV1,
+  type HumanReviewV1,
+  type HumanSnapshotV1,
 } from "../../contracts/http.ts";
 import { ApplicationController } from "../../ui/controllers/application.tsx";
 import { createCiteApplyBridge } from "../../webmcp/bridge.ts";
-import { createCiteApplyDispatch } from "../../webmcp/invoke.ts";
+import {
+  createCiteApplyDispatch,
+  type AssistedActivityEntry,
+} from "../../webmcp/invoke.ts";
 
 type Authority = Readonly<{
   pageCapability: string | null;
@@ -64,18 +68,39 @@ function fieldLabel(field: string): string {
   return field.replaceAll("_", " ");
 }
 
+/** Keeps the visible list bounded; a session cannot outgrow the panel. */
+const MAX_ACTIVITY_ENTRIES = 40;
+
+function activityTime(instant: string): string {
+  const parsed = new Date(instant);
+  return Number.isNaN(parsed.getTime())
+    ? instant
+    : parsed.toISOString().slice(11, 19);
+}
+
+/**
+ * The banner is server truth: a Draft reports its own assistance mode, and any
+ * other stage means the server has already closed assisted access.
+ */
+function assistanceOf(snapshot: HumanSnapshotV1 | null): "off" | "allowed" {
+  if (snapshot === null || snapshot.stage !== "draft") return "off";
+  return snapshot.view.assistance === "allowed" ? "allowed" : "off";
+}
+
 export default function ApplicationPage() {
   const authorityRef = useRef<Authority>(INITIAL_AUTHORITY);
   const [snapshot, setSnapshot] = useState<HumanSnapshotV1 | null>(null);
-  const [assistance, setAssistance] = useState<
-    "off" | "allowed" | "unavailable"
-  >("off");
+  const [webmcpUnavailable, setWebmcpUnavailable] = useState(false);
+  const [established, setEstablished] = useState(false);
   const [notice, setNotice] = useState("Checking latest state…");
   const [bridgeStatus, setBridgeStatus] = useState("not registered");
   const [emailDraft, setEmailDraft] = useState("anaya.rao@example.test");
   const [reason, setReason] = useState<string>("more_recent");
   const [receipt, setReceipt] = useState<ReceiptRecord | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
+  const [activity, setActivity] = useState<readonly AssistedActivityEntry[]>(
+    [],
+  );
 
   const adoptSnapshot = useCallback((next: HumanSnapshotV1) => {
     authorityRef.current = {
@@ -83,8 +108,51 @@ export default function ApplicationPage() {
       expectedPageEpoch: next.pageEpoch,
       expectedApplicationRevision: next.applicationRevision,
       expectedRequirementsVersion: next.requirementsVersion,
+      // Assisted access lives on the server. When the server no longer reports
+      // an allowed Draft, the page drops its consent capability at once rather
+      // than continuing to assert an authority it does not have.
+      consentCapability:
+        next.stage === "draft" && next.view.assistance === "allowed"
+          ? authorityRef.current.consentCapability
+          : null,
     };
     setSnapshot(next);
+  }, []);
+
+  /**
+   * Re-reads the same snapshot the page reads on load. Used whenever a tool
+   * call changed server state without returning a projection the page could
+   * adopt, so the visible form never lags behind the server.
+   */
+  const reconcile = useCallback(async () => {
+    const result = (await postJson(
+      "/api/application",
+      { mode: "snapshot" },
+      authorityRef.current.pageCapability,
+    )) as { ok?: boolean; data?: { snapshot?: unknown } };
+    if (result.ok !== true) return;
+    const parsed = HumanSnapshotV1Schema.safeParse(result.data?.snapshot);
+    if (parsed.success) adoptSnapshot(parsed.data);
+  }, [adoptSnapshot]);
+
+  /**
+   * Adopts the `uiSnapshot` the server already returned alongside a mutating
+   * tool result. It is parsed before it is trusted; an unparsable projection
+   * falls back to the plain snapshot re-read.
+   */
+  const adoptProjection = useCallback(
+    (uiSnapshot: unknown) => {
+      const parsed = HumanSnapshotV1Schema.safeParse(uiSnapshot);
+      if (parsed.success) adoptSnapshot(parsed.data);
+      else void reconcile();
+    },
+    [adoptSnapshot, reconcile],
+  );
+
+  const recordActivity = useCallback((entry: AssistedActivityEntry) => {
+    setActivity((entries) =>
+      [...entries, entry].slice(-MAX_ACTIVITY_ENTRIES),
+    );
   }, []);
 
   useEffect(() => {
@@ -134,14 +202,22 @@ export default function ApplicationPage() {
         consentCapability: null,
       };
       adoptSnapshot(takeover.data.snapshot);
-      setNotice("This page is current. Assisted access is off.");
+      setEstablished(true);
 
       const bridge = createCiteApplyBridge(
-        createCiteApplyDispatch(() => ({
-          pageCapability: authorityRef.current.pageCapability,
-          consentCapability: authorityRef.current.consentCapability,
-          localDirty: false,
-        })),
+        createCiteApplyDispatch(
+          () => ({
+            pageCapability: authorityRef.current.pageCapability,
+            consentCapability: authorityRef.current.consentCapability,
+            localDirty: false,
+          }),
+          fetch,
+          {
+            onActivity: recordActivity,
+            onMutationProjection: adoptProjection,
+            onMutationUnprojected: () => void reconcile(),
+          },
+        ),
       );
       const registered = await bridge.registerOnce();
       if (cancelled) return;
@@ -151,7 +227,7 @@ export default function ApplicationPage() {
         setBridgeStatus("six CiteApply tools registered");
       } else {
         setBridgeStatus("WebMCP is unavailable in this browser");
-        setAssistance("unavailable");
+        setWebmcpUnavailable(true);
       }
     };
 
@@ -159,7 +235,7 @@ export default function ApplicationPage() {
     return () => {
       cancelled = true;
     };
-  }, [adoptSnapshot]);
+  }, [adoptSnapshot, adoptProjection, recordActivity, reconcile]);
 
   const runAction = useCallback(
     async (action: Record<string, unknown>) => {
@@ -201,8 +277,6 @@ export default function ApplicationPage() {
     allowAssistedAccess: async () => {
       const result = await runAction({ action: "allow_assisted_access" });
       if (result.ok === true) {
-        setAssistance("allowed");
-        setNotice("This page is current. Assisted access is allowed.");
         return { ok: true as const, assistance: "allowed" as const };
       }
       return {
@@ -216,8 +290,6 @@ export default function ApplicationPage() {
         ...authorityRef.current,
         consentCapability: null,
       };
-      setAssistance("off");
-      setNotice("This page is current. Assisted access is off.");
       const result = await runAction({ action: "revoke_assisted_access" });
       return result.ok === true
         ? { ok: true as const, assistance: "off" as const }
@@ -254,7 +326,6 @@ export default function ApplicationPage() {
     if (result.ok === true && result.data !== undefined) {
       setReceipt(result.data.receipt);
       setProblem(null);
-      setAssistance("off");
     } else if (result.error !== undefined) {
       setProblem(result.error.message);
     }
@@ -286,6 +357,16 @@ export default function ApplicationPage() {
   const review: HumanReviewV1 | null =
     snapshot !== null && snapshot.stage === "review" ? snapshot.review : null;
 
+  // Assisted access is reported by the server, never remembered by this page.
+  const assistance: "off" | "allowed" | "unavailable" = webmcpUnavailable
+    ? "unavailable"
+    : assistanceOf(snapshot);
+  const statusLine = established
+    ? assistance === "allowed"
+      ? "This page is current. Assisted access is allowed."
+      : "This page is current. Assisted access is off."
+    : notice;
+
   return (
     <main>
       <header>
@@ -295,11 +376,37 @@ export default function ApplicationPage() {
         </p>
         <h1>Application</h1>
         <p role="status" aria-live="polite">
-          {notice}
+          {statusLine}
         </p>
         <p>WebMCP: {bridgeStatus}</p>
         {problem === null ? null : <p role="alert">{problem}</p>}
       </header>
+
+      <section aria-labelledby="assisted-activity-heading">
+        <h2 id="assisted-activity-heading">Assisted activity</h2>
+        {activity.length === 0 ? (
+          <p>No assisted tool calls yet.</p>
+        ) : (
+          <ol className="activity">
+            {activity.map((entry) => (
+              <li key={entry.sequence} data-outcome={entry.outcome}>
+                <code>{entry.tool}</code> → <strong>{entry.outcome}</strong>{" "}
+                <span className="meta">
+                  revision{" "}
+                  {entry.applicationRevision === null
+                    ? "—"
+                    : entry.applicationRevision}{" "}
+                  · requirements{" "}
+                  {entry.requirementsVersion === null
+                    ? "—"
+                    : entry.requirementsVersion}{" "}
+                  · {activityTime(entry.at)}
+                </span>
+              </li>
+            ))}
+          </ol>
+        )}
+      </section>
 
       {receipt !== null ? (
         <section className="receipt" aria-labelledby="receipt-heading">
@@ -384,6 +491,7 @@ export default function ApplicationPage() {
         <>
           <ApplicationController
             consent={consentPort}
+            key={assistance}
             initialAssistance={assistance}
           />
 
