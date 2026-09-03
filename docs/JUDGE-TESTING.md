@@ -28,8 +28,7 @@ crash. Wait for the stated delay and start again.
 2. **Expected:** after relaunch, on any page, DevTools console
    `'modelContext' in document` → `true`.
 
-> Last full verification was on Chrome 151.0.7922.175; re-verification against
-> Chrome 152 is pending. On Chrome 151 the invocation contract is:
+> Last full verification was on Chrome 152.0.7977.66. The invocation contract is:
 > `getTools()` returns a **Promise**; `executeTool(toolObject, argsJsonString)`
 > takes the **registered tool object** (not its name) and a **JSON string**; the
 > result comes back as a JSON string. See
@@ -39,12 +38,13 @@ crash. Wait for the stated delay and start again.
 
 1. Open `LIVE_URL`.
 2. **Expected:** header “Horizon Education Aid — Need-Based Scholarship”,
-   “Fictional demo · Synthetic data only”, heading “Apply with synthetic
-   records”, and two paths — **Supported packet** and **Conflict packet**.
+   “Fictional demo · Synthetic data only”, heading “The agent cites. You
+   decide.”, a three-sentence explanation, a **Try it with an agent** box, and
+   two paths — **Supported packet** and **Conflict packet**.
 3. Click **Start conflict packet**.
 4. **Expected:** you land on the application page. Under the “Application”
-   heading, a status line reads **“This page is current. Assisted access is
-   off.”** and below it **“WebMCP: six CiteApply tools registered”**.
+   heading, one status line reads **“This page is current. Assisted access is
+   off. WebMCP: six CiteApply tools registered.”**
    - If it instead reads “WebMCP is unavailable in this browser”, the flag is not
      active — go back to A0. The application still works manually.
 
@@ -130,7 +130,10 @@ version you last read; the schema is closed, so unexpected keys are rejected).
 
 **Expected:** `ok:true` with the list of `updatedFields`, **and the visible form
 changes as the result returns** — rows move from “Not linked yet” to the bound
-value. Either every entry applied or none did.
+value with the record it came from and that record’s own words beneath it. The
+**Assisted activity** panel at the foot of the page gains a row naming the tool,
+an **accepted** badge, the revision and the time. Either every entry applied or
+none did.
 
 Retry the identical call with the **same** `requestId`: expect the recorded
 effect replayed, not a second application. Reuse that `requestId` with different
@@ -182,10 +185,15 @@ outstanding, and nothing on the page changes stage.
 
 ### A10. The human decides
 
-1. In the income row, choose a reason under **Why this source**, then click
-   **Use `<document>`: `<value>`** for one of the two sources.
-2. In the email row, click **Save email**, then **I declare this is my address**.
-3. **Expected:** the income row becomes ready; the email row loses “not yet
+1. **Expected first:** the income row shows both disagreeing records side by
+   side — **Synthetic Household Statement** and **Synthetic Income Statement** —
+   each with its quoted excerpt and what that excerpt reads as in rupees, so you
+   read the evidence before you choose.
+2. Choose a reason under **Why you chose this source**, then click
+   **Use the Synthetic Income Statement** (or **Use the Synthetic Household
+   Statement**).
+3. In the email row, click **Save email**, then **I declare this is my address**.
+4. **Expected:** the income row becomes ready; the email row loses “not yet
    declared”; the Readiness count rises and the blockers list empties.
 
 Now confirm the agent still cannot read your private decision: re-run
@@ -206,10 +214,18 @@ choice, no reason string, no declaration record in the payload.
    is invalidated and re-frozen.
 4. Click **Submit this application**.
 5. **Expected:** the **Submitted** section with a receipt id, the review short
-   id, the same content hash, and the conflict warning carried through.
+   id, the same content hash, the conflict warning carried through, and every
+   accepted answer beside the excerpt it rests on.
+6. Click **Download JSON**. **Expected:** a file named
+   `citeapply-receipt-<id>.json` whose top-level `schema` is
+   `citeapply-receipt-v1`, and whose accepted values are the ones on screen.
+7. Click **Print**. **Expected:** the print preview keeps the receipt and its
+   excerpts and drops the page’s controls and the Assisted activity panel.
+8. **Start a new synthetic demo** returns you to the landing page.
 
 At no point is there a tool that can confirm, submit, read the receipt, or
-export it.
+export it. Download JSON and Print are visible human controls on the receipt;
+the agent has no tool that reaches either one.
 
 ### A12. The manual path is complete (optional, 3 minutes)
 

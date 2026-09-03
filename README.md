@@ -19,15 +19,20 @@ and the server — not the tool descriptions — enforces that boundary.
 ## Judge quick start (90 seconds)
 
 1. **Use Chrome with WebMCP enabled.** Open `chrome://flags/#enable-webmcp-testing`,
-   set it to **Enabled**, and relaunch. (Last verified end-to-end on Chrome 151;
-   see [docs/verification/genuine-chrome-webmcp.md](docs/verification/genuine-chrome-webmcp.md).)
+   set it to **Enabled**, and relaunch — or launch Chrome with
+   `--enable-features=WebMCPTesting`. (Last verified end-to-end on Chrome
+   152.0.7977.66; see
+   [docs/verification/genuine-chrome-webmcp.md](docs/verification/genuine-chrome-webmcp.md).)
 2. **Open the live URL:** `LIVE_URL`
 3. **Pick the Conflict packet.** Click **Start conflict packet**. This is the
    packet that shows the whole point: two accepted sources disagree about
    income. (**Start supported packet** is the happy path.)
-4. On the application page, confirm the header reads
-   **“WebMCP: six CiteApply tools registered”**, then click
-   **Review and allow assisted access** → **Allow assisted access**.
+4. On the application page, confirm the status line ends
+   **“WebMCP: six CiteApply tools registered.”**, then click
+   **Review and allow assisted access** → **Allow assisted access**. The
+   **Where the assistant stops** panel states the boundary in two columns, and
+   the **Assisted activity** panel at the foot of the page logs every tool call
+   with its outcome as it happens.
 5. **Give your agent these three prompts** (any WebMCP-capable client on the page,
    or Chrome’s own `document.modelContext.executeTool` from DevTools):
    - “List the CiteApply tools on this page, then read the application state in
@@ -44,10 +49,17 @@ and the server — not the tool descriptions — enforces that boundary.
     "safeActions":["resolve_in_visible_application"]}}
    ```
 
-   Nothing is written. The income row on the page keeps reading
-   **“Two accepted sources disagree. You decide.”** until *you* pick a source
-   and a reason in the visible portal. A protected read before you allow access
-   is refused the same way, with `consent_required`.
+   Nothing is written, and the refusal appears in the Assisted activity panel
+   with a **conflict requires human** badge. The income row on the page keeps
+   reading **“Two accepted sources disagree. You decide.”**, showing both
+   records with their quoted excerpts, until *you* choose a reason under **Why
+   you chose this source** and click **Use the Synthetic Income Statement** (or
+   the Household Statement). A protected read before you allow access is refused
+   the same way, with `consent_required`.
+
+7. **Finish it.** **Prepare review** → **Submit this application** → the
+   **Submitted** receipt, where **Download JSON**, **Print**, and **Start a new
+   synthetic demo** present the same accepted record three ways.
 
 Step-by-step instructions with expected output at every step, including the
 ChatGPT in-app browser, are in [docs/JUDGE-TESTING.md](docs/JUDGE-TESTING.md).
@@ -139,12 +151,14 @@ The agent can **never**, through any tool, at any stage:
 
 - declare the applicant’s contact email (only the visible
   **I declare this is my address** button does that);
-- resolve the income conflict (only **Use `<document>`: `<value>`** with a
-  reason in the visible portal does that);
+- resolve the income conflict (only **Use the Synthetic Income Statement** or
+  **Use the Synthetic Household Statement**, with a reason, in the visible
+  portal does that);
 - read the frozen Review’s contents, its content hash, the private conflict
   choice or reason, or the declaration records;
 - confirm or submit (only **Submit this application** on the frozen review does
-  that), or read the receipt or export it.
+  that), or read the receipt or export it — **Download JSON** and **Print** on
+  the receipt are visible human controls with no tool behind them.
 
 Two structural reasons this holds, both worth copying:
 
@@ -202,8 +216,13 @@ and `household_size` (`src/domain/fields.ts`) — so the agent must re-read acti
 requirements mid-session.
 
 The frozen Review shows every answer beside the exact source text it came from —
-including *both* disagreeing income excerpts — and carries a warning when the
-applicant resolved a conflict. That warning survives into the receipt.
+including *both* disagreeing income excerpts, with the one the applicant chose
+marked and the one they set aside kept in view — and carries a warning when the
+applicant resolved a conflict. That warning, and the whole annotated record,
+survive into the receipt and into its downloaded JSON.
+
+The applicant sees both excerpts *before* deciding, not only afterwards: the
+conflict row itself quotes each record.
 
 ## Running it locally
 
@@ -277,11 +296,13 @@ application page loads. In a browser without WebMCP the page says so plainly
 usable through the visible manual controls — assistance is always optional,
 never required.
 
-**Last verified against Chrome 151** (`chrome://flags/#enable-webmcp-testing`
-enabled): all six tools register and are invocable through the browser’s own
+**Last verified against Chrome 152.0.7977.66**
+(`chrome://flags/#enable-webmcp-testing` enabled, or
+`--enable-features=WebMCPTesting` on the command line): all six tools register
+and are invocable through the browser’s own
 `document.modelContext.executeTool`, and the consent boundary, a permitted
 binding, and the `conflict_requires_human` refusal were all exercised from the
-client side. **Re-verification against Chrome 152 is pending Phase 1.** The full
+client side. The full
 transcript, including Chrome’s actual invocation contract, is in
 [docs/verification/genuine-chrome-webmcp.md](docs/verification/genuine-chrome-webmcp.md).
 
@@ -320,7 +341,7 @@ and every journey fails):
 ```bash
 export APP_ORIGIN=http://localhost:3100
 npm run test:e2e
-npm run test:a11y
+npm run test:a11y            # axe WCAG 2.1 AA scan + the consent-authority kernel
 npm run verify:built-anti-hardcode   # after npm run build
 ```
 
