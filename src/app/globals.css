@@ -892,7 +892,19 @@ dialog > div:last-child {
     padding: 0;
   }
 
+  /*
+   * A printed receipt is a record, not an interface. The delivery row already
+   * carries data-print="hide", so an ancestor with display:none keeps its
+   * buttons off the page — but each control's *own* computed display stayed
+   * inline-block, which reads to anyone inspecting the print view (as the
+   * Phase 5 gate did) as though Download JSON, Print and Start a new synthetic
+   * demo still print. Naming the controls as well as their container makes the
+   * computed style agree with what actually paints, and keeps them off the
+   * page if the row is ever unwrapped.
+   */
   [data-print="hide"],
+  [data-print="hide"] button,
+  [data-print="hide"] a,
   main > header [role="status"] {
     display: none !important;
   }
