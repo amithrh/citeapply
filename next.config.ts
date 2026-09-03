@@ -38,7 +38,9 @@ const securityHeaders = [
   {
     key: "Permissions-Policy",
     value:
-      "camera=(), geolocation=(), microphone=(), payment=(), usb=(), browsing-topics=(), tools=(self)",
+      // `tools` is not a registered Permissions-Policy feature, and Chrome logs
+      // an error for every page load that declares it.
+      "camera=(), geolocation=(), microphone=(), payment=(), usb=(), browsing-topics=()",
   },
   { key: "Referrer-Policy", value: "no-referrer" },
   {

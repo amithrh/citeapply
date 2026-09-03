@@ -7,8 +7,10 @@ export const API_SECURITY_HEADERS = Object.freeze({
   "Cross-Origin-Opener-Policy": "same-origin",
   "Cross-Origin-Resource-Policy": "same-origin",
   "Origin-Agent-Cluster": "?1",
+  // `tools` is not a registered Permissions-Policy feature; declaring it only
+  // produces a console error in Chrome.
   "Permissions-Policy":
-    "camera=(), geolocation=(), microphone=(), payment=(), usb=(), browsing-topics=(), tools=(self)",
+    "camera=(), geolocation=(), microphone=(), payment=(), usb=(), browsing-topics=()",
   "Referrer-Policy": "no-referrer",
   "X-Content-Type-Options": "nosniff",
   "X-Frame-Options": "DENY",
