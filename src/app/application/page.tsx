@@ -1068,7 +1068,17 @@ export default function ApplicationPage() {
           assistant to read this application.
         </p>
       ) : (
-        <ol className="activity">
+        /*
+         * In the rail this list is capped and scrolls, and a scroll container
+         * a keyboard cannot reach is a real barrier — the demonstration makes
+         * it thirteen entries long, which is where it first appeared. It is
+         * focusable and named, so the transcript can be read without a mouse.
+         */
+        <ol
+          className="activity"
+          tabIndex={0}
+          aria-label="Every assisted tool call, most recent first"
+        >
           {[...activity].reverse().map((entry) => (
             <li key={entry.sequence} data-outcome={entry.outcome}>
               <span className="line">

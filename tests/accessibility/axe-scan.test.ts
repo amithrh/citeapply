@@ -183,3 +183,43 @@ test("@a11y the application, its consent dialog, the review and the receipt have
     await browser.close();
   }
 });
+
+/**
+ * The demonstration surfaces: the narration strip while the scripted client is
+ * mid-run — a dark board on a light page, with a live region and two outcome
+ * badges — and the hand-off panel with the two comparison columns.
+ */
+test("@a11y the narration strip and the hand-off panel have no WCAG 2.1 AA violations", async ({
+  page,
+}) => {
+  test.slow();
+  await page.goto("/");
+  await page
+    .getByRole("button", { name: "Start with records that disagree" })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Application" }),
+  ).toBeVisible();
+
+  await page
+    .getByRole("button", { name: "Watch an assistant fill this in" })
+    .click();
+  await page
+    .getByRole("button", { name: "Allow assisted access", exact: true })
+    .click();
+
+  await expect(page.locator(".watch-strip")).toBeVisible();
+  await expect(page.locator(".watch-badge")).toBeVisible();
+  await scan(page, "narration strip (mid-run)");
+
+  for (let attempt = 0; attempt < 120; attempt += 1) {
+    if ((await page.locator(".handoff").count()) > 0) break;
+    await page
+      .getByRole("button", { name: "Skip ahead" })
+      .click()
+      .catch(() => undefined);
+    await page.waitForTimeout(120);
+  }
+  await expect(page.locator(".handoff")).toBeVisible();
+  await scan(page, "hand-off and feel-the-difference panels");
+});
