@@ -261,6 +261,21 @@ export default function ApplicationPage() {
     null,
   );
   const [deliveryProblem, setDeliveryProblem] = useState<string | null>(null);
+  /**
+   * The server, not this page, decides which tab owns the session: opening
+   * /application in a second tab takes the page epoch with it, and every call
+   * from the superseded tab is then answered `stale_page`. A tab that has been
+   * told that must stop claiming to be current — it has no authority left, its
+   * assisted access is gone, and every mutating control it still shows would
+   * only be refused. This latches on the first such refusal and is cleared
+   * only by a reload, because a reload is the only thing that can win the
+   * session back.
+   */
+  const [stale, setStale] = useState(false);
+
+  const noteOutcome = useCallback((code: unknown) => {
+    if (code === "stale_page") setStale(true);
+  }, []);
 
   const adoptSnapshot = useCallback((next: HumanSnapshotV1) => {
     authorityRef.current = {
@@ -289,11 +304,18 @@ export default function ApplicationPage() {
       "/api/application",
       { mode: "snapshot" },
       authorityRef.current.pageCapability,
-    )) as { ok?: boolean; data?: { snapshot?: unknown } };
-    if (result.ok !== true) return;
+    )) as {
+      ok?: boolean;
+      data?: { snapshot?: unknown };
+      error?: { code?: string };
+    };
+    if (result.ok !== true) {
+      noteOutcome(result.error?.code);
+      return;
+    }
     const parsed = HumanSnapshotV1Schema.safeParse(result.data?.snapshot);
     if (parsed.success) adoptSnapshot(parsed.data);
-  }, [adoptSnapshot]);
+  }, [adoptSnapshot, noteOutcome]);
 
   /**
    * Adopts the `uiSnapshot` the server already returned alongside a mutating
@@ -309,11 +331,14 @@ export default function ApplicationPage() {
     [adoptSnapshot, reconcile],
   );
 
-  const recordActivity = useCallback((entry: AssistedActivityEntry) => {
-    setActivity((entries) =>
-      [...entries, entry].slice(-MAX_ACTIVITY_ENTRIES),
-    );
-  }, []);
+  const recordActivity = useCallback(
+    (entry: AssistedActivityEntry) => {
+      // A tool call is the other route by which this tab learns it is stale.
+      noteOutcome(entry.outcome);
+      setActivity((entries) => [...entries, entry].slice(-MAX_ACTIVITY_ENTRIES));
+    },
+    [noteOutcome],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -426,11 +451,12 @@ export default function ApplicationPage() {
         adoptSnapshot(result.data.snapshot);
         setProblem(null);
       } else if (result.error !== undefined) {
+        noteOutcome(result.error.code);
         setProblem(result.error.message);
       }
       return result;
     },
-    [adoptSnapshot],
+    [adoptSnapshot, noteOutcome],
   );
 
   const consentPort = {
@@ -647,14 +673,19 @@ export default function ApplicationPage() {
     snapshot !== null && snapshot.stage === "review" ? snapshot.review : null;
 
   // Assisted access is reported by the server, never remembered by this page.
-  const assistance: "off" | "allowed" | "unavailable" = webmcpUnavailable
-    ? "unavailable"
-    : assistanceOf(snapshot);
-  const statusLine = established
-    ? assistance === "allowed"
-      ? "This page is current. Assisted access is allowed."
-      : "This page is current. Assisted access is off."
-    : notice;
+  // A superseded tab has none, whatever it was last told, so `stale` wins.
+  const assistance: "off" | "allowed" | "unavailable" = stale
+    ? "off"
+    : webmcpUnavailable
+      ? "unavailable"
+      : assistanceOf(snapshot);
+  const statusLine = stale
+    ? "This page is no longer current. Reload to continue."
+    : established
+      ? assistance === "allowed"
+        ? "This page is current. Assisted access is allowed."
+        : "This page is current. Assisted access is off."
+      : notice;
 
   return (
     <main>
@@ -664,9 +695,22 @@ export default function ApplicationPage() {
           <strong>Fictional demo · Synthetic data only</strong>
         </p>
         <h1>Application</h1>
-        <p role="status" aria-live="polite">
+        <p role="status" aria-live="polite" data-stale={stale || undefined}>
           {statusLine} WebMCP: {bridgeStatus}.
         </p>
+        {stale ? (
+          <p className="stale-recovery" data-print="hide">
+            Another tab took over this synthetic session, so this page can no
+            longer act on it. Nothing you have saved is lost.{" "}
+            <button
+              type="button"
+              className="primary"
+              onClick={() => window.location.reload()}
+            >
+              Reload this page
+            </button>
+          </p>
+        ) : null}
         {problem === null ? null : <p role="alert">{problem}</p>}
       </header>
 
@@ -757,12 +801,14 @@ export default function ApplicationPage() {
           <button
             type="button"
             className="primary"
+            disabled={stale}
             onClick={() => void submit(review)}
           >
             Submit this application
           </button>
           <button
             type="button"
+            disabled={stale}
             onClick={() => void runAction({ action: "return_to_draft" })}
           >
             Return to draft
@@ -778,6 +824,7 @@ export default function ApplicationPage() {
             consent={consentPort}
             key={assistance}
             initialAssistance={assistance}
+            stale={stale}
           />
 
           <section className="boundary" aria-labelledby="boundary-heading">
@@ -837,6 +884,7 @@ export default function ApplicationPage() {
             <button
               type="button"
               className="primary"
+              disabled={stale}
               onClick={() => void runAction({ action: "prepare_review" })}
             >
               Prepare review
@@ -888,6 +936,7 @@ export default function ApplicationPage() {
                             <button
                               key={claim.claimHandle}
                               type="button"
+                              disabled={stale}
                               onClick={() =>
                                 void runAction({
                                   action: "bind_evidence",
@@ -909,6 +958,7 @@ export default function ApplicationPage() {
                           <span>Synthetic .test email address</span>
                           <input
                             type="email"
+                            disabled={stale}
                             value={emailDraft}
                             onChange={(event) =>
                               setEmailDraft(event.target.value)
@@ -917,6 +967,7 @@ export default function ApplicationPage() {
                         </label>
                         <button
                           type="button"
+                          disabled={stale}
                           onClick={() =>
                             void runAction({
                               action: "save_email",
@@ -929,6 +980,7 @@ export default function ApplicationPage() {
                         {field.status === "needs_declaration" ? (
                           <button
                             type="button"
+                            disabled={stale}
                             onClick={() =>
                               void runAction({ action: "declare_email" })
                             }
@@ -962,6 +1014,7 @@ export default function ApplicationPage() {
                           <select
                             value={reason}
                             required
+                            disabled={stale}
                             aria-describedby="reason-hint"
                             onChange={(event) => setReason(event.target.value)}
                           >
@@ -1008,7 +1061,7 @@ export default function ApplicationPage() {
                                   </p>
                                   <button
                                     type="button"
-                                    disabled={reason === ""}
+                                    disabled={stale || reason === ""}
                                     aria-describedby="reason-hint"
                                     onClick={() => {
                                       if (reason === "") return;

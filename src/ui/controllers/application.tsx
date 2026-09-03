@@ -23,6 +23,14 @@ export type ApplicationConsentPort = Readonly<{
 export type ApplicationControllerProps = Readonly<{
   consent: ApplicationConsentPort;
   initialAssistance?: AssistanceMode;
+  /**
+   * Set when the page has been superseded by another tab. The server answers
+   * every call from this tab `stale_page`, so offering to change assisted
+   * access here would only produce a refusal; the controls are disabled and
+   * the status says why. Assistance itself is unaffected — this only stops the
+   * page from offering an action it no longer has the authority to take.
+   */
+  stale?: boolean;
   children?: ReactNode;
 }>;
 
@@ -36,6 +44,7 @@ const INITIAL_STATUS: Record<AssistanceMode, string> = {
 export function ApplicationController({
   consent,
   initialAssistance = "off",
+  stale = false,
   children,
 }: ApplicationControllerProps) {
   const [assistance, setAssistance] =
@@ -138,13 +147,16 @@ export function ApplicationController({
       <section aria-labelledby="assisted-access-heading">
         <h2 id="assisted-access-heading">Assisted access</h2>
         <p role="status" aria-live="polite">
-          {status}
+          {stale
+            ? "Assisted access ended when another tab took over this session."
+            : status}
         </p>
 
         {assistance === "off" ? (
           <button
             id="allow-assisted-access-trigger"
             type="button"
+            disabled={stale}
             onClick={() => setDisclosureOpen(true)}
           >
             Review and allow assisted access
@@ -152,6 +164,7 @@ export function ApplicationController({
         ) : assistance === "allowed" ? (
           <button
             type="button"
+            disabled={stale}
             aria-busy={busyAction === "revoke" || undefined}
             aria-disabled={busyAction === "revoke"}
             onClick={() => void handleRevoke()}
