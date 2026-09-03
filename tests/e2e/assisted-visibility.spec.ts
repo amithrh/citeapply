@@ -146,7 +146,7 @@ test("@journey an assisted batch is visible in the form without a reload", async
     await expect
       .poll(async () => page.getByText("Not linked yet").count())
       .toBeLessThan(beforeCount);
-    await expect(page.getByText("guardian name")).toBeVisible();
+    await expect(page.getByText("Guardian name")).toBeVisible();
     await expect(page.getByText(/of 8 required answers are ready\./)).toBeVisible();
 
     const after = await page.screenshot({ fullPage: true });

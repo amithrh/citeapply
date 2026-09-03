@@ -133,7 +133,7 @@ for (const packet of ["supported", "conflict"] as const) {
 
       // 6 the form moved, with no reload, and the guardian branch opened
       await expect(page.getByText(/of 8 required answers are ready\./)).toBeVisible();
-      await expect(page.getByText("guardian name")).toBeVisible();
+      await expect(page.getByText("Guardian name")).toBeVisible();
       await expect.poll(() => page.getByText("Not linked yet").count()).toBeLessThan(unlinkedBefore);
       const afterShot = await page.screenshot({ fullPage: true });
       expect(Buffer.compare(beforeShot, afterShot)).not.toBe(0);

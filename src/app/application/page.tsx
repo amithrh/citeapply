@@ -77,8 +77,35 @@ async function postJson(
   return (await response.json()) as unknown;
 }
 
+/**
+ * Values are stored and hashed exactly as the sources produced them. These
+ * helpers change only what a person reads: nothing here touches the canonical
+ * content, the review hash, or anything the agent receives.
+ */
+const LABEL_ACRONYMS: Readonly<Record<string, string>> = { id: "ID" };
+
+/** Sentence case, so a row reads as a question rather than a database column. */
 function fieldLabel(field: string): string {
-  return field.replaceAll("_", " ");
+  const words = field.split("_").map((word) => LABEL_ACRONYMS[word] ?? word);
+  const [first, ...rest] = words;
+  if (first === undefined) return field;
+  return [first.charAt(0).toUpperCase() + first.slice(1), ...rest].join(" ");
+}
+
+const RUPEES = new Intl.NumberFormat("en-IN", {
+  style: "currency",
+  currency: "INR",
+  maximumFractionDigits: 0,
+});
+
+/** Money as money, yes/no as Yes/No, everything else as the source wrote it. */
+function displayValue(field: string, value: unknown): string {
+  if (typeof value === "boolean") return value ? "Yes" : "No";
+  if (field === "annual_household_income" && typeof value === "number") {
+    return RUPEES.format(value);
+  }
+  if (typeof value === "number") return value.toLocaleString("en-IN");
+  return String(value);
 }
 
 /** The record's own title, so a candidate is named before it is chosen. */
@@ -540,7 +567,9 @@ export default function ApplicationPage() {
               <div key={diff.field}>
                 <dt>{fieldLabel(diff.field)}</dt>
                 <dd>
-                  {String("value" in diff.final ? diff.final.value : "")}
+                  {"value" in diff.final
+                    ? displayValue(diff.field, diff.final.value)
+                    : ""}
                   {diff.excerpts.length === 0 ? null : (
                     <ul>
                       {diff.excerpts.map((excerpt) => (
@@ -614,7 +643,9 @@ export default function ApplicationPage() {
                   <dt>{fieldLabel(field.field)}</dt>
                   <dd>
                     {field.status === "ready"
-                      ? String("value" in field ? field.value : "linked")
+                      ? "value" in field
+                        ? displayValue(field.field, field.value)
+                        : "Linked"
                       : field.status === "needs_declaration"
                         ? `${field.value} — not yet declared`
                         : field.status === "conflict"
@@ -723,7 +754,11 @@ export default function ApplicationPage() {
                                       : `“${source.excerpt}”`}
                                   </p>
                                   <p className="candidate-value">
-                                    Reads as {String(claim.normalizedValue)}
+                                    Reads as{" "}
+                                    {displayValue(
+                                      claim.kind,
+                                      claim.normalizedValue,
+                                    )}
                                   </p>
                                   <button
                                     type="button"

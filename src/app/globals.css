@@ -215,13 +215,13 @@ dl > div {
   border-bottom: 1px solid var(--rule);
 }
 
+/* Sentence case: the label is a question the applicant is answering, not a
+   column heading in a database. */
 dt {
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-size: 0.88rem;
+  font-weight: 600;
   color: var(--quiet);
-  padding-top: 0.15rem;
+  padding-top: 0.2rem;
 }
 
 dd {
