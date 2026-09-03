@@ -21,7 +21,6 @@
     "verify:dependencies": "node --input-type=module -e \"const p=JSON.parse(await (await import('node:fs/promises')).readFile('package.json','utf8'));const direct={...p.dependencies,...p.devDependencies};for(const [name,version] of Object.entries(direct)){if(!/^\\d+\\.\\d+\\.\\d+$/.test(version))throw new Error(name+' must use an exact version: '+version)}console.log(Object.keys(direct).length+' exact direct dependency pins')\"",
     "verify:production-imports": "node scripts/verify-production-imports.mjs",
     "verify:built-anti-hardcode": "node scripts/verify-built-anti-hardcode.mjs",
-    "verify:file-structure": "node scripts/verify-file-structure.mjs",
     "verify:surfaces": "node scripts/verify-file-structure.mjs --surfaces",
     "test:contracts": "sh -c 'node --env-file-if-exists=.env.local --test tests/contract/*.test.ts' --",
     "test:unit": "sh -c 'node --env-file-if-exists=.env.local --test tests/unit/*.test.ts' --",

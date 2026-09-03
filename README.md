@@ -243,16 +243,29 @@ Create `.env.local` with the three required variables:
 `APP_ORIGIN` is not cosmetic: same-origin enforcement and key derivation both
 use it, and a mismatch refuses every request as `stale_page`.
 
-Then:
+For iteration, `npm run dev -- -p 3100` works.
+
+### Run the production build
 
 ```bash
 npm run build
-PORT=3100 node .next/standalone/server.js   # standalone output
+cp -R .next/static .next/standalone/.next/static
+PORT=3100 node .next/standalone/server.js
 ```
 
+The `cp -R` line is required, not optional. `next build` with
+`output: "standalone"` emits a self-contained server tree under
+`.next/standalone`, but Next deliberately leaves the client bundles, CSS and
+fonts in `.next/static` and expects the deploy step to copy them next to that
+server — its own docs say so, and it is why every hosting adapter does this
+copy for you. `node .next/standalone/server.js` chdirs into its own directory
+at startup, so without the copy the HTML renders and every `/_next/static/…`
+request 404s: an unstyled page whose buttons do nothing. (The PDF parser used
+to need a hand copy too; that one is fixed, and `next.config.ts` now traces
+`pdfjs-dist` into the standalone output.)
+
 Open the origin you configured, choose a packet, and the application page takes
-over the session and registers the tools. For iteration, `npm run dev -- -p 3100`
-works too.
+over the session and registers the tools.
 
 Details and platform notes: [docs/DEPLOYING.md](docs/DEPLOYING.md).
 
@@ -290,6 +303,7 @@ npm run verify:versions
 npm run verify:dependencies
 npm run verify:fixture-hashes
 npm run verify:production-imports
+npm run verify:surfaces      # route, table and tool surface inventory
 npm run typecheck
 npm run lint
 npm run test:contracts       # tool contract, projections, registration
@@ -309,6 +323,13 @@ npm run test:e2e
 npm run test:a11y
 npm run verify:built-anti-hardcode   # after npm run build
 ```
+
+The scaffolding gate `verify:file-structure` has been removed from
+`package.json`: it pinned the tree to an early build gate and reported files
+that shipped long ago (the review, submission and receipt routes, the e2e
+specs) as unexpected, so it could only ever fail here. Its surface inventory —
+the half that is still true — remains as `npm run verify:surfaces`, which runs
+the same script with `--surfaces`.
 
 ## How it is built
 
