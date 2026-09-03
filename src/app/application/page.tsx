@@ -43,6 +43,23 @@ const CONFLICT_REASONS = [
 ] as const;
 
 /**
+ * The three stages of one application, in order, so the page can say which
+ * ones are behind the applicant. Both crossings are one-way: preparing a
+ * review freezes the draft, and submitting accepts the review.
+ */
+const STAGES = [
+  { id: "draft", label: "Draft" },
+  { id: "review", label: "Review" },
+  { id: "receipt", label: "Submitted" },
+] as const;
+
+const STAGE_ORDER: readonly ("draft" | "review" | "receipt")[] = [
+  "draft",
+  "review",
+  "receipt",
+];
+
+/**
  * One candidate source behind a disputed answer, as the applicant sees it:
  * the record it came from and the words that record actually uses. Fetched
  * through the page's own human read channel (`mode: "evidence_excerpt"`), so
@@ -762,7 +779,9 @@ export default function ApplicationPage() {
   );
 
   return (
-    <main>
+    /* The draft is a workspace and needs the width; the frozen review and the
+       receipt are documents and keep the reading measure. */
+    <main className={stage === "draft" ? "portal portal-wide" : "portal"}>
       <header>
         <p>Horizon Education Aid — Need-Based Scholarship</p>
         <p>
@@ -771,6 +790,28 @@ export default function ApplicationPage() {
         <h1 id="stage-heading" data-stage={stage}>
           {stageHeading}
         </h1>
+        {/*
+          Three stages on one URL, two of them one-way. The heading says where
+          you are; this says where that is in the whole thing, and which steps
+          are already behind you.
+        */}
+        <ol className="stages" aria-label="Application stages" data-print="hide">
+          {STAGES.map((entry) => (
+            <li
+              key={entry.id}
+              data-state={
+                entry.id === stage
+                  ? "current"
+                  : STAGE_ORDER.indexOf(entry.id) < STAGE_ORDER.indexOf(stage)
+                    ? "done"
+                    : "todo"
+              }
+              aria-current={entry.id === stage ? "step" : undefined}
+            >
+              {entry.label}
+            </li>
+          ))}
+        </ol>
         <p role="status" aria-live="polite" data-stale={stale || undefined}>
           {statusLine} WebMCP: {bridgeStatus}.
         </p>
@@ -889,11 +930,21 @@ export default function ApplicationPage() {
           </button>
         </section>
       ) : submitted !== null ? (
-        <p>Loading your receipt…</p>
+        <p className="waiting" role="status" aria-live="polite">
+          <strong>Fetching your receipt</strong>
+          The application is submitted. CiteApply is reading back the accepted
+          record so you can download or print it.
+        </p>
       ) : draft === null ? (
-        <p>Loading the saved application…</p>
+        <p className="waiting" role="status" aria-live="polite">
+          <strong>Opening your application</strong>
+          CiteApply is parsing this packet&apos;s three synthetic records and
+          loading whatever you have already saved. This takes a moment on the
+          first view.
+        </p>
       ) : (
-        <>
+        <div className="workspace">
+          <div className="workspace-rail">
           <ApplicationController
             consent={consentPort}
             key={assistance}
@@ -924,7 +975,9 @@ export default function ApplicationPage() {
               </div>
             </div>
           </section>
+          </div>
 
+          <div className="workspace-main">
           <section aria-labelledby="progress-heading">
             <h2 id="progress-heading">Readiness</h2>
             <p className="progress">
@@ -969,6 +1022,11 @@ export default function ApplicationPage() {
 
           <section aria-labelledby="fields-heading">
             <h2 id="fields-heading">Answers</h2>
+            <p className="section-lead">
+              Every control below is yours, with or without an assistant. Nothing
+              here is hidden while assisted access is off — that is simply the
+              application, filled in by hand.
+            </p>
             <dl>
               {draft.fields.map((field) => (
                 <div key={field.field}>
@@ -1170,7 +1228,8 @@ export default function ApplicationPage() {
               ))}
             </ul>
           </section>
-        </>
+          </div>
+        </div>
       )}
 
       {stage === "draft" ? null : activityPanel}
