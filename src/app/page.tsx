@@ -16,6 +16,7 @@ import {
 } from "../ui/site/figures.tsx";
 import { HeroScene } from "../ui/site/hero-scene.tsx";
 import { LandingMotion } from "../ui/site/motion.tsx";
+import { WATCH_REQUEST_KEY } from "../ui/demo/runner.ts";
 import { UploadRecords } from "../ui/site/upload-records.tsx";
 
 type FailureBody = Readonly<{
@@ -329,8 +330,21 @@ export default function LandingPage() {
   const [error, setError] = useState<string | null>(null);
   const [lastPacket, setLastPacket] = useState<PacketCode | null>(null);
 
-  const start = (packet: PacketCode) => {
+  /**
+   * Starts a record set, optionally asking the application page to run its
+   * scripted demonstration on arrival. The request is a browser preference and
+   * carries no authority whatever: all it can do is open the same disclosure
+   * the rail opens, and a person still has to press Allow assisted access
+   * before a single tool call is made.
+   */
+  const start = (packet: PacketCode, watch = false) => {
     if (busy !== null) return;
+    try {
+      if (watch) window.sessionStorage.setItem(WATCH_REQUEST_KEY, "yes");
+      else window.sessionStorage.removeItem(WATCH_REQUEST_KEY);
+    } catch {
+      // A browser that refuses storage simply opens the application instead.
+    }
     setBusy(packet);
     setLastPacket(packet);
     setError(null);
@@ -394,17 +408,29 @@ export default function LandingPage() {
                 <Link className="cta cta-decide" href="#records">
                   Try the sample records
                 </Link>
-                <Link className="cta cta-seal" href="#upload">
-                  Upload your records
-                </Link>
+                <button
+                  type="button"
+                  className="cta cta-seal"
+                  aria-busy={busy === "conflict" || undefined}
+                  onClick={() => start("conflict", true)}
+                >
+                  {busy === "conflict"
+                    ? "Starting…"
+                    : "Watch an assistant fill it in"}
+                </button>
               </div>
               <p className="cta-note">
                 Read the records before you start: each one opens as the PDF the
                 server parses. The interesting set is the one that disagrees —
                 two accepted records give different incomes, the portal refuses
-                to choose, and so does the agent.
+                to choose, and so does the agent. Watching it happen takes about
+                half a minute: you allow access, and a scripted client calls the
+                real tools while the form fills in front of you.
               </p>
               <ul className="cta-secondary">
+                <li>
+                  <Link href="#upload">Upload your records</Link>
+                </li>
                 <li>
                   <Link href="#by-hand">Fill it in by hand</Link>
                 </li>
@@ -605,7 +631,10 @@ export default function LandingPage() {
           </div>
         </Band>
 
-        <Band className="section feature feature-dark" labelledBy="refusal-heading">
+        <Band
+          className="section feature feature-dark"
+          labelledBy="refusal-heading"
+        >
           <div className="feature-grid">
             <div className="feature-text">
               <p className="feature-kicker">The refusal</p>
@@ -741,6 +770,26 @@ export default function LandingPage() {
           assistant removes the reading and the retyping. It does not remove
           you.
         </p>
+        <div className="compare-watch">
+          <p>
+            You do not need an agent to see the difference. Start the set that
+            disagrees, allow assisted access, and a scripted client on the page
+            calls the same six tools against the same server — every acceptance
+            and both refusals land in the ledger while you watch. The
+            application then counts what it did against what you did by hand,
+            from this session only.
+          </p>
+          <button
+            type="button"
+            className="cta cta-seal"
+            aria-busy={busy === "conflict" || undefined}
+            onClick={() => start("conflict", true)}
+          >
+            {busy === "conflict"
+              ? "Starting…"
+              : "Watch an assistant fill it in"}
+          </button>
+        </div>
       </Band>
 
       {/* ---- How it works ----------------------------------------------- */}
@@ -789,7 +838,11 @@ export default function LandingPage() {
       </Band>
 
       {/* ---- The six tools ---------------------------------------------- */}
-      <Band id="tools" className="section tools-band" labelledBy="tools-heading">
+      <Band
+        id="tools"
+        className="section tools-band"
+        labelledBy="tools-heading"
+      >
         <h2 id="tools-heading">The six tools this page registers</h2>
         <p className="section-lead">
           Every tool is declared on <code>document.modelContext</code> with the
@@ -806,7 +859,9 @@ export default function LandingPage() {
               </p>
               <p className="tool-hints">
                 <span className="hint-read">readOnly</span>
-                <span className={tool.untrusted ? "hint-untrusted" : "hint-own"}>
+                <span
+                  className={tool.untrusted ? "hint-untrusted" : "hint-own"}
+                >
                   {tool.untrusted
                     ? "untrusted content"
                     : "the portal's own rules"}
@@ -828,7 +883,9 @@ export default function LandingPage() {
               </p>
               <p className="tool-hints">
                 <span className="hint-write">can change the draft</span>
-                <span className={tool.untrusted ? "hint-untrusted" : "hint-own"}>
+                <span
+                  className={tool.untrusted ? "hint-untrusted" : "hint-own"}
+                >
                   {tool.untrusted
                     ? "untrusted content"
                     : "the portal's own rules"}
@@ -928,7 +985,11 @@ export default function LandingPage() {
       </Band>
 
       {/* ---- Closing band ------------------------------------------------ */}
-      <section className="closing" aria-labelledby="closing-heading" data-reveal="">
+      <section
+        className="closing"
+        aria-labelledby="closing-heading"
+        data-reveal=""
+      >
         <div className="hero-ground" aria-hidden="true">
           <span className="glow glow-seal" />
         </div>

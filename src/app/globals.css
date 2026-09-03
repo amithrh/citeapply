@@ -1064,6 +1064,29 @@ dialog > div:last-child {
   font-weight: 400;
 }
 
+/* The one invitation on the landing page that starts something rather than
+   scrolling somewhere. It sits under the two lanes it is the answer to. */
+.compare-watch {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: calc(var(--step) * 3);
+  margin-top: calc(var(--step) * 4);
+  padding-top: calc(var(--step) * 4);
+  border-top: 1px solid var(--rule);
+}
+
+.compare-watch p {
+  flex: 1 1 22rem;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.compare-watch button {
+  flex: 0 0 auto;
+}
+
 /* ---- Watching an assistant work ---------------------------------------- */
 
 /*
