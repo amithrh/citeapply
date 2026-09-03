@@ -164,7 +164,8 @@ export function HandoffPanel({ summary, shape, byHand }: HandoffPanelProps) {
       <p className="handoff-shape">
         This application is backed by {shape.records} records and asks for{" "}
         {shape.requiredAnswers} answers. {shape.decisions.length} of the things
-        it needs are decisions no tool on this page can make.
+        it needs are the decisions listed above, and no tool on this page can
+        make any of them.
       </p>
       <div className="difference" aria-labelledby="difference-heading">
         <div className="difference-column" data-side="hand">
@@ -219,11 +220,6 @@ export function HandoffPanel({ summary, shape, byHand }: HandoffPanelProps) {
           </dl>
         </div>
       </div>
-      <ul className="difference-decisions">
-        {shape.decisions.map((decision) => (
-          <li key={decision}>{decision}</li>
-        ))}
-      </ul>
       <p className="watch-honesty">{HONESTY_LABEL}</p>
     </section>
   );

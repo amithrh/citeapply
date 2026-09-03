@@ -1327,10 +1327,16 @@ dialog > div:last-child {
   margin: 0 0 calc(var(--step) * 4);
 }
 
+/* This is the panel's payoff, not one of the site's small-caps labels, so it
+   opts out of the global h3 and speaks in the same serif as the heading above
+   it. */
 .handoff h3 {
   font-family: var(--serif);
   font-size: 1.3rem;
   font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--ink);
   margin: 0 0 var(--step);
 }
 
@@ -1416,20 +1422,6 @@ dialog > div:last-child {
   line-height: 1.5;
   color: var(--quiet);
   margin: 0 0 calc(var(--step) * 1.5);
-}
-
-.difference-decisions {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.difference-decisions li {
-  border-left: 3px solid var(--decide);
-  padding-left: calc(var(--step) * 1.75);
-  margin-bottom: calc(var(--step) * 1.25);
-  font-size: 0.92rem;
-  color: var(--decide);
 }
 
 /* ---- Receipt delivery: one record, three presentations ------------------ */
