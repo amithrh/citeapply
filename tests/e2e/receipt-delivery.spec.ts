@@ -39,6 +39,9 @@ async function reachReceipt(page: Page, label: string): Promise<void> {
   await expect(page.getByText("Nothing is blocking Review.")).toBeVisible();
 
   await page.getByRole("button", { name: "Prepare review" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Review before submitting" }),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Submit this application" }).click();
   await expect(page.getByRole("heading", { name: "Submitted" })).toBeVisible();
 }

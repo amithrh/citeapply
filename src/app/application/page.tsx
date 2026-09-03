@@ -9,6 +9,7 @@ import {
   type HumanReviewV1,
   type HumanSnapshotV1,
 } from "../../contracts/http.ts";
+import { ASSISTED_ACCESS_CATALOG } from "../../ui/components/consent.tsx";
 import { ApplicationController } from "../../ui/controllers/application.tsx";
 import { createCiteApplyBridge } from "../../webmcp/bridge.ts";
 import {
@@ -121,6 +122,18 @@ function displayValue(field: string, value: unknown): string {
   return String(value);
 }
 
+/** The claim handles a saved answer rests on, in the order it cites them. */
+function citedHandles(field: HumanDraftV1["fields"][number]): readonly string[] {
+  if (field.status !== "ready") return [];
+  if ("bindings" in field) {
+    return field.bindings.map(({ claimHandle }) => claimHandle);
+  }
+  if ("resolution" in field && typeof field.resolution !== "string") {
+    return [field.resolution.chosen.claimHandle];
+  }
+  return [];
+}
+
 /** The record's own title, so a candidate is named before it is chosen. */
 function documentTitle(draft: HumanDraftV1, code: string): string {
   return draft.documents.find((document) => document.code === code)?.title ?? code;
@@ -128,6 +141,15 @@ function documentTitle(draft: HumanDraftV1, code: string): string {
 
 /** Keeps the visible list bounded; a session cannot outgrow the panel. */
 const MAX_ACTIVITY_ENTRIES = 40;
+
+/**
+ * A refusal carries as much meaning as an acceptance here, so both are named
+ * in words rather than left as a bare code.
+ */
+function outcomeLabel(outcome: string): string {
+  if (outcome === "ok") return "accepted";
+  return outcome.replaceAll("_", " ");
+}
 
 function activityTime(instant: string): string {
   const parsed = new Date(instant);
@@ -572,37 +594,11 @@ export default function ApplicationPage() {
         </p>
         <h1>Application</h1>
         <p role="status" aria-live="polite">
-          {statusLine}
+          {statusLine} WebMCP: {bridgeStatus}.
         </p>
-        <p>WebMCP: {bridgeStatus}</p>
         {problem === null ? null : <p role="alert">{problem}</p>}
       </header>
 
-      <section aria-labelledby="assisted-activity-heading" data-print="hide">
-        <h2 id="assisted-activity-heading">Assisted activity</h2>
-        {activity.length === 0 ? (
-          <p>No assisted tool calls yet.</p>
-        ) : (
-          <ol className="activity">
-            {activity.map((entry) => (
-              <li key={entry.sequence} data-outcome={entry.outcome}>
-                <code>{entry.tool}</code> → <strong>{entry.outcome}</strong>{" "}
-                <span className="meta">
-                  revision{" "}
-                  {entry.applicationRevision === null
-                    ? "—"
-                    : entry.applicationRevision}{" "}
-                  · requirements{" "}
-                  {entry.requirementsVersion === null
-                    ? "—"
-                    : entry.requirementsVersion}{" "}
-                  · {activityTime(entry.at)}
-                </span>
-              </li>
-            ))}
-          </ol>
-        )}
-      </section>
 
       {receipt !== null ? (
         <section className="receipt" aria-labelledby="receipt-heading">
@@ -745,14 +741,51 @@ export default function ApplicationPage() {
             initialAssistance={assistance}
           />
 
+          <section className="boundary" aria-labelledby="boundary-heading">
+            <h2 id="boundary-heading">Where the assistant stops</h2>
+            <div className="boundary-columns">
+              <div className="may">
+                <h3>What the assistant may do</h3>
+                <ul>
+                  {ASSISTED_ACCESS_CATALOG.permittedActions.map((action) => (
+                    <li key={action}>{action}</li>
+                  ))}
+                </ul>
+              </div>
+              <div className="only-you">
+                <h3>What only you can do</h3>
+                <ul>
+                  {ASSISTED_ACCESS_CATALOG.excludedActions.map((action) => (
+                    <li key={action}>{action}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </section>
+
           <section aria-labelledby="progress-heading">
             <h2 id="progress-heading">Readiness</h2>
-            <p>
+            <p className="progress">
               {draft.progress.ready} of {draft.progress.total} required answers
               are ready.
             </p>
+            <div
+              className="gauge"
+              aria-hidden="true"
+              data-complete={
+                draft.progress.ready === draft.progress.total || undefined
+              }
+            >
+              <span
+                style={{
+                  width: `${Math.round(
+                    (draft.progress.ready / draft.progress.total) * 100,
+                  )}%`,
+                }}
+              />
+            </div>
             {draft.blockers.length === 0 ? (
-              <p>Nothing is blocking Review.</p>
+              <p className="clear">Nothing is blocking Review.</p>
             ) : (
               <ul className="blockers">
                 {draft.blockers.map((blocker) => (
@@ -790,6 +823,21 @@ export default function ApplicationPage() {
                             ? "Not required"
                             : "Not linked yet"}
 
+                    {citedHandles(field).length === 0 ? null : (
+                      <ul>
+                        {citedHandles(field).map((claimHandle) => {
+                          const source = excerpts[claimHandle];
+                          return (
+                            <li key={claimHandle}>
+                              {source === undefined
+                                ? "Loading the source record…"
+                                : `${source.title}: “${source.excerpt}”`}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+
                     {field.active &&
                     field.status === "missing" &&
                     field.field !== "preferred_contact_email" ? (
@@ -819,7 +867,7 @@ export default function ApplicationPage() {
                       <>
                         {" "}
                         <label>
-                          <span>Synthetic .test email</span>
+                          <span>Synthetic .test email address</span>
                           <input
                             type="email"
                             value={emailDraft}
@@ -913,7 +961,7 @@ export default function ApplicationPage() {
                             })}
                         </ul>
                         <label>
-                          <span>Why this source</span>
+                          <span>Why you chose this source</span>
                           <select
                             value={reason}
                             onChange={(event) => setReason(event.target.value)}
@@ -943,6 +991,46 @@ export default function ApplicationPage() {
           </section>
         </>
       )}
+
+        <section
+          className="activity-panel"
+          aria-labelledby="assisted-activity-heading"
+          data-print="hide"
+        >
+          <h2 id="assisted-activity-heading">Assisted activity</h2>
+          <p>
+            Every tool call this page answered, with the outcome the server
+            returned. A refusal is listed exactly like an acceptance.
+          </p>
+          {activity.length === 0 ? (
+            <p className="empty">
+              No assisted tool calls yet. Allow assisted access, then ask your
+              assistant to read this application.
+            </p>
+          ) : (
+            <ol className="activity">
+              {[...activity].reverse().map((entry) => (
+                <li key={entry.sequence} data-outcome={entry.outcome}>
+                  <span className="line">
+                    <code>{entry.tool}</code>
+                    <strong className="badge">
+                      {outcomeLabel(entry.outcome)}
+                    </strong>
+                  </span>
+                  <span className="meta">
+                    <time dateTime={entry.at}>{activityTime(entry.at)}</time>
+                    {entry.applicationRevision === null
+                      ? null
+                      : ` · revision ${entry.applicationRevision}`}
+                    {entry.requirementsVersion === null
+                      ? null
+                      : ` · requirements v${entry.requirementsVersion}`}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          )}
+        </section>
     </main>
   );
 }

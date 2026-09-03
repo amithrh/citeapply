@@ -345,10 +345,8 @@ section li {
 
 .decide label {
   display: block;
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-size: 0.85rem;
+  font-weight: 600;
   color: var(--quiet);
   margin-bottom: var(--step);
 }
@@ -371,10 +369,8 @@ label {
 
 label span {
   display: block;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-size: 0.85rem;
+  font-weight: 600;
   color: var(--quiet);
   margin-bottom: 0.25rem;
 }
@@ -556,48 +552,149 @@ dialog > div:last-child {
 
 /* ---- Assisted activity: what the agent asked for, and what it got ------- */
 
+.activity-panel > p {
+  font-size: 0.9rem;
+  color: var(--quiet);
+}
+
+.activity-panel .empty {
+  border-left: 3px solid var(--rule);
+  padding-left: calc(var(--step) * 1.75);
+}
+
 .activity {
   list-style: none;
   padding: 0;
   margin: 0;
-  border-left: 3px solid var(--seal);
+  border-top: 1px solid var(--rule);
   font-size: 0.9rem;
 }
 
 .activity li {
-  padding: 0.3rem 0 0.3rem calc(var(--step) * 1.75);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--step);
+  padding: calc(var(--step) * 1.25) 0;
   border-bottom: 1px solid var(--rule);
 }
 
-.activity li:last-child {
-  border-bottom: none;
+.activity .line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--step);
+  flex: 1 1 22rem;
 }
 
 .activity code {
   font-family: var(--mono);
-  font-size: 0.85rem;
+  font-size: 0.82rem;
+  color: var(--ink);
 }
 
-.activity strong {
+/* An outcome is a verdict, so it is stamped rather than written inline. */
+.activity .badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid var(--seal);
+  background: var(--seal-soft);
   color: var(--seal);
+  white-space: nowrap;
 }
 
 /* A refusal is the product working, so it is marked, not hidden. */
-.activity li[data-outcome="conflict_requires_human"] strong,
-.activity li[data-outcome="consent_required"] strong,
-.activity li[data-outcome="not_ready_for_review"] strong,
-.activity li[data-outcome="assistance_unavailable"] strong,
-.activity li[data-outcome="stale_state"] strong,
-.activity li[data-outcome="evidence_unavailable"] strong,
-.activity li[data-outcome="temporarily_unavailable"] strong {
+.activity li:not([data-outcome="ok"]) .badge {
+  border-color: var(--decide);
+  background: var(--decide-soft);
   color: var(--decide);
 }
 
 .activity .meta {
-  display: block;
   color: var(--quiet);
   font-family: var(--mono);
-  font-size: 0.75rem;
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
+/* ---- The boundary, stated on the page rather than only in the dialog ---- */
+
+.boundary-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  gap: calc(var(--step) * 2);
+}
+
+.boundary-columns h3 {
+  font-family: var(--sans);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+  margin-top: 0;
+}
+
+.boundary-columns ul {
+  list-style: none;
+  padding: 0 0 0 calc(var(--step) * 1.75);
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--quiet);
+}
+
+.boundary-columns .may ul {
+  border-left: 3px solid var(--seal);
+}
+
+.boundary-columns .may h3 {
+  color: var(--seal);
+}
+
+.boundary-columns .only-you ul {
+  border-left: 3px solid var(--decide);
+}
+
+.boundary-columns .only-you h3 {
+  color: var(--decide);
+}
+
+/* ---- Readiness --------------------------------------------------------- */
+
+.progress {
+  font-family: var(--serif);
+  font-size: 1.35rem;
+  line-height: 1.25;
+  margin-bottom: calc(var(--step) * 1.5);
+}
+
+.gauge {
+  height: 0.5rem;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: #fff;
+  overflow: hidden;
+  margin-bottom: calc(var(--step) * 2.5);
+  max-width: 26rem;
+}
+
+.gauge > span {
+  display: block;
+  height: 100%;
+  background: var(--seal);
+  transition: width 200ms ease;
+}
+
+.gauge[data-complete] > span {
+  background: var(--seal);
+}
+
+.clear {
+  color: var(--seal);
+  font-weight: 600;
 }
 
 /* ---- Disputed sources, side by side at the moment of choice ------------- */
