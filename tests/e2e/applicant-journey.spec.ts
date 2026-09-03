@@ -81,8 +81,40 @@ test("@journey the Conflict packet cannot reach Review until the applicant decid
   await expect(page.getByText("INR 540,000")).toBeVisible();
   await expect(page.getByText("INR 480,000")).toBeVisible();
 
-  // The applicant chooses a source and states a reason.
-  await page.getByRole("button", { name: "Use the Synthetic Income Statement" }).click();
+  // D-P1-1. The reason is the applicant's, so the portal will not supply one.
+  // The selector starts on its placeholder and both source buttons are
+  // genuinely unavailable until a reason is chosen — resolving without one is
+  // refused, and the conflict still blocks Review.
+  const reasonSelect = page.getByLabel("Why you chose this source");
+  await expect(reasonSelect).toHaveValue("");
+  const useStatement = page.getByRole("button", {
+    name: "Use the Synthetic Income Statement",
+  });
+  const useHousehold = page.getByRole("button", {
+    name: "Use the Synthetic Household Statement",
+  });
+  await expect(useStatement).toBeDisabled();
+  await expect(useHousehold).toBeDisabled();
+  await expect(
+    page.getByText("Choose a reason to enable the two buttons below."),
+  ).toBeVisible();
+
+  // Attempting the resolution anyway changes nothing: the income row still
+  // disagrees and Review is still blocked.
+  await useStatement.click({ force: true });
+  await expect(
+    page.getByText("Income sources disagree. Resolve this in CiteApply."),
+  ).toBeVisible();
+  await expect(page.getByText("Nothing is blocking Review.")).toHaveCount(0);
+  await page.getByRole("button", { name: "Prepare review" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Review before submitting" }),
+  ).toHaveCount(0);
+
+  // The applicant chooses a source and states a reason — in that order.
+  await reasonSelect.selectOption("more_recent");
+  await expect(useStatement).toBeEnabled();
+  await useStatement.click();
   await expect(page.getByText("Nothing is blocking Review.")).toBeVisible();
 
   await page.getByRole("button", { name: "Prepare review" }).click();

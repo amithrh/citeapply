@@ -8,6 +8,7 @@ import type { z } from "zod";
 
 import {
   AuthorityMetaV1Schema,
+  CONFLICT_REASONS,
   EVIDENCE_FIELD_IDS,
   FIELD_IDS,
   ORDINARY_CLEAR_FIELD_IDS,
@@ -5726,6 +5727,78 @@ test("G4E.7 durable HTTP contract oracle", { concurrency: 1 }, async (suite) => 
       true,
     );
   });
+
+  await suite.test(
+    "resolve_income refuses every reason the applicant did not state",
+    () => {
+      // D-P1-1. The frozen Review and the receipt quote this reason back as the
+      // applicant's own — "You chose the Synthetic Income Statement because it
+      // is the more recent source." — and it is baked into the content hash.
+      // The request schema is the boundary that guarantees the value came from
+      // a person: it is a closed enum of exactly the three offered reasons, so
+      // an omitted field, the UI's empty placeholder, or any string the client
+      // invents is refused before the action ever reaches the service. This
+      // widens nothing; it pins the existing narrowness so a later change
+      // cannot quietly relax it.
+      const coordinates = {
+        requestId: uuid(604),
+        expectedPageEpoch: 1,
+        expectedApplicationRevision: 1,
+        expectedRequirementsVersion: 1,
+        action: "resolve_income",
+        claimHandle: handle(6),
+      } as const;
+
+      for (const reason of CONFLICT_REASONS) {
+        assert.equal(
+          HumanActionRequestSchema.safeParse({ ...coordinates, reason }).success,
+          true,
+          `${reason} is one of the three the applicant may choose`,
+        );
+      }
+
+      // Omitted entirely.
+      assert.equal(
+        HumanActionRequestSchema.safeParse(coordinates).success,
+        false,
+      );
+      // The empty placeholder the selector now starts on.
+      for (const notAReason of [
+        "",
+        " ",
+        "null",
+        "unspecified",
+        "more recent",
+        "MORE_RECENT",
+        "more_recent ",
+      ]) {
+        assert.equal(
+          HumanActionRequestSchema.safeParse({
+            ...coordinates,
+            reason: notAReason,
+          }).success,
+          false,
+          `${JSON.stringify(notAReason)} is not a stated reason`,
+        );
+      }
+      // Non-string shapes cannot slip through either.
+      for (const notAReason of [null, undefined, 0, true, {}, ["more_recent"]]) {
+        assert.equal(
+          HumanActionRequestSchema.safeParse({
+            ...coordinates,
+            reason: notAReason,
+          }).success,
+          false,
+        );
+      }
+      // And the closed enum is exactly the three the UI offers, so the
+      // selector and the server cannot drift apart.
+      assert.deepEqual(
+        [...CONFLICT_REASONS],
+        ["more_recent", "corrected_record", "confirmed_for_application"],
+      );
+    },
+  );
 
   await suite.test("coverage ledger closes all eight families", () => {
     const expectedCoverage: readonly Readonly<{

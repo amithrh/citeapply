@@ -120,6 +120,9 @@ test("@a11y the application, its consent dialog, the review and the receipt have
 
     await completeDraft(page);
     await page
+      .getByLabel("Why you chose this source")
+      .selectOption("more_recent");
+    await page
       .getByRole("button", { name: "Use the Synthetic Income Statement" })
       .click();
     await expect(page.getByText("Nothing is blocking Review.")).toBeVisible();

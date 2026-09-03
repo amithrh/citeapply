@@ -199,6 +199,14 @@ for (const packet of ["supported", "conflict"] as const) {
 
       // 10 the applicant decides, in the visible UI only
       if (packet === "conflict") {
+        // The applicant states the reason first; until they do, both source
+        // buttons are unavailable and the resolution cannot be made (D-P1-1).
+        await expect(
+          page.getByRole("button", { name: "Use the Synthetic Income Statement" }),
+        ).toBeDisabled();
+        await page
+          .getByLabel("Why you chose this source")
+          .selectOption("more_recent");
         await page.getByRole("button", { name: "Use the Synthetic Income Statement" }).click();
       }
       await page.getByRole("button", { name: "I declare this is my address" }).click();

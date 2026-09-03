@@ -758,6 +758,34 @@ dialog > div:last-child {
   width: 100%;
 }
 
+/*
+ * The reason comes before the choice, because the receipt quotes it back as
+ * the applicant's own. Until one is chosen the two source buttons are
+ * genuinely unavailable — not merely styled as such — and the hint below the
+ * selector says why. `aria-describedby` ties the hint to both the selector and
+ * the buttons, so the explanation is announced with whichever the applicant
+ * reaches first.
+ */
+.reason-choice {
+  display: block;
+  margin: 0 0 var(--step);
+}
+
+.reason-hint {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--quiet);
+  max-width: 34rem;
+  margin: 0 0 calc(var(--step) * 3);
+}
+
+.candidates button[disabled] {
+  cursor: not-allowed;
+  color: var(--quiet);
+  background: var(--panel);
+  border-color: var(--rule);
+}
+
 /* ---- Receipt delivery: one record, three presentations ------------------ */
 
 .receipt .identifiers dd code {

@@ -139,6 +139,11 @@ test("@journey the conflict receipt keeps both disagreeing excerpts in the file 
   }
   await page.getByRole("button", { name: "Save email" }).click();
   await page.getByRole("button", { name: "I declare this is my address" }).click();
+  // The reason is the applicant's own; the source buttons stay disabled until
+  // one is chosen (D-P1-1).
+  await page
+    .getByLabel("Why you chose this source")
+    .selectOption("more_recent");
   await page
     .getByRole("button", { name: "Use the Synthetic Income Statement" })
     .click();

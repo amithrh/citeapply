@@ -242,7 +242,11 @@ export default function ApplicationPage() {
   const [notice, setNotice] = useState("Checking latest state…");
   const [bridgeStatus, setBridgeStatus] = useState("not registered");
   const [emailDraft, setEmailDraft] = useState("anaya.rao@example.test");
-  const [reason, setReason] = useState<string>("more_recent");
+  // Deliberately empty. The frozen Review and the receipt both quote this back
+  // as the applicant's own words — "You chose the Synthetic Income Statement
+  // because it is the more recent source." — so the product must never pick it
+  // for them. An unselected placeholder is the only honest default.
+  const [reason, setReason] = useState<string>("");
   const [receipt, setReceipt] = useState<ReceiptRecord | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   const [activity, setActivity] = useState<readonly AssistedActivityEntry[]>(
@@ -953,6 +957,29 @@ export default function ApplicationPage() {
                             page to read them before choosing.
                           </p>
                         ) : null}
+                        <label className="reason-choice">
+                          <span>Why you chose this source</span>
+                          <select
+                            value={reason}
+                            required
+                            aria-describedby="reason-hint"
+                            onChange={(event) => setReason(event.target.value)}
+                          >
+                            <option value="">
+                              Choose a reason before you decide…
+                            </option>
+                            {CONFLICT_REASONS.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <p id="reason-hint" className="reason-hint">
+                          {reason === ""
+                            ? "Choose a reason to enable the two buttons below. The review and the receipt will quote it back as your reason, so CiteApply will not pick one for you."
+                            : "This reason is recorded on the review and the receipt as yours."}
+                        </p>
                         <ul className="candidates">
                           {draft.claims
                             .filter(
@@ -981,13 +1008,16 @@ export default function ApplicationPage() {
                                   </p>
                                   <button
                                     type="button"
-                                    onClick={() =>
+                                    disabled={reason === ""}
+                                    aria-describedby="reason-hint"
+                                    onClick={() => {
+                                      if (reason === "") return;
                                       void runAction({
                                         action: "resolve_income",
                                         claimHandle: claim.claimHandle,
                                         reason,
-                                      })
-                                    }
+                                      });
+                                    }}
                                   >
                                     Use the {title}
                                   </button>
@@ -995,19 +1025,6 @@ export default function ApplicationPage() {
                               );
                             })}
                         </ul>
-                        <label>
-                          <span>Why you chose this source</span>
-                          <select
-                            value={reason}
-                            onChange={(event) => setReason(event.target.value)}
-                          >
-                            {CONFLICT_REASONS.map((option) => (
-                              <option key={option.value} value={option.value}>
-                                {option.label}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
                       </div>
                     ) : null}
                   </dd>
