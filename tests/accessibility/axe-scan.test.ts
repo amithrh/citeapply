@@ -85,6 +85,21 @@ test("@a11y the landing page has no WCAG 2.1 AA violations", async ({
   await scan(page, "landing");
 });
 
+/**
+ * Phase 2D added the site shell (masthead and footer on every route) and the
+ * "For agents" route. The shell is scanned implicitly by every case here; this
+ * case covers the one page that is nothing but the shell and static content.
+ */
+test("@a11y the For agents page has no WCAG 2.1 AA violations", async ({
+  page,
+}) => {
+  await page.goto("/agents");
+  await expect(
+    page.getByRole("heading", { name: "For agents", level: 1 }),
+  ).toBeVisible();
+  await scan(page, "for agents");
+});
+
 test("@a11y the application, its consent dialog, the review and the receipt have no WCAG 2.1 AA violations", async () => {
   test.slow();
   const browser = await openChrome();
