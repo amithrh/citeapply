@@ -11,6 +11,38 @@ Fill the three placeholders before submitting: `LIVE_URL`, `REPO_URL`,
 
 ---
 
+## Watch an assistant fill it in
+
+Most people who open a WebMCP demonstration have no WebMCP-enabled agent, so
+they fill the form by hand and never see the thing the product is about. So the
+application carries the journey itself.
+
+**Watch an assistant fill this in** opens the ordinary consent disclosure and
+waits: nothing is called until a person presses **Allow assisted access**. Then
+a scripted client — bundled with the page, holding the six registered tool
+objects and nothing else — performs the real journey. In Chrome with the WebMCP
+flag it goes through `document.modelContext.getTools()` and `executeTool`,
+exactly as an external agent would. In any other browser it calls the same
+registered descriptors over the same dispatcher, to the same endpoint, with the
+same page-injected headers and the same server validation.
+
+Nine steps, narrated one plain sentence at a time above the form: read the
+state, read the rules, read the evidence index, bind four supported answers in a
+single atomic call, read the rules again as six required answers become eight,
+bind the two that just appeared, ask for the income — refused
+`conflict_requires_human`, with nothing written, where two accepted records
+disagree — propose a contact address it can never declare, and try to freeze a
+review, refused `not_ready_for_review`. Every call also lands in the page's own
+Assisted activity ledger, and the strip's counter equals that ledger exactly.
+
+It is labelled for what it is, throughout: *"Scripted demonstration client.
+Every call is a real WebMCP tool call, validated by the server; nothing is
+simulated."* It ends by handing the application back, and by counting this
+session against itself — what the client did through the tools, what the person
+did by hand, and the decisions that were never available to anything but them.
+No time saving is claimed, because none was measured.
+
+
 ## Tagline
 
 **A scholarship portal where the website — not the model — owns the evidence rules.**

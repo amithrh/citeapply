@@ -33,21 +33,39 @@ and the server — not the tool descriptions — enforces that boundary.
    (**Start with records that agree** is the happy path.) You can open each of
    the three PDFs from the same card, or download the set as a zip and upload
    it back through **Upload your records**.
-4. On the application page, confirm the status line ends
+4. **Watch an assistant fill it in — 30 seconds, no agent required.** In the
+   **Assisted access** rail, click **Watch an assistant fill this in**. The
+   normal disclosure opens; nothing is called until *you* click **Allow
+   assisted access**. Then a scripted client on the page performs the real
+   journey through the real tool surface — in Chrome with the flag it goes
+   through `document.modelContext.getTools()` and `executeTool`, exactly as an
+   external agent would; in any other browser it calls the same registered
+   descriptors over the same dispatcher and the same server checks. A strip
+   above the form narrates one step at a time, with the outcome badge the
+   server returned and a live counter (`N tool calls · M answers cited ·
+   K refusals`) that is the Assisted activity ledger counted twice. It always
+   carries the label **“Scripted demonstration client. Every call is a real
+   WebMCP tool call, validated by the server; nothing is simulated.”** It ends
+   on a hand-off panel — the decisions it was never allowed to make — and a
+   *Feel the difference* comparison built from this session's own numbers. The
+   landing page's second hero button starts the disagreeing set and opens the
+   same flow.
+
+5. On the application page, confirm the status line ends
    **“WebMCP: six CiteApply tools registered.”**, then click
    **Review and allow assisted access** → **Allow assisted access**. The
    **Assisted activity** panel — directly beneath **Assisted access**, above
    the answers — logs every tool call with its outcome as it happens, and the
    **Where the assistant stops** panel below it states the boundary in two
    columns.
-5. **Give your agent these three prompts** (any WebMCP-capable client on the page,
+6. **Or drive it with your own agent — give it these three prompts** (any WebMCP-capable client on the page,
    or Chrome’s own `document.modelContext.executeTool` from DevTools):
    - “List the CiteApply tools on this page, then read the application state in
      `redacted` mode and tell me what it discloses.”
    - “Read the evidence index and the active form requirements, then apply every
      supported binding you are allowed to apply in one atomic call.”
    - “Now bind annual household income from the best source you can find.”
-6. **What refusal looks like.** The third prompt cannot succeed on the records
+7. **What refusal looks like.** The third prompt cannot succeed on the records
    that disagree. The portal returns, verbatim:
 
    ```json
@@ -67,7 +85,7 @@ and the server — not the tool descriptions — enforces that boundary.
    the frozen review and the receipt quote back to you. A protected read before
    you allow access is refused the same way, with `consent_required`.
 
-7. **Finish it.** **Prepare review** → **Submit this application** → the
+8. **Finish it.** **Prepare review** → **Submit this application** → the
    **Submitted** receipt, where **Download JSON**, **Print**, and **Start a new
    synthetic demo** present the same accepted record three ways.
 

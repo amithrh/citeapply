@@ -59,6 +59,57 @@ crash. Wait for the stated delay and start again.
    - If it instead reads “WebMCP is unavailable in this browser”, the flag is not
      active — go back to A0. The application still works manually.
 
+### A1a. Watch an assistant fill it in (30 seconds)
+
+This is the fastest way to see the whole product work, and it needs no agent
+and no console.
+
+1. In the **Assisted access** rail, click **Watch an assistant fill this in**.
+2. **Expected:** the ordinary disclosure dialog opens — **“Allow assisted
+   access?”** — and **nothing has been called**. The Assisted activity ledger
+   is still empty. This button cannot grant itself access.
+3. Click **Allow assisted access**.
+4. **Expected:** a dark strip pins itself above the form and narrates nine
+   steps, one plain sentence at a time, each with the tool name and the outcome
+   badge the server returned:
+
+   | # | Tool | Outcome |
+   |---|---|---|
+   | 1 | `get_application_state` | accepted |
+   | 2 | `get_form_requirements` | accepted |
+   | 3 | `get_evidence_index` | accepted |
+   | 4 | `apply_evidence_backed_answers` | accepted — four answers bound in one call |
+   | 5 | `get_form_requirements` | accepted — 6 required answers become 8 |
+   | 6 | `apply_evidence_backed_answers` | accepted — the two that just appeared |
+   | 7 | `apply_evidence_backed_answers` | **conflict requires human** (disagreeing set) / accepted (agreeing set) |
+   | 8 | `apply_evidence_backed_answers` | accepted — the address, as a proposal only |
+   | 9 | `prepare_submission_review` | **not ready for review** |
+
+   The form rows fill in live, with the record line each answer cites beneath
+   it. **Skip ahead** cuts the pause between steps; **Stop** ends the run.
+   A reader whose system asks for reduced motion gets the same nine steps with
+   no pauses and no animated rows.
+5. **Expected:** the counter on the strip — `N tool calls · M answers cited ·
+   K refusals` — matches the **Assisted activity** ledger in the rail entry for
+   entry. It is thirteen calls on either record set: nine narrated steps plus
+   the four version reads the client makes before each write.
+6. **Expected:** the strip carries, throughout, **“Scripted demonstration
+   client. Every call is a real WebMCP tool call, validated by the server;
+   nothing is simulated.”** That is the literal truth: with the Chrome flag on,
+   every call above went through `document.modelContext.executeTool`.
+7. **Expected:** the run ends on **The rest is yours** — the decisions it was
+   refused or never offered — and **Feel the difference**, two columns of
+   counts from this session only. There is no time saving claimed anywhere,
+   because none was measured.
+8. Finish the application yourself from there (§A9 onward). The assistant
+   stopped exactly where it was supposed to.
+
+> The same flow starts from the landing page's second hero button, **Watch an
+> assistant fill it in**, which opens the disagreeing set and the disclosure.
+> In a browser with no WebMCP the flow still runs, over the page's own
+> registered descriptors — the status line will say WebMCP is unavailable while
+> the run proceeds, which is exactly what it means.
+
 ### A2. Discover the tools
 
 In DevTools console:
@@ -255,8 +306,9 @@ the agent has no tool that reaches either one.
 ### A12. The manual path is complete (optional, 3 minutes)
 
 Start the **records that agree**, never open the consent dialog, and complete the
-whole application with the visible buttons only (**Link `<document>` record**,
-**Save email**, **I declare this is my address**, **Prepare review**, **Submit
+whole application with the visible controls only (for each answer: open a
+record, type the value as it is written, name the record and the line, then
+**Link this line**; then **Save email**, **I declare this is my address**, **Prepare review**, **Submit
 this application**). **Expected:** you reach a receipt. Assistance is optional,
 never required.
 
@@ -271,7 +323,8 @@ that is.
    closed, it does not inherit consent.
 3. Go back to the first tab. It still says it is current, because nothing has
    told it otherwise yet. Now make **any** call from it — click a **Link
-   `<document>` record** button, or run a tool from the console.
+   this line** button on any empty answer, press **Save email**, or run a tool
+   from the console.
 4. **Expected:** the call is refused with
    `{"ok":false,"error":{"code":"stale_page","message":"This page is no longer
    current.","safeActions":["reload_current_application"]}}`, and the first tab

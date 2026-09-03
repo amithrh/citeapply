@@ -25,6 +25,25 @@
   (“waiting compressed”). No invocation animation, no precomputed result, no
   harness standing in for the external client, no causally disconnected edit.
 
+**Use the built-in demonstration, not a DevTools console.** The application now
+carries the whole assisted journey itself: **Watch an assistant fill this in**,
+in the Assisted access rail. It opens the ordinary disclosure, waits for you to
+press **Allow assisted access**, and then calls the real tools — through
+`document.modelContext.executeTool` when the Chrome flag is on — while a strip
+above the form narrates one step at a time with the outcome badge the server
+returned and a live counter. It films far better than a split-screen console,
+and every shot below assumes it.
+
+**The honesty label must be legible in every shot that shows the strip or the
+hand-off panel**: *“Scripted demonstration client. Every call is a real WebMCP
+tool call, validated by the server; nothing is simulated.”* Do not crop it out,
+do not cover it with a lower third, and do not shrink the browser so far that
+it stops being readable at 1080p. If a shot cannot hold it, reframe the shot.
+
+Press **Skip ahead** between steps to keep the pace; that control is on screen,
+so nothing is being hidden. Do not cut between steps in a way that implies the
+run was faster than it was.
+
 Recommended capture order: record the full chronological session first, then cut
 the 0:00–0:12 cold open out of the later part of that same take.
 
@@ -34,13 +53,14 @@ the 0:00–0:12 cold open out of the later part of that same take.
 
 ### 0:00–0:12 — Cold open: a genuine call, a visible change
 
-**On screen:** the application page, records that disagree, split so the DevTools
-console showing a real `document.modelContext.executeTool(...)` call and its
-JSON result sits beside the form. The result lands, the **Legal name** row flips
-from “Not linked yet” to the bound value with its source excerpt beneath it, and
-a new row appears in the page’s own **Assisted activity** panel with an
-**accepted** badge. Persistent on-screen label, top-left: **“Excerpt from 1:35
-of this same recording.”**
+**On screen:** the application page, records that disagree, mid-run. The
+narration strip reads *“Binding legal name, student ID, institution and
+dependency on a guardian from the enrollment and household records — one call,
+every answer citing the line it came from”*, the badge flips to **accepted**,
+and four rows fill in at once, each with the record line it cites beneath it. A
+new entry lands in the page’s own **Assisted activity** panel. The strip’s
+honesty label and its counter are both in frame. Persistent on-screen label,
+top-left: **“Excerpt from 1:35 of this same recording.”**
 
 > "That was a real WebMCP tool call, from the browser's own API, into a
 > scholarship portal that just changed in front of you. Nobody typed into that
@@ -60,7 +80,9 @@ CiteApply tools registered.”**
 
 ### 0:30–0:48 — Discovery, and a protected read before consent
 
-**On screen:** console. `getTools()` resolves to the six names. Then a
+**On screen:** DevTools console, one short cut — this is the only console shot
+in the film, and it is here because discovery *before* consent has no UI. `getTools()`
+resolves to the six names. Then a
 `get_application_state` call in `redacted` mode returning
 `{"ok":true,"data":{"access":"consent_required","safeActions":["use_visible_application"]}}`,
 then the same tool in `protected` mode returning the `consent_required` refusal.
@@ -85,12 +107,14 @@ two columns headed **What the assistant may do** and **What only you can do**.
 
 ### 1:05–1:35 — Reads, then one atomic mutation
 
-**On screen:** console calls to `get_form_requirements` (active mode) and
-`get_evidence_index` — the index shows two income claims that disagree,
-`540000` and `480000`. Then one `apply_evidence_backed_answers` call binding the
-supported fields. The form visibly updates as the result returns, and the
-**Assisted activity** panel logs each call with its outcome badge. *(This is the
-region the cold open was cut from.)*
+**On screen:** click **Watch an assistant fill this in** and, on the disclosure
+that opens, **Allow assisted access** — show that the ledger is still empty at
+the moment of the click, so the button plainly could not start itself. The strip
+appears and narrates steps 1–4: reading the state, reading the rules, reading
+the index of every line the three records hold, and then one
+`apply_evidence_backed_answers` call binding four answers. The form updates as
+each result returns, and the **Assisted activity** panel logs every call with
+its badge. *(This is the region the cold open was cut from.)*
 
 > "It reads the rules, then the evidence index — and there are already two income
 > claims that don't agree. It applies the bindings it's allowed to apply in a
@@ -104,7 +128,9 @@ the page from the first load, labelled **“Not required”**; the moment
 `dependency` is bound they flip to **“Not linked yet”** and start counting
 toward readiness, and the readiness line moves with them. Frame both rows
 *before* the binding lands, so the label change is the beat. Then re-run
-`get_form_requirements` in active mode; the active set grows from six to eight.
+`get_form_requirements` in active mode — step 5 of the run — and the strip says
+so in words: *“6 required answers became 8: guardian name and household size are
+now asked for.”* Both rows highlight as it says it.
 
 > "Answering one question changed which questions apply. Guardian name and
 > household size just became required — watch the labels flip. This isn't a
@@ -113,13 +139,20 @@ toward readiness, and the readiness line moves with them. Frame both rows
 
 ### 1:52–2:12 — The refusal this product exists for
 
-**On screen:** an `apply_evidence_backed_answers` call attempting to bind
-`annual_household_income`. The result:
+**On screen:** step 7. The strip reads *“Asking for the annual household
+income”*, the badge turns ochre and reads **conflict requires human**, and the
+sentence completes: *“Refused: the two records disagree about this figure, and
+nothing was written. Only you can settle it.”* The counter ticks its first
+refusal. The server’s own payload, for the lower third or an inset:
 `{"ok":false,"error":{"code":"conflict_requires_human","message":"Income sources disagree. Resolve this in CiteApply.","safeActions":["resolve_in_visible_application"]}}`.
 Cut to the income row, still reading **“Two accepted sources disagree. You
 decide.”**, and to the **conflict requires human** badge that just appeared in
 the Assisted activity panel. Then `get_validation_issues` listing the conflict
-and the undeclared email as blockers.
+and the undeclared email as blockers. Then step 9 —
+`prepare_submission_review` — refused **not ready for review**, and the run
+stops on **The rest is yours** and **Feel the difference**: what the client did,
+what you did, and the decisions that were never available to it. Hold the
+hand-off panel long enough to read the honesty label on it.
 
 > "Here's the moment. The agent asks to fill in income. Two accepted sources
 > disagree — five hundred and forty thousand on one, four hundred and eighty
@@ -148,8 +181,10 @@ a declaration already made.
 
 ### 2:30–2:42 — Frozen review, human-only submit
 
-**On screen:** call `prepare_submission_review` **from the console, on camera**,
-so the narration and the picture agree. Show its result first — it returns only
+**On screen:** the scripted run already tried `prepare_submission_review` and
+was refused; now that the decisions are made, click **Prepare review** by hand.
+If you want the tool path on camera instead, call it from the console and show
+its result first — it returns only
 `{"readiness":"ready"}` and an opaque `reviewRef`: no contents, no hash, nothing
 the agent could reconstruct the review from. *Then* cut to the page, where the
 frozen review has appeared: each answer beside the exact source excerpt, both
@@ -157,10 +192,9 @@ conflicting income excerpts visible, the conflict warning, the content hash, and
 the copy “Assisted access is closed while you review it.” (Confirm a follow-up
 tool call now returns `consent_required`.) Click **Submit this application**.
 
-> If you would rather not cut to a console here, click **Prepare review** by
-> hand instead and change the first narration line to “I can ask the site to
-> freeze the application — or the agent can, and it gets back nothing but
-> ‘ready’.” Do not narrate the tool path over a shot of a button being clicked.
+> Do not narrate the tool path over a shot of a button being clicked. If you
+> click **Prepare review**, say so: “I can ask the site to freeze the
+> application — or the agent can, and it gets back nothing but ‘ready’.”
 
 > "The agent can ask the site to freeze the application — but the review only
 > appears here, in the page, and assisted access closes when it does. Every
