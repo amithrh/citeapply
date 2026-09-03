@@ -109,19 +109,29 @@ export function SiteFooter() {
             <h2 id="footer-repo">Source and documents</h2>
             <ul>
               <li>
-                The repository is MIT licensed. Read{" "}
-                <span className="footer-mono">LICENSE</span> and{" "}
-                <span className="footer-mono">README.md</span> at its root.
+                The{" "}
+                <a href="https://github.com/amithrh/citeapply">repository</a> is
+                MIT licensed. Read its{" "}
+                <a href="https://github.com/amithrh/citeapply/blob/main/LICENSE">
+                  LICENSE
+                </a>{" "}
+                and{" "}
+                <a href="https://github.com/amithrh/citeapply/blob/main/README.md">
+                  README
+                </a>
+                .
               </li>
               <li>
                 Judge walkthrough:{" "}
-                <span className="footer-mono">docs/JUDGE-TESTING.md</span>
+                <a href="https://github.com/amithrh/citeapply/blob/main/docs/JUDGE-TESTING.md">
+                  docs/JUDGE-TESTING.md
+                </a>
               </li>
               <li>
                 Chrome verification:{" "}
-                <span className="footer-mono">
+                <a href="https://github.com/amithrh/citeapply/blob/main/docs/verification/genuine-chrome-webmcp.md">
                   docs/verification/genuine-chrome-webmcp.md
-                </span>
+                </a>
               </li>
             </ul>
           </section>

@@ -1,0 +1,1 @@
+Consent is a real disclosure. It lists what the tools may receive, what they will never receive, and what they can't do. And the capability it creates is never handed to the agent. The page holds it and injects it on every call.

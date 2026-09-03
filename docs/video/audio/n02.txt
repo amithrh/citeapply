@@ -1,0 +1,1 @@
+CiteApply is a fictional aid portal running entirely on synthetic records. It registers six WebMCP tools when the application page loads. Everything you'll see the agent do goes through those six tools, and nothing else.

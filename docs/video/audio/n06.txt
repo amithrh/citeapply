@@ -1,0 +1,1 @@
+Answering one question changed which questions apply. Guardian name and household size just became required. Watch the labels flip. This isn't a static schema the agent memorised. It has to read the requirements again, because the site's rules are live.

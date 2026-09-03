@@ -1,0 +1,38 @@
+[
+  [
+    "get_application_state",
+    "accepted"
+  ],
+  [
+    "get_form_requirements",
+    "accepted"
+  ],
+  [
+    "get_evidence_index",
+    "accepted"
+  ],
+  [
+    "apply_evidence_backed_answers",
+    "accepted"
+  ],
+  [
+    "get_form_requirements",
+    "accepted"
+  ],
+  [
+    "apply_evidence_backed_answers",
+    "accepted"
+  ],
+  [
+    "apply_evidence_backed_answers",
+    "conflict requires human"
+  ],
+  [
+    "apply_evidence_backed_answers",
+    "accepted"
+  ],
+  [
+    "prepare_submission_review",
+    "not ready for review"
+  ]
+]

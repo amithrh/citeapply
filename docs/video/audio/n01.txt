@@ -1,0 +1,1 @@
+That was a real WebMCP tool call, from the browser's own API, into a scholarship portal that just changed in front of you. Nobody typed into that form. Now here is the whole session, from the start.

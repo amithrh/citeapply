@@ -1,0 +1,17 @@
+{
+  "hosted": true,
+  "names": [
+    "apply_evidence_backed_answers",
+    "get_application_state",
+    "get_evidence_index",
+    "get_form_requirements",
+    "get_validation_issues",
+    "prepare_submission_review"
+  ],
+  "redacted": {
+    "threw": "TypeError: Failed to execute 'executeTool' on 'ModelContext': The provided value is not of type 'RegisteredTool'."
+  },
+  "protectedRead": {
+    "threw": "TypeError: Failed to execute 'executeTool' on 'ModelContext': The provided value is not of type 'RegisteredTool'."
+  }
+}

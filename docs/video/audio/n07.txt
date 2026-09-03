@@ -1,0 +1,1 @@
+Here's the moment. The agent asks to fill in income. Two accepted sources disagree. Five hundred and forty thousand on one, four hundred and eighty thousand on the other. The website answers conflict requires human, and writes nothing. It also refuses to declare my email address for me. The agent can read exactly why it's blocked. It just can't clear the blockers itself.

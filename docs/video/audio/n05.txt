@@ -1,0 +1,1 @@
+It reads the rules, then the evidence index, and there are already two income claims that don't agree. It applies the bindings it's allowed to apply in a single atomic call. All of them, or none. And the form you're looking at is the thing that changed.
