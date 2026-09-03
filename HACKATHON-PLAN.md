@@ -123,3 +123,10 @@ Blockers only the user can clear: `vercel login` on this machine; approve creati
 
 ## Decision 2026-09-03 08:10 IST
 User: deployment deferred. Local (http://localhost:3100, real Chrome) must be excellent first. Phase 3 is on hold until the user reopens it; Phase 5 gate runs against local.
+
+## Phase 1 corrections (08:20 IST) — supersede the facts table where they conflict
+- The 4 journey failures were NOT the missing APP_ORIGIN export. Cause: Postgres.app on :5432 denies connections from the Homebrew node binary (App Permissions dialog). Until the user approves node in Postgres.app → Settings → App Permissions, use the throwaway cluster the Phase 1 agent started: `DATABASE_URL=postgresql://citeapply@127.0.0.1:5433/citeapply` (datadir `scratchpad/pgdata`, socket `/tmp/ca-sock`). Do not use the user's `.env.local` DATABASE_URL for automated runs.
+- Real Chrome can be scripted: Playwright `channel: "chrome"` with `--enable-features=WebMCPTesting`. `getTools()` is a Promise; `executeTool(toolObject, JSON.stringify(args))`.
+- Standalone start needs BOTH `.next/static` and `node_modules/pdfjs-dist` copied into `.next/standalone` until D-2 is fixed.
+- Playwright target is 16 passed + 1 documented skip (the genuine-client trace needs real ChatGPT capture files). 17/17 is not reachable by agents.
+- Phase 1 defect list is authoritative: `docs/evidence/phase1/REPORT.md` (D-1..D-12).
