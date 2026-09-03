@@ -120,3 +120,6 @@ Blockers only the user can clear: `vercel login` on this machine; approve creati
 - Conflict row copy: "Two accepted sources disagree. You decide."
 - Email: **Save email** then **I declare this is my address**
 - Phase 2 must add the Assisted activity panel; the video script currently assumes DevTools console beside the form until it exists.
+
+## Decision 2026-09-03 08:10 IST
+User: deployment deferred. Local (http://localhost:3100, real Chrome) must be excellent first. Phase 3 is on hold until the user reopens it; Phase 5 gate runs against local.
