@@ -32,7 +32,7 @@ and the page kept claiming "Assisted access is allowed" after the server had clo
 - `src/app/application/page.tsx:85-88, 361-370, 494` — the banner and the page status line are
   derived from the server's own `draft.assistance`, not from page memory; the consent controller
   is re-keyed on that server value so it can never disagree with it.
-- `src/app/application/page.tsx:385-410`, `src/app/globals.css:556-600` — the **Assisted activity**
+- `src/app/application/page.tsx:385-410`, `src/app/globals.css:557-601` — the **Assisted activity**
   list: tool name, outcome code, application revision, requirements version, time. It is a
   projection of the response the page already received.
 
