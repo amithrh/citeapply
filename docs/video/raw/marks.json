@@ -1,0 +1,246 @@
+{
+  "startedAt": "2026-09-03T16:56:02.620Z",
+  "marks": [
+    {
+      "name": "recording_start",
+      "at": 0
+    },
+    {
+      "name": "landing",
+      "at": 1.32
+    },
+    {
+      "name": "landing_record_sets",
+      "at": 5.89
+    },
+    {
+      "name": "application_loaded",
+      "at": 8.43
+    },
+    {
+      "name": "discovery_pre_consent",
+      "at": 10.94,
+      "extra": {
+        "hosted": true,
+        "names": [
+          "apply_evidence_backed_answers",
+          "get_application_state",
+          "get_evidence_index",
+          "get_form_requirements",
+          "get_validation_issues",
+          "prepare_submission_review"
+        ],
+        "redacted": {
+          "threw": "TypeError: Failed to execute 'executeTool' on 'ModelContext': The provided value is not of type 'RegisteredTool'."
+        },
+        "protectedRead": {
+          "threw": "TypeError: Failed to execute 'executeTool' on 'ModelContext': The provided value is not of type 'RegisteredTool'."
+        }
+      }
+    },
+    {
+      "name": "fill_choice",
+      "at": 12.14
+    },
+    {
+      "name": "consent_dialog_from_choice",
+      "at": 15.04
+    },
+    {
+      "name": "consent_allowed",
+      "at": 24.27
+    },
+    {
+      "name": "coach_strip",
+      "at": 26.87
+    },
+    {
+      "name": "where_the_assistant_stops",
+      "at": 31.15
+    },
+    {
+      "name": "branch_rows_before",
+      "at": 35.45
+    },
+    {
+      "name": "watch_button",
+      "at": 38.73
+    },
+    {
+      "name": "watch_clicked",
+      "at": 40.53
+    },
+    {
+      "name": "step_1",
+      "at": 40.54,
+      "extra": {
+        "tool": "get_application_state",
+        "badge": "accepted"
+      }
+    },
+    {
+      "name": "step_2",
+      "at": 43.81,
+      "extra": {
+        "tool": "get_form_requirements",
+        "badge": "accepted"
+      }
+    },
+    {
+      "name": "step_3",
+      "at": 47.08,
+      "extra": {
+        "tool": "get_evidence_index",
+        "badge": "accepted"
+      }
+    },
+    {
+      "name": "step_4",
+      "at": 50.34,
+      "extra": {
+        "tool": "apply_evidence_backed_answers",
+        "badge": "accepted"
+      }
+    },
+    {
+      "name": "step_5",
+      "at": 53.19,
+      "extra": {
+        "tool": "get_form_requirements",
+        "badge": "accepted"
+      }
+    },
+    {
+      "name": "step_6",
+      "at": 56.44,
+      "extra": {
+        "tool": "apply_evidence_backed_answers",
+        "badge": "accepted"
+      }
+    },
+    {
+      "name": "step_7",
+      "at": 59.68,
+      "extra": {
+        "tool": "apply_evidence_backed_answers",
+        "badge": "conflict requires human"
+      }
+    },
+    {
+      "name": "step_8",
+      "at": 62.92,
+      "extra": {
+        "tool": "apply_evidence_backed_answers",
+        "badge": "accepted"
+      }
+    },
+    {
+      "name": "step_9",
+      "at": 66.18,
+      "extra": {
+        "tool": "prepare_submission_review",
+        "badge": "not ready for review"
+      }
+    },
+    {
+      "name": "run_complete",
+      "at": 66.18,
+      "extra": {
+        "seen": [
+          [
+            "get_application_state",
+            "accepted"
+          ],
+          [
+            "get_form_requirements",
+            "accepted"
+          ],
+          [
+            "get_evidence_index",
+            "accepted"
+          ],
+          [
+            "apply_evidence_backed_answers",
+            "accepted"
+          ],
+          [
+            "get_form_requirements",
+            "accepted"
+          ],
+          [
+            "apply_evidence_backed_answers",
+            "accepted"
+          ],
+          [
+            "apply_evidence_backed_answers",
+            "conflict requires human"
+          ],
+          [
+            "apply_evidence_backed_answers",
+            "accepted"
+          ],
+          [
+            "prepare_submission_review",
+            "not ready for review"
+          ]
+        ]
+      }
+    },
+    {
+      "name": "handoff",
+      "at": 66.46
+    },
+    {
+      "name": "feel_the_difference",
+      "at": 71.26
+    },
+    {
+      "name": "income_conflict_row",
+      "at": 76.03
+    },
+    {
+      "name": "income_pdf_open",
+      "at": 81.36
+    },
+    {
+      "name": "back_to_application",
+      "at": 85.64
+    },
+    {
+      "name": "reason_chosen",
+      "at": 88.9
+    },
+    {
+      "name": "source_chosen",
+      "at": 91.59
+    },
+    {
+      "name": "email_declared",
+      "at": 94.89
+    },
+    {
+      "name": "review_frozen",
+      "at": 98.18
+    },
+    {
+      "name": "review_excerpts",
+      "at": 104.92
+    },
+    {
+      "name": "receipt",
+      "at": 110.29
+    },
+    {
+      "name": "receipt_detail",
+      "at": 117.06
+    },
+    {
+      "name": "download_json",
+      "at": 121.14
+    },
+    {
+      "name": "recording_end",
+      "at": 124.64
+    }
+  ]
+}
