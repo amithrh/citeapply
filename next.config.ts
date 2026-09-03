@@ -75,6 +75,12 @@ const nextConfig: NextConfig = {
       "./node_modules/pdfjs-dist/package.json",
       "./node_modules/pdfjs-dist/legacy/build/**",
       "./node_modules/pdfjs-dist/standard_fonts/**",
+      // pdfjs-dist's legacy build reaches for @napi-rs/canvas to polyfill
+      // DOMMatrix and Path2D. It is an optional dependency, so nothing imports
+      // it statically and nothing traces it; without it every start dies with
+      // `ReferenceError: DOMMatrix is not defined` before a page is read.
+      "./node_modules/@napi-rs/canvas/**",
+      "./node_modules/@napi-rs/canvas-*/**",
     ],
   },
   async headers() {
