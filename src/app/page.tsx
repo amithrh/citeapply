@@ -16,6 +16,7 @@ import {
 } from "../ui/site/figures.tsx";
 import { HeroScene } from "../ui/site/hero-scene.tsx";
 import { LandingMotion } from "../ui/site/motion.tsx";
+import { UploadRecords } from "../ui/site/upload-records.tsx";
 
 type FailureBody = Readonly<{
   ok?: boolean;
@@ -73,6 +74,41 @@ async function startSyntheticDemo(packet: PacketCode): Promise<string | null> {
   window.location.assign(started.data.destination);
   return null;
 }
+
+/**
+ * The two sample record sets. Each is three one-page PDFs — the same documents
+ * a real applicant would have to hand — and every one of them is served
+ * straight from the committed, hash-allowlisted fixture it comes from.
+ */
+const RECORD_SETS = [
+  {
+    code: "conflict",
+    title: "Records that disagree",
+    lead: "The income statement and the household statement give different household incomes. Nobody but you can settle which one to stand behind.",
+    tone: "decide",
+    button: "Start with records that disagree",
+  },
+  {
+    code: "supported",
+    title: "Records that agree",
+    lead: "All three records line up, so every answer can be read straight out of them and the application runs end to end.",
+    tone: "seal",
+    button: "Start with records that agree",
+  },
+] as const satisfies readonly {
+  code: PacketCode;
+  title: string;
+  lead: string;
+  tone: string;
+  button: string;
+}[];
+
+/** The three documents in every set, in the order they are read. */
+const RECORD_DOCUMENTS = [
+  { file: "enrollment.pdf", label: "Enrollment record" },
+  { file: "household.pdf", label: "Household statement" },
+  { file: "income.pdf", label: "Income statement" },
+] as const;
 
 /**
  * Four facts about this build, each one checkable in the repository rather
@@ -143,7 +179,7 @@ const TOOLS = [
     writes: false,
     untrusted: true,
     summary:
-      "Lists the claims parsed from this packet's records as opaque handles. No raw PDF, no storage path, no full excerpt.",
+      "Lists the claims parsed from this set's records as opaque handles. No raw PDF, no storage path, no full excerpt.",
   },
   {
     name: "get_validation_issues",
@@ -250,7 +286,7 @@ const FAQ = [
   {
     question: "What can the assistant never do?",
     answer:
-      "Choose a packet, declare your email address, resolve a disagreement between two records, return from a review, confirm or submit the application, or load, print or export a receipt. The server refuses those calls; it is not a matter of the tool descriptions asking nicely.",
+      "Choose which records to start from, declare your email address, resolve a disagreement between two records, return from a review, confirm or submit the application, or load, print or export a receipt. The server refuses those calls; it is not a matter of the tool descriptions asking nicely.",
   },
   {
     question: "What if I bring no assistant at all?",
@@ -260,7 +296,7 @@ const FAQ = [
   {
     question: "What is stored, and for how long?",
     answer:
-      "Your answers, which record each one cites, and the review and receipt you produce — all against a session cookie that lasts 60 minutes. Because the packets are synthetic, none of it is anyone's real data, and there is nothing here worth keeping.",
+      "Your answers, which record each one cites, and the review and receipt you produce — all against a session cookie that lasts 60 minutes. Because the records are synthetic, none of it is anyone's real data, and there is nothing here worth keeping.",
   },
 ] as const;
 
@@ -347,50 +383,35 @@ export default function LandingPage() {
               role="group"
               aria-labelledby="apply-heading"
             >
-              <h2 id="apply-heading">Start a synthetic application</h2>
+              <h2 id="apply-heading">Start with a set of records</h2>
               <p className="cta-lead">
-                Both packets carry the same eight questions and the same three
-                records. They differ in one thing: whether the records agree.
+                Every application here begins from three documents — an
+                enrollment record, a household statement and an income
+                statement. Take one of the two sample sets, or upload a set you
+                downloaded from this page.
               </p>
-              {error === null ? null : (
-                <div className="cta-error" role="alert">
-                  <p>{error}</p>
-                  {lastPacket === null ? null : (
-                    <button type="button" onClick={() => start(lastPacket)}>
-                      Try again
-                    </button>
-                  )}
-                </div>
-              )}
               <div className="cta-row">
-                <button
-                  type="button"
-                  className="cta cta-decide"
-                  aria-busy={busy === "conflict" || undefined}
-                  onClick={() => start("conflict")}
-                >
-                  {busy === "conflict" ? "Starting…" : "Start conflict packet"}
-                </button>
-                <button
-                  type="button"
-                  className="cta cta-seal"
-                  aria-busy={busy === "supported" || undefined}
-                  onClick={() => start("supported")}
-                >
-                  {busy === "supported"
-                    ? "Starting…"
-                    : "Start supported packet"}
-                </button>
+                <Link className="cta cta-decide" href="#records">
+                  Try the sample records
+                </Link>
+                <Link className="cta cta-seal" href="#upload">
+                  Upload your records
+                </Link>
               </div>
               <p className="cta-note">
-                The conflict packet is the interesting one: two accepted records
-                disagree about income, the portal refuses to choose, and so does
-                the agent. The supported packet is the same application with
-                records that agree.
+                Read the records before you start: each one opens as the PDF the
+                server parses. The interesting set is the one that disagrees —
+                two accepted records give different incomes, the portal refuses
+                to choose, and so does the agent.
               </p>
-              <p className="cta-secondary">
-                <Link href="/agents">See how agents help</Link>
-              </p>
+              <ul className="cta-secondary">
+                <li>
+                  <Link href="#by-hand">Fill it in by hand</Link>
+                </li>
+                <li>
+                  <Link href="/agents">See how agents help</Link>
+                </li>
+              </ul>
             </div>
 
             <p className="stamp">Fictional demo · Synthetic data only</p>
@@ -401,6 +422,96 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* ---- The records ------------------------------------------------ */}
+      <Band
+        id="records"
+        className="section records-band"
+        labelledBy="records-heading"
+      >
+        <h2 id="records-heading">The records you will be working from</h2>
+        <p className="section-lead">
+          These are the actual files the server reads. Open any of them, or
+          download a whole set and upload it back — the application that opens
+          is built from the sentences inside them, never from anything typed in
+          here.
+        </p>
+
+        {error === null ? null : (
+          <div className="records-error" role="alert">
+            <p>{error}</p>
+            {lastPacket === null ? null : (
+              <button type="button" onClick={() => start(lastPacket)}>
+                Try again
+              </button>
+            )}
+          </div>
+        )}
+
+        <div className="record-sets">
+          {RECORD_SETS.map((set) => (
+            <article
+              key={set.code}
+              className="record-set"
+              data-tone={set.tone}
+              aria-labelledby={`set-${set.code}`}
+            >
+              <h3 id={`set-${set.code}`}>{set.title}</h3>
+              <p className="record-set-lead">{set.lead}</p>
+              <ul className="record-list">
+                {RECORD_DOCUMENTS.map((document) => (
+                  <li key={document.file}>
+                    <a
+                      href={`/api/demo?document=${set.code}/${document.file}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label={`Preview the ${document.label.toLowerCase()} from the ${set.title.toLowerCase()}`}
+                    >
+                      {document.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+              <p className="record-download">
+                <a
+                  href={`/api/demo?records=${set.code}`}
+                  aria-label={`Download the ${set.title.toLowerCase()} as a zip`}
+                >
+                  Download these records (.zip)
+                </a>
+              </p>
+              <button
+                type="button"
+                className={`cta cta-${set.tone}`}
+                aria-busy={busy === set.code || undefined}
+                onClick={() => start(set.code)}
+              >
+                {busy === set.code ? "Starting…" : set.button}
+              </button>
+            </article>
+          ))}
+
+          <article
+            id="upload"
+            className="record-set record-upload"
+            aria-labelledby="upload-heading"
+          >
+            <h3 id="upload-heading">Upload your records</h3>
+            <p className="record-set-lead">
+              Download one of the sets above and upload its three PDFs here. The
+              server checks each file against the records it committed to and
+              opens that application.
+            </p>
+            <UploadRecords />
+            <p className="record-note">
+              Nothing real is accepted, and nothing you choose is kept: each
+              file is hashed, compared, and dropped. Anything that is not one of
+              this demonstration&apos;s own records is refused, by name-free
+              message, before an application exists.
+            </p>
+          </article>
+        </div>
+      </Band>
 
       {/* ---- Proof strip ----------------------------------------------- */}
       <section className="proof" aria-labelledby="proof-heading" data-reveal="">
@@ -643,9 +754,9 @@ export default function LandingPage() {
           <li>
             <h3>Your records are read for you</h3>
             <p>
-              Choosing a packet parses its three PDFs on the server and turns
-              them into a short index of claims. Nothing is typed in, and no
-              record is treated as more than a claim until it is cited.
+              Starting a set parses its three PDFs on the server and turns them
+              into a short index of claims. Nothing is typed in, and no record
+              is treated as more than a claim until it is cited.
             </p>
           </li>
           <li>
@@ -665,6 +776,16 @@ export default function LandingPage() {
             </p>
           </li>
         </ol>
+        <div id="by-hand" className="by-hand">
+          <h3>Or fill it in by hand</h3>
+          <p>
+            An assistant is optional and off until you turn it on. Once an
+            application is open, CiteApply asks you which way you want to work —
+            by hand, or with an assistant helping — and every control is on the
+            page either way. Nothing is hidden while assisted access is off, and
+            the two paths end on the same frozen review.
+          </p>
+        </div>
       </Band>
 
       {/* ---- The six tools ---------------------------------------------- */}
@@ -727,8 +848,9 @@ export default function LandingPage() {
       >
         <h2 id="agent-heading">Try it with an agent</h2>
         <p className="section-lead">
-          Turn WebMCP on in Chrome, start the conflict packet, allow assisted
-          access on the application page, and say these three things in order.
+          Turn WebMCP on in Chrome, start the records that disagree, allow
+          assisted access on the application page, and say these three things in
+          order.
         </p>
 
         <div className="console">
@@ -814,12 +936,12 @@ export default function LandingPage() {
           <h2 id="closing-heading">Walk it yourself — it takes two minutes</h2>
           <p>
             Nothing you enter is submitted anywhere, the records are invented,
-            and the session lasts an hour. Take the conflict packet if you only
-            have time for one.
+            and the session lasts an hour. Take the records that disagree if you
+            only have time for one.
           </p>
           <p className="closing-links">
-            <Link className="closing-primary" href="#apply">
-              Choose a packet
+            <Link className="closing-primary" href="#records">
+              Choose a set of records
             </Link>
             <Link className="closing-secondary" href="/agents">
               Read the agent instructions

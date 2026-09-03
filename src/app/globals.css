@@ -1491,7 +1491,8 @@ html[data-scrolled] body:has(main.landing) .site-header {
   margin: 0 0 1rem;
 }
 
-.landing button.cta {
+.landing button.cta,
+.landing a.cta {
   margin: 0;
   font-size: 0.98rem;
   font-weight: 700;
@@ -1504,27 +1505,31 @@ html[data-scrolled] body:has(main.landing) .site-header {
 
 /* Ochre is the colour of the decision the portal will not make for you, so the
    packet built around one leads. */
-.landing button.cta-decide {
+.landing button.cta-decide,
+.landing a.cta-decide {
   background: #e8a94e;
   border-color: #e8a94e;
   color: #2a1503;
   box-shadow: 0 12px 26px -14px rgb(232 169 78 / 0.85);
 }
 
-.landing button.cta-decide:hover {
+.landing button.cta-decide:hover,
+.landing a.cta-decide:hover {
   background: #f4bb69;
   border-color: #f4bb69;
   color: #2a1503;
   transform: translateY(-2px);
 }
 
-.landing button.cta-seal {
+.landing button.cta-seal,
+.landing a.cta-seal {
   background: rgb(127 212 204 / 0.1);
   border-color: rgb(127 212 204 / 0.5);
   color: #cdeee9;
 }
 
-.landing button.cta-seal:hover {
+.landing button.cta-seal:hover,
+.landing a.cta-seal:hover {
   background: rgb(127 212 204 / 0.2);
   border-color: #7fd4cc;
   color: #ffffff;
@@ -1540,6 +1545,15 @@ html[data-scrolled] body:has(main.landing) .site-header {
 }
 
 .cta-secondary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cta-secondary li {
   margin: 0;
 }
 
@@ -1547,6 +1561,15 @@ html[data-scrolled] body:has(main.landing) .site-header {
   color: #7fd4cc;
   font-weight: 600;
   text-underline-offset: 3px;
+}
+
+.landing a.cta {
+  display: inline-block;
+  text-decoration: none;
+}
+
+.landing a.cta:hover {
+  text-decoration: none;
 }
 
 .landing .stamp {
@@ -1936,6 +1959,216 @@ html[data-scrolled] body:has(main.landing) .site-header {
   color: var(--seal);
   font-weight: 600;
   text-underline-offset: 3px;
+}
+
+/* ---- The records --------------------------------------------------------- */
+
+/*
+ * Three panels: two committed record sets and the intake for bringing one
+ * back. The two sets are drawn as filed folders — a coloured head rule in the
+ * meaning colour, the three documents listed as filed lines. The intake is
+ * deliberately not a third folder: it sits on the field ground behind a dashed
+ * edge, because it is a slot, not a document.
+ */
+.record-sets {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  gap: clamp(1rem, 2vw, 1.6rem);
+  align-items: stretch;
+}
+
+/*
+ * The two CTA fills are drawn for the dark hero, where a tinted wash reads.
+ * On the paper ground they would disappear, so both buttons are solid here and
+ * keep their meaning colours: ochre for the set built around a decision, teal
+ * for the one that runs straight through.
+ */
+.records-band button.cta-decide {
+  background: var(--decide);
+  border-color: var(--decide);
+  color: var(--paper);
+  box-shadow: none;
+}
+
+.records-band button.cta-decide:hover {
+  background: #a5590a;
+  border-color: #a5590a;
+  color: var(--paper);
+}
+
+.records-band button.cta-seal {
+  background: var(--seal);
+  border-color: var(--seal);
+  color: var(--paper);
+}
+
+.records-band button.cta-seal:hover {
+  background: #14837f;
+  border-color: #14837f;
+  color: var(--paper);
+}
+
+.record-set {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: clamp(1.1rem, 1.8vw, 1.5rem);
+  background: var(--paper);
+  border: 1px solid var(--edge);
+  border-top: 4px solid var(--rule);
+}
+
+.record-set[data-tone="decide"] {
+  border-top-color: var(--decide);
+}
+
+.record-set[data-tone="seal"] {
+  border-top-color: var(--seal);
+}
+
+.record-set h3 {
+  font-family: var(--serif);
+  font-size: 1.3rem;
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--ink);
+  margin: 0;
+  padding: 0;
+  border: none;
+  text-transform: none;
+  letter-spacing: -0.01em;
+}
+
+.record-set-lead {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--quiet);
+  max-width: 42ch;
+}
+
+.record-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--rule);
+}
+
+.record-list li {
+  margin: 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.record-list a {
+  display: block;
+  padding: 0.5rem 0;
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-decoration-color: var(--rule);
+  text-underline-offset: 3px;
+}
+
+.record-list a:hover {
+  color: var(--seal);
+  text-decoration-color: currentColor;
+}
+
+.record-download {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.records-band .record-set > button.cta {
+  margin-top: auto;
+  align-self: flex-start;
+}
+
+.record-upload {
+  background: var(--field);
+  border: 1px dashed var(--quiet);
+  padding-top: calc(clamp(1.1rem, 1.8vw, 1.5rem) + 3px);
+}
+
+.record-note {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--quiet);
+}
+
+.upload-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.upload-form label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.upload-form input[type="file"] {
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--ink);
+  max-width: 100%;
+}
+
+.upload-count {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--quiet);
+}
+
+.upload-refusal {
+  margin: 0;
+  padding-left: 0.9rem;
+  border-left: 3px solid var(--decide);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--decide);
+}
+
+.upload-form .cta {
+  align-self: flex-start;
+}
+
+.records-error {
+  margin: 0 0 clamp(1.25rem, 2vw, 1.75rem);
+  padding-left: 1rem;
+  border-left: 3px solid var(--decide);
+  color: var(--decide);
+}
+
+.records-error p {
+  margin: 0 0 0.5rem;
+}
+
+.by-hand {
+  margin-top: clamp(2rem, 3.5vw, 3rem);
+  padding-top: clamp(1.5rem, 2.5vw, 2rem);
+  border-top: 1px solid var(--rule);
+}
+
+.by-hand h3 {
+  font-family: var(--serif);
+  font-size: 1.3rem;
+  font-weight: 500;
+  color: var(--ink);
+  margin: 0 0 0.6rem;
+  padding: 0;
+  border: none;
+  text-transform: none;
+  letter-spacing: -0.01em;
+}
+
+.by-hand p {
+  margin: 0;
+  max-width: 62ch;
+  color: var(--quiet);
+  line-height: 1.65;
 }
 
 /* ---- The program's own facts -------------------------------------------- */
@@ -2845,7 +3078,8 @@ html[data-scrolled] body:has(main.landing) .site-header {
     grid-template-columns: 1fr;
   }
 
-  .landing button.cta {
+  .landing button.cta,
+  .landing a.cta {
     width: 100%;
     text-align: center;
   }
