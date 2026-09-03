@@ -1,6 +1,12 @@
 # Judge testing guide
 
-Live URL: `LIVE_URL`
+**Where to run it.** There is no public deployment yet, so this guide is written
+against a local production build at `http://localhost:3100`. Build and start it
+exactly as `README.md` → *Run the production build* prescribes — the
+`HOSTNAME=localhost` prefix and the `set -a; . ./.env.local; set +a` line are
+both required, and omitting either produces a page that cannot start a packet.
+If a live URL is published, substitute it for `http://localhost:3100`
+throughout; nothing below depends on the origin.
 
 Everything below is synthetic. Nothing is submitted to any real program. Please
 do not type real personal or financial information — the portal says so on the
@@ -36,15 +42,18 @@ crash. Wait for the stated delay and start again.
 
 ### A1. Start the Conflict packet
 
-1. Open `LIVE_URL`.
+1. Open `http://localhost:3100`.
 2. **Expected:** header “Horizon Education Aid — Need-Based Scholarship”,
    “Fictional demo · Synthetic data only”, heading “The agent cites. You
    decide.”, a three-sentence explanation, a **Try it with an agent** box, and
    two paths — **Supported packet** and **Conflict packet**.
 3. Click **Start conflict packet**.
-4. **Expected:** you land on the application page. Under the “Application”
-   heading, one status line reads **“This page is current. Assisted access is
-   off. WebMCP: six CiteApply tools registered.”**
+4. **Expected:** you land on the application page. The heading and the browser
+   tab both read **“Application”** — they name the stage you are on, and will
+   change to **“Review before submitting”** and then **“Submitted”** as you
+   cross each threshold. Under the heading, one status line reads **“This page
+   is current. Assisted access is off. WebMCP: six CiteApply tools
+   registered.”**
    - If it instead reads “WebMCP is unavailable in this browser”, the flag is not
      active — go back to A0. The application still works manually.
 
@@ -141,10 +150,12 @@ content: expect `request_reuse_mismatch`.
 
 ### A7. The conditional branch opens
 
-**Expected:** after the dependency field is bound, **guardian name** and
-**household size** rows appear in the Answers list. Re-run
-`get_form_requirements` with `mode: "active"` and confirm the active set is
-larger than before. An attempt to work from the stale version returns
+**Expected:** after the dependency field is bound, the **guardian name** and
+**household size** rows *become required*. Both rows are on screen from the
+first load, labelled **“Not required”**; binding `dependency` flips them to
+**“Not linked yet”** and they start counting toward readiness. Re-run
+`get_form_requirements` with `mode: "active"` and confirm the active set grew
+from six to eight. An attempt to work from the stale version returns
 `stale_state` carrying the current versions.
 
 ### A8. The refusal (the point of the Conflict packet)
@@ -160,8 +171,8 @@ Attempt to bind `annual_household_income` from either income claim.
 ```
 
 and on the page, the income row still reads **“Two accepted sources disagree.
-You decide.”** with the note “CiteApply will not choose between these. Pick the
-source you stand behind.” Nothing was written.
+You decide.”** with the note “CiteApply will not choose between these. Read
+both records and pick the source you stand behind.” Nothing was written.
 
 Also try to have the agent declare the email. **Expected:** it cannot — the
 `preferred_contact_email` row stays at *“… — not yet declared”*. The tool may at
@@ -189,11 +200,20 @@ outstanding, and nothing on the page changes stage.
    side — **Synthetic Household Statement** and **Synthetic Income Statement** —
    each with its quoted excerpt and what that excerpt reads as in rupees, so you
    read the evidence before you choose.
-2. Choose a reason under **Why you chose this source**, then click
-   **Use the Synthetic Income Statement** (or **Use the Synthetic Household
-   Statement**).
-3. In the email row, click **Save email**, then **I declare this is my address**.
-4. **Expected:** the income row becomes ready; the email row loses “not yet
+2. **Expected before you choose:** the **Why you chose this source** selector
+   sits on its placeholder, *“Choose a reason before you decide…”*, and **both**
+   **Use the …** buttons are **disabled**, with the hint “Choose a reason to
+   enable the two buttons below. The review and the receipt will quote it back
+   as your reason, so CiteApply will not pick one for you.” Try clicking a
+   source button now: nothing resolves, and the income row still disagrees. The
+   reason on the receipt is yours or there is no resolution.
+3. Choose a reason under **Why you chose this source** — the buttons enable —
+   then click **Use the Synthetic Income Statement** (or **Use the Synthetic
+   Household Statement**).
+4. In the email row, click **I declare this is my address**. If the agent
+   already called `propose_email`, **Save email** is unnecessary; re-saving
+   withdraws a declaration you have already made.
+5. **Expected:** the income row becomes ready; the email row loses “not yet
    declared”; the Readiness count rises and the blockers list empties.
 
 Now confirm the agent still cannot read your private decision: re-run
@@ -219,8 +239,11 @@ choice, no reason string, no declaration record in the payload.
 6. Click **Download JSON**. **Expected:** a file named
    `citeapply-receipt-<id>.json` whose top-level `schema` is
    `citeapply-receipt-v1`, and whose accepted values are the ones on screen.
-7. Click **Print**. **Expected:** the print preview keeps the receipt and its
-   excerpts and drops the page’s controls and the Assisted activity panel.
+7. Click **Print**. **Expected:** the print preview keeps the receipt, its
+   identifiers and every source excerpt, and drops the WebMCP status line, the
+   Assisted activity panel, and the receipt's own **Download JSON**, **Print**
+   and **Start a new synthetic demo** controls. The printed page is the record
+   without the interface.
 8. **Start a new synthetic demo** returns you to the landing page.
 
 At no point is there a tool that can confirm, submit, read the receipt, or
@@ -235,7 +258,48 @@ whole application with the visible buttons only (**Link `<document>` record**,
 this application**). **Expected:** you reach a receipt. Assistance is optional,
 never required.
 
-### A13. Revocation is immediate (optional)
+### A13. A second tab supersedes the first (optional, 1 minute)
+
+Only one page may own a session, and the page is now honest about which one
+that is.
+
+1. With the application open and assisted access allowed, open
+   `http://localhost:3100/application` in a **second tab**.
+2. **Expected:** the second tab lands with assisted access **off** — it fails
+   closed, it does not inherit consent.
+3. Go back to the first tab. It still says it is current, because nothing has
+   told it otherwise yet. Now make **any** call from it — click a **Link
+   `<document>` record** button, or run a tool from the console.
+4. **Expected:** the call is refused with
+   `{"ok":false,"error":{"code":"stale_page","message":"This page is no longer
+   current.","safeActions":["reload_current_application"]}}`, and the first tab
+   corrects itself: the status line flips to **“This page is no longer current.
+   Reload to continue.”**, the “Assisted access is allowed” claim disappears, a
+   **Reload this page** control appears, and every mutating control on that tab
+   is disabled. The page never asserts an authority it does not have.
+5. Click **Reload this page**. **Expected:** the first tab is current again,
+   assisted access is off (fail-closed), and no saved work was lost. The second
+   tab is now the stale one.
+
+### A14. A malformed tool argument is still a structured refusal (optional)
+
+```js
+await call("apply_evidence_backed_answers", { bindings: [] });   // wrong key
+```
+
+**Expected:** not a thrown `UnknownError`, but
+
+```json
+{"ok":false,"error":{"code":"invalid_request",
+ "message":"The request is not valid.",
+ "safeActions":["use_visible_application"]}}
+```
+
+The closed input schema rejects it in the page, before the network — and still
+tells the agent what to do instead. Every failure in this product is a
+structured refusal; there are no opaque ones.
+
+### A15. Revocation is immediate (optional)
 
 With access allowed, click **Revoke access**, then call any tool.
 **Expected:** status reads “Assisted access is off. Saved application work was
@@ -247,7 +311,7 @@ revocation.
 
 ## B. ChatGPT in-app browser
 
-1. Open `LIVE_URL` in the ChatGPT in-app browser.
+1. Open the running CiteApply origin in the ChatGPT in-app browser.
 2. **Expected:** the landing page renders identically; **Start conflict packet**
    works; the application page loads and shows the readiness, answers, and
    sources sections.

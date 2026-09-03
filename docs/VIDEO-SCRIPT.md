@@ -4,9 +4,16 @@
 
 ## Recording rules (from `docs/hackathon-build/scope.md`, "Demo Path")
 
-- **One continuously recorded Conflict-packet session** against the deployed,
-  styled build at `LIVE_URL` in Chrome 152 with `chrome://flags/#enable-webmcp-testing`
-  enabled. Do not stop recording until the receipt renders.
+- **One continuously recorded Conflict-packet session** in Chrome 152 with
+  `chrome://flags/#enable-webmcp-testing` enabled. Do not stop recording until
+  the receipt renders.
+- **Recording target.** No public deployment exists yet, so record against the
+  local production build at `http://localhost:3100`, started exactly as
+  `README.md` → *Run the production build* prescribes (the `HOSTNAME=localhost`
+  is required). That is the same styled standalone build a deployment would
+  serve — nothing in the demo depends on the origin. If a live URL is published
+  before recording, substitute it here and re-record; never narrate a URL that
+  is not on screen.
 - The **cold open is an excerpt from later in that same recording** — a genuine
   external-client tool result and a visible form mutation on screen by 0:10 —
   and must carry an on-screen label saying so.
@@ -36,8 +43,8 @@ a new row appears in the page’s own **Assisted activity** panel with an
 of this same recording.”**
 
 > "That was a real WebMCP tool call, from the browser's own API, into a
-> scholarship portal that just changed in front of you. Nobody clicked anything.
-> Now here is the whole session, from the start."
+> scholarship portal that just changed in front of you. Nobody typed into that
+> form. Now here is the whole session, from the start."
 
 ### 0:12–0:30 — Start the Conflict packet
 
@@ -92,13 +99,17 @@ region the cold open was cut from.)*
 
 ### 1:35–1:52 — The requirements change underneath the agent
 
-**On screen:** the conditional branch appearing — **Guardian name** and
-**Household size** rows are now present. Re-run `get_form_requirements` in
-active mode; the active set is larger than before.
+**On screen:** the **Guardian name** and **Household size** rows. They are on
+the page from the first load, labelled **“Not required”**; the moment
+`dependency` is bound they flip to **“Not linked yet”** and start counting
+toward readiness, and the readiness line moves with them. Frame both rows
+*before* the binding lands, so the label change is the beat. Then re-run
+`get_form_requirements` in active mode; the active set grows from six to eight.
 
 > "Answering one question changed which questions apply. Guardian name and
-> household size just appeared. This isn't a static schema the agent memorised —
-> it has to read the requirements again, because the site's rules are live."
+> household size just became required — watch the labels flip. This isn't a
+> static schema the agent memorised — it has to read the requirements again,
+> because the site's rules are live."
 
 ### 1:52–2:12 — The refusal this product exists for
 
@@ -120,21 +131,36 @@ and the undeclared email as blockers.
 
 **On screen:** the income row, showing both records side by side — **Synthetic
 Household Statement** quoting “INR 480,000” and **Synthetic Income Statement**
-quoting “INR 540,000”, each with what it reads as in rupees. Pick a reason from
-**Why you chose this source**, click **Use the Synthetic Income Statement**,
-then in the email row click **Save email** and **I declare this is my address**.
+quoting “INR 540,000”, each with what it reads as in rupees. Show that both
+**Use the …** buttons are **disabled** and the hint reads “Choose a reason to
+enable the two buttons below” — the site will not supply the reason. Pick a
+reason from **Why you chose this source**; the buttons enable. Click **Use the
+Synthetic Income Statement**. Then, in the email row, click **I declare this is
+my address** — and *only* that. The agent already proposed the address with
+`propose_email`, so **Save email** is unnecessary, and re-saving would withdraw
+a declaration already made.
 
 > "So I decide — and I get to read both records before I do. Here is what each
-> one actually says. I pick the source I'm willing to stand behind, I say why,
-> and I declare my own contact address. Those two acts are mine — there is no
-> tool that can do either one."
+> one actually says. Notice the buttons are dead until I say why: the site will
+> not write a reason on my behalf. I pick the source I'm willing to stand
+> behind, I say why, and I declare my own contact address. Those two acts are
+> mine — there is no tool that can do either one."
 
 ### 2:30–2:42 — Frozen review, human-only submit
 
-**On screen:** click **Prepare review**. The frozen review appears: each answer
-beside the exact source excerpt, both conflicting income excerpts visible, the
-conflict warning, the content hash. Note the copy: “Assisted access is closed
-while you review it.” Click **Submit this application**.
+**On screen:** call `prepare_submission_review` **from the console, on camera**,
+so the narration and the picture agree. Show its result first — it returns only
+`{"readiness":"ready"}` and an opaque `reviewRef`: no contents, no hash, nothing
+the agent could reconstruct the review from. *Then* cut to the page, where the
+frozen review has appeared: each answer beside the exact source excerpt, both
+conflicting income excerpts visible, the conflict warning, the content hash, and
+the copy “Assisted access is closed while you review it.” (Confirm a follow-up
+tool call now returns `consent_required`.) Click **Submit this application**.
+
+> If you would rather not cut to a console here, click **Prepare review** by
+> hand instead and change the first narration line to “I can ask the site to
+> freeze the application — or the agent can, and it gets back nothing but
+> ‘ready’.” Do not narrate the tool path over a shot of a button being clicked.
 
 > "The agent can ask the site to freeze the application — but the review only
 > appears here, in the page, and assisted access closes when it does. Every
@@ -145,11 +171,14 @@ while you review it.” Click **Submit this application**.
 
 **On screen:** the **Submitted** receipt: receipt id, review short id, the same
 content hash, the conflict warning, every accepted answer beside its source
-excerpt, and the line saying which record you chose and why. Hover the
-**Download JSON** and **Print** buttons.
+excerpt, and the line saying which record you chose and why — the reason being
+the one *you* selected two shots earlier. Hover the **Download JSON** and
+**Print** buttons. If the shot cuts to the browser's print preview, note that
+those two buttons and **Start a new synthetic demo** are correctly absent from
+it: the printed page is the record without the interface.
 
-> "Same hash, same warning, and the record I chose still named on a receipt I
-> could defend — on screen, as a file, or on paper. Synthetic records, a
+> "Same hash, same warning, and the record I chose — with the reason I gave for
+> choosing it — still named on a receipt I could defend — on screen, as a file, or on paper. Synthetic records, a
 > fictional program, and WebMCP is still a draft standard. But the contract is
 > real — and the website is the one enforcing it."
 
@@ -158,8 +187,8 @@ excerpt, and the line saying which record you chose and why. Hover the
 ## Word-for-word narration, continuous
 
 > That was a real WebMCP tool call, from the browser's own API, into a
-> scholarship portal that just changed in front of you. Nobody clicked anything.
-> Now here is the whole session, from the start.
+> scholarship portal that just changed in front of you. Nobody typed into that
+> form. Now here is the whole session, from the start.
 >
 > CiteApply is a fictional aid portal running entirely on synthetic records. It
 > registers six WebMCP tools when the application page loads. Everything you'll
@@ -180,8 +209,9 @@ excerpt, and the line saying which record you chose and why. Hover the
 > thing that changed.
 >
 > Answering one question changed which questions apply. Guardian name and
-> household size just appeared. This isn't a static schema the agent memorised —
-> it has to read the requirements again, because the site's rules are live.
+> household size just became required — watch the labels flip. This isn't a
+> static schema the agent memorised — it has to read the requirements again,
+> because the site's rules are live.
 >
 > Here's the moment. The agent asks to fill in income. Two accepted sources
 > disagree — five hundred and forty thousand on one, four hundred and eighty
@@ -190,17 +220,18 @@ excerpt, and the line saying which record you chose and why. Hover the
 > exactly why it's blocked. It just can't clear the blockers itself.
 >
 > So I decide — and I get to read both records before I do. Here is what each
-> one actually says. I pick the source I'm willing to stand behind, I say why,
-> and I declare my own contact address. Those two acts are mine — there is no
-> tool that can do either one.
+> one actually says. Notice the buttons are dead until I say why: the site will
+> not write a reason on my behalf. I pick the source I'm willing to stand
+> behind, I say why, and I declare my own contact address. Those two acts are
+> mine — there is no tool that can do either one.
 >
 > The agent can ask the site to freeze the application — but the review only
 > appears here, in the page, and assisted access closes when it does. Every
 > answer sits beside the exact text it came from, including both figures that
 > disagreed. Submitting is mine too.
 >
-> Same hash, same warning, and the record I chose still named on a receipt I
-> could defend — on screen, as a file, or on paper. Synthetic records, a
+> Same hash, same warning, and the record I chose — with the reason I gave for
+> choosing it — still named on a receipt I could defend — on screen, as a file, or on paper. Synthetic records, a
 > fictional program, and WebMCP is still a draft standard. But the contract is
 > real — and the website is the one enforcing it.
 

@@ -23,16 +23,20 @@ and the server — not the tool descriptions — enforces that boundary.
    `--enable-features=WebMCPTesting`. (Last verified end-to-end on Chrome
    152.0.7977.66; see
    [docs/verification/genuine-chrome-webmcp.md](docs/verification/genuine-chrome-webmcp.md).)
-2. **Open the live URL:** `LIVE_URL`
+2. **Open the running app.** There is no public deployment yet, so build and
+   start it locally first — *Run the production build*, below, is four commands
+   and takes about a minute — then open `http://localhost:3100`. (If a live URL
+   is published, it goes here and the rest of this quick start is unchanged.)
 3. **Pick the Conflict packet.** Click **Start conflict packet**. This is the
    packet that shows the whole point: two accepted sources disagree about
    income. (**Start supported packet** is the happy path.)
 4. On the application page, confirm the status line ends
    **“WebMCP: six CiteApply tools registered.”**, then click
    **Review and allow assisted access** → **Allow assisted access**. The
-   **Where the assistant stops** panel states the boundary in two columns, and
-   the **Assisted activity** panel at the foot of the page logs every tool call
-   with its outcome as it happens.
+   **Assisted activity** panel — directly beneath **Assisted access**, above
+   the answers — logs every tool call with its outcome as it happens, and the
+   **Where the assistant stops** panel below it states the boundary in two
+   columns.
 5. **Give your agent these three prompts** (any WebMCP-capable client on the page,
    or Chrome’s own `document.modelContext.executeTool` from DevTools):
    - “List the CiteApply tools on this page, then read the application state in
@@ -52,10 +56,13 @@ and the server — not the tool descriptions — enforces that boundary.
    Nothing is written, and the refusal appears in the Assisted activity panel
    with a **conflict requires human** badge. The income row on the page keeps
    reading **“Two accepted sources disagree. You decide.”**, showing both
-   records with their quoted excerpts, until *you* choose a reason under **Why
-   you chose this source** and click **Use the Synthetic Income Statement** (or
-   the Household Statement). A protected read before you allow access is refused
-   the same way, with `consent_required`.
+   records with their quoted excerpts and the note “CiteApply will not choose
+   between these. Read both records and pick the source you stand behind.” Both
+   **Use the …** buttons stay disabled until *you* choose a reason under **Why
+   you chose this source**; only then can you click **Use the Synthetic Income
+   Statement** (or the Household Statement), and the reason you chose is what
+   the frozen review and the receipt quote back to you. A protected read before
+   you allow access is refused the same way, with `consent_required`.
 
 7. **Finish it.** **Prepare review** → **Submit this application** → the
    **Submitted** receipt, where **Download JSON**, **Print**, and **Start a new
@@ -335,8 +342,10 @@ transcript, including Chrome’s actual invocation contract, is in
 automatically in `tests/contract/webmcp-registration.test.ts` against a
 spec-shaped `ModelContext` stand-in: all six tools register with one shared
 abort signal, an inactive or deactivated bridge refuses to dispatch at all, and
-a malformed tool argument never reaches the server. The server side is proven
-against a real database in `tests/integration/minimum-client-spine.test.ts`.
+a malformed tool argument never reaches the server *and* comes back as a
+structured `invalid_request` refusal carrying `safeActions`, rather than a
+thrown error. The server side is proven against a real database in
+`tests/integration/minimum-client-spine.test.ts`.
 What is *not* yet proven is a session in which an autonomous agent chooses the
 calls itself: the Chrome verification above was driven by scripted calls to the
 browser’s WebMCP API. `tests/e2e/raw-genuine-client-chronology.spec.ts` exists to
