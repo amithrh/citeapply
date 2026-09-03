@@ -1,5 +1,10 @@
 import type { NextConfig } from "next";
 
+// The Next development bundler evaluates strings, which a production-grade
+// script-src forbids. The allowance is added only outside a production build,
+// so `npm run dev` works and the shipped header never carries it.
+const developmentBuild = process.env.NODE_ENV !== "production";
+
 const contentSecurityPolicy = [
   "default-src 'self'",
   "base-uri 'none'",
@@ -13,7 +18,9 @@ const contentSecurityPolicy = [
   "media-src 'none'",
   "object-src 'none'",
   // Next.js emits small inline bootstrap scripts for App Router hydration.
-  "script-src 'self' 'unsafe-inline'",
+  developmentBuild
+    ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
+    : "script-src 'self' 'unsafe-inline'",
   // Application styling is local; this allowance covers Next's inline style output.
   "style-src 'self' 'unsafe-inline'",
   "worker-src 'none'",
