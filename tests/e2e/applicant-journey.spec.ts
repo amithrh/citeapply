@@ -1,5 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
 
+import {
+  completeSharedFields,
+  linkSupportedIncome,
+} from "./support/manual-entry.ts";
+
 /**
  * Drives the complete visible journey in a real browser for both packets. The
  * point of the Conflict run is that the portal refuses to choose: the
@@ -10,24 +15,10 @@ import { expect, test, type Page } from "@playwright/test";
 async function startPacket(page: Page, label: string): Promise<void> {
   await page.goto("/");
   await page.getByRole("button", { name: label }).click();
-  await expect(page.getByRole("heading", { name: "Application" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Application" }),
+  ).toBeVisible();
   await expect(page.getByText("This page is current.")).toBeVisible();
-}
-
-async function clickAll(page: Page, name: string, times: number): Promise<void> {
-  for (let index = 0; index < times; index += 1) {
-    await page.getByRole("button", { name }).first().click();
-    await page.waitForTimeout(250);
-  }
-}
-
-async function completeSharedFields(page: Page): Promise<void> {
-  await clickAll(page, "Link enrollment record", 3);
-  // The first household link opens the dependency branch, which activates the
-  // two conditional answers.
-  await clickAll(page, "Link household record", 3);
-  await page.getByRole("button", { name: "Save email" }).click();
-  await page.getByRole("button", { name: "I declare this is my address" }).click();
 }
 
 test("@journey the Supported packet reaches a receipt with no conflict warning", async ({
@@ -35,9 +26,11 @@ test("@journey the Supported packet reaches a receipt with no conflict warning",
 }) => {
   await startPacket(page, "Start with records that agree");
   await completeSharedFields(page);
-  await page.getByRole("button", { name: "Link income record" }).click();
+  await linkSupportedIncome(page);
 
-  await expect(page.getByText("8 of 8 required answers are ready.")).toBeVisible();
+  await expect(
+    page.getByText("8 of 8 required answers are ready."),
+  ).toBeVisible();
   await expect(page.getByText("Nothing is blocking Review.")).toBeVisible();
 
   await page.getByRole("button", { name: "Prepare review" }).click();
@@ -45,7 +38,9 @@ test("@journey the Supported packet reaches a receipt with no conflict warning",
     page.getByRole("heading", { name: "Review before submitting" }),
   ).toBeVisible();
   await expect(
-    page.getByText("Income evidence differed and was resolved by the applicant."),
+    page.getByText(
+      "Income evidence differed and was resolved by the applicant.",
+    ),
   ).toHaveCount(0);
 
   await page.getByRole("button", { name: "Submit this application" }).click();
@@ -126,21 +121,27 @@ test("@journey the Conflict packet cannot reach Review until the applicant decid
   await expect(page.getByText("INR 540,000")).toBeVisible();
   await expect(page.getByText("INR 480,000")).toBeVisible();
   await expect(
-    page.getByText("Income evidence differed and was resolved by the applicant."),
+    page.getByText(
+      "Income evidence differed and was resolved by the applicant.",
+    ),
   ).toBeVisible();
 
   await page.getByRole("button", { name: "Submit this application" }).click();
   await expect(page.getByRole("heading", { name: "Submitted" })).toBeVisible();
   // The applicant's resolution is still disclosed on the accepted receipt.
   await expect(
-    page.getByText("Income evidence differed and was resolved by the applicant."),
+    page.getByText(
+      "Income evidence differed and was resolved by the applicant.",
+    ),
   ).toBeVisible();
 });
 
-test("@journey returning to draft withdraws the frozen review", async ({ page }) => {
+test("@journey returning to draft withdraws the frozen review", async ({
+  page,
+}) => {
   await startPacket(page, "Start with records that agree");
   await completeSharedFields(page);
-  await page.getByRole("button", { name: "Link income record" }).click();
+  await linkSupportedIncome(page);
   await page.getByRole("button", { name: "Prepare review" }).click();
   await expect(
     page.getByRole("heading", { name: "Review before submitting" }),
@@ -156,8 +157,10 @@ test("@journey assistance is optional and the manual path never depends on it", 
 }) => {
   await startPacket(page, "Start with records that agree");
   // This browser has no WebMCP, and the application is still fully completable.
-  await expect(page.getByText("WebMCP is unavailable in this browser")).toBeVisible();
+  await expect(
+    page.getByText("WebMCP is unavailable in this browser"),
+  ).toBeVisible();
   await completeSharedFields(page);
-  await page.getByRole("button", { name: "Link income record" }).click();
+  await linkSupportedIncome(page);
   await expect(page.getByText("Nothing is blocking Review.")).toBeVisible();
 });

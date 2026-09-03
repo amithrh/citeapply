@@ -1,5 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
 
+import {
+  completeSharedFields,
+  linkSupportedIncome,
+} from "./support/manual-entry.ts";
+
 /**
  * D-4: the receipt is a document a person can keep, and the three ways to keep
  * it are the same record. The downloaded JSON is the canonical
@@ -25,17 +30,12 @@ type ReceiptRecord = Readonly<{
 async function reachReceipt(page: Page, label: string): Promise<void> {
   await page.goto("/");
   await page.getByRole("button", { name: label }).click();
-  await expect(page.getByRole("heading", { name: "Application" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Application" }),
+  ).toBeVisible();
 
-  for (const link of ["Link enrollment record", "Link household record"]) {
-    for (let index = 0; index < 3; index += 1) {
-      await page.getByRole("button", { name: link }).first().click();
-      await page.waitForTimeout(250);
-    }
-  }
-  await page.getByRole("button", { name: "Link income record" }).click();
-  await page.getByRole("button", { name: "Save email" }).click();
-  await page.getByRole("button", { name: "I declare this is my address" }).click();
+  await completeSharedFields(page);
+  await linkSupportedIncome(page);
   await expect(page.getByText("Nothing is blocking Review.")).toBeVisible();
 
   await page.getByRole("button", { name: "Prepare review" }).click();
@@ -66,7 +66,9 @@ test("@journey the receipt's JSON, screen, and print view are the same record", 
   await reachReceipt(page, "Start with records that agree");
 
   // The three affordances the receipt must offer.
-  await expect(page.getByRole("button", { name: "Download JSON" })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Download JSON" }),
+  ).toBeVisible();
   await expect(page.getByRole("button", { name: "Print" })).toBeVisible();
   await expect(
     page.getByRole("link", { name: "Start a new synthetic demo" }),
@@ -80,7 +82,9 @@ test("@journey the receipt's JSON, screen, and print view are the same record", 
   const stream = await saved.createReadStream();
   const chunks: Buffer[] = [];
   for await (const chunk of stream) chunks.push(Buffer.from(chunk));
-  const record = JSON.parse(Buffer.concat(chunks).toString("utf8")) as ReceiptRecord;
+  const record = JSON.parse(
+    Buffer.concat(chunks).toString("utf8"),
+  ) as ReceiptRecord;
 
   expect(record.schema).toBe("citeapply-receipt-v1");
 
@@ -90,9 +94,11 @@ test("@journey the receipt's JSON, screen, and print view are the same record", 
   for (const diff of record.acceptedReview.diffs) {
     if ("value" in diff.final && diff.final.value !== undefined) {
       await expect(
-        receiptSection.getByText(onScreenForm(diff.field, diff.final.value), {
-          exact: false,
-        }).first(),
+        receiptSection
+          .getByText(onScreenForm(diff.field, diff.final.value), {
+            exact: false,
+          })
+          .first(),
       ).toBeVisible();
     }
     for (const excerpt of diff.excerpts) {
@@ -118,7 +124,9 @@ test("@journey the receipt's JSON, screen, and print view are the same record", 
       ).toBeVisible();
     }
   }
-  await expect(page.getByRole("button", { name: "Download JSON" })).toBeHidden();
+  await expect(
+    page.getByRole("button", { name: "Download JSON" }),
+  ).toBeHidden();
   await expect(
     page.getByRole("heading", { name: "Assisted activity" }),
   ).toBeHidden();
@@ -129,16 +137,13 @@ test("@journey the conflict receipt keeps both disagreeing excerpts in the file 
   page,
 }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "Start with records that disagree" }).click();
-  await expect(page.getByRole("heading", { name: "Application" })).toBeVisible();
-  for (const link of ["Link enrollment record", "Link household record"]) {
-    for (let index = 0; index < 3; index += 1) {
-      await page.getByRole("button", { name: link }).first().click();
-      await page.waitForTimeout(250);
-    }
-  }
-  await page.getByRole("button", { name: "Save email" }).click();
-  await page.getByRole("button", { name: "I declare this is my address" }).click();
+  await page
+    .getByRole("button", { name: "Start with records that disagree" })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Application" }),
+  ).toBeVisible();
+  await completeSharedFields(page);
   // The reason is the applicant's own; the source buttons stay disabled until
   // one is chosen (D-P1-1).
   await page
@@ -160,7 +165,9 @@ test("@journey the conflict receipt keeps both disagreeing excerpts in the file 
   const stream = await (await download).createReadStream();
   const chunks: Buffer[] = [];
   for await (const chunk of stream) chunks.push(Buffer.from(chunk));
-  const record = JSON.parse(Buffer.concat(chunks).toString("utf8")) as ReceiptRecord;
+  const record = JSON.parse(
+    Buffer.concat(chunks).toString("utf8"),
+  ) as ReceiptRecord;
 
   const incomeDiff = record.acceptedReview.diffs.find(
     ({ field }) => field === "annual_household_income",

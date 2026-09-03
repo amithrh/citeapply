@@ -81,7 +81,9 @@ main {
   border: 1px solid var(--rule);
   border-top: 3px solid var(--seal);
   border-radius: 5px;
-  box-shadow: 0 1px 0 var(--edge), 0 14px 34px -26px rgb(10 47 51 / 0.5);
+  box-shadow:
+    0 1px 0 var(--edge),
+    0 14px 34px -26px rgb(10 47 51 / 0.5);
 }
 
 main.landing,
@@ -361,7 +363,9 @@ button {
   padding: 0.4rem 0.85rem;
   margin: var(--step) var(--step) 0 0;
   cursor: pointer;
-  transition: background-color 120ms ease, color 120ms ease;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
 }
 
 button:hover {
@@ -503,7 +507,6 @@ select:hover {
   margin: 0 calc(var(--step) * -3) calc(var(--step) * 5);
 }
 
-
 .frozen .meta {
   font-family: var(--mono);
   font-size: 0.78rem;
@@ -534,7 +537,6 @@ select:hover {
   background: var(--seal-soft);
   padding: calc(var(--step) * 4) calc(var(--step) * 3);
 }
-
 
 .receipt .identifiers dd {
   font-family: var(--mono);
@@ -863,6 +865,203 @@ dialog > div:last-child {
   color: var(--quiet);
   background: var(--panel);
   border-color: var(--rule);
+}
+
+/* ---- By hand: the work slip -------------------------------------------- */
+
+/*
+ * The by-hand path has no shortcut button, because an evidence-backed answer
+ * has no shortcut: the value has to be read out of a record and attached to
+ * the line that states it. This block is that working — the applicant's own,
+ * so it takes neither of the product's two meanings. Teal is a record having
+ * spoken and ochre is the portal declining; nothing has happened here yet, so
+ * the slip is ruled in the quiet grey and sits on the office panel.
+ */
+.entry {
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--quiet);
+  border-radius: 3px;
+  padding: calc(var(--step) * 2) calc(var(--step) * 2.25);
+  margin-top: calc(var(--step) * 1.5);
+}
+
+/* Three steps that really are in order, so they are numbered. The figures
+   hang in the margin in the same monospace the page gives to all its data. */
+.entry-steps {
+  list-style: none;
+  counter-reset: entry-step;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  /* Naming the record and naming the line are one act, so they share a row
+     wherever the answer column is wide enough to hold both selects — measured
+     from the column itself rather than from the viewport, because this block
+     lives inside a two-column filed row. */
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: calc(var(--step) * 1.5) calc(var(--step) * 2);
+}
+
+.entry-steps > li:first-child {
+  grid-column: 1 / -1;
+}
+
+.entry-steps > li {
+  counter-increment: entry-step;
+  position: relative;
+  padding-left: calc(var(--step) * 3.25);
+  margin: 0;
+  min-width: 0;
+}
+
+.entry-steps > li::before {
+  content: counter(entry-step);
+  position: absolute;
+  left: 0;
+  top: 0.1rem;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--quiet);
+  width: calc(var(--step) * 2.25);
+  text-align: right;
+}
+
+.entry-step-label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--quiet);
+  margin-bottom: calc(var(--step) * 0.5);
+}
+
+.entry input[type="text"],
+.entry select {
+  width: 100%;
+  margin: 0;
+}
+
+.entry-link {
+  margin-top: calc(var(--step) * 2);
+}
+
+/*
+ * A mismatch is the site refusing to accept a pairing it cannot see in the
+ * record — the same act as refusing to settle a disagreement, so it carries
+ * the same ochre.
+ */
+.entry-refusal {
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--decide);
+  background: var(--decide-soft);
+  border-left: 3px solid var(--decide);
+  border-radius: 0 3px 3px 0;
+  padding: calc(var(--step) * 1.25) calc(var(--step) * 1.75);
+  margin: calc(var(--step) * 1.75) 0 0;
+}
+
+/* ---- The three records, once, above the answers ------------------------ */
+
+.record-shelf {
+  margin: 0 0 calc(var(--step) * 3.5);
+  padding-bottom: calc(var(--step) * 2.5);
+  border-bottom: 1px solid var(--rule);
+}
+
+.record-shelf-lead {
+  font-family: var(--serif);
+  font-size: 1.06rem;
+  line-height: 1.45;
+  max-width: 34rem;
+  margin: 0 0 calc(var(--step) * 2);
+}
+
+/* Filed tabs, not body links: opening one is the first real act of the form. */
+.entry-records {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--step) * 1.5);
+  padding: 0;
+  margin: 0;
+}
+
+.entry-records li {
+  margin: 0;
+}
+
+.entry-records a {
+  display: inline-block;
+  font-size: 0.88rem;
+  text-decoration: none;
+  color: var(--seal);
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-bottom: 2px solid var(--seal-soft);
+  border-radius: 3px 3px 0 0;
+  padding: calc(var(--step) * 0.85) calc(var(--step) * 1.75);
+}
+
+.entry-records a:hover,
+.entry-records a:focus-visible {
+  border-bottom-color: var(--seal);
+  text-decoration: underline;
+}
+
+/* ---- The by-hand tally: a count sheet ---------------------------------- */
+
+/*
+ * A ledger column, with dotted leaders and the figures set in monospace at the
+ * margin. Every number is an event this page saw; none is a constant, and
+ * nothing here is an estimate of time.
+ */
+.by-hand-tally dl {
+  display: block;
+  margin: 0;
+}
+
+.by-hand-tally dl > div {
+  display: flex;
+  align-items: baseline;
+  gap: calc(var(--step) * 0.75);
+  padding: 0.3rem 0;
+  border: none;
+}
+
+.by-hand-tally dt {
+  font-family: var(--sans);
+  font-size: 0.84rem;
+  font-weight: 400;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+/* The leader that carries the eye to the figure. */
+.by-hand-tally dl > div::after {
+  content: "";
+  order: 1;
+  flex: 1 1 auto;
+  min-width: calc(var(--step) * 2);
+  height: 0;
+  border-bottom: 1px dotted var(--rule);
+  transform: translateY(-0.25rem);
+}
+
+.by-hand-tally dd {
+  order: 2;
+  font-family: var(--mono);
+  font-size: 0.92rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0;
+}
+
+.by-hand-tally dl > div[data-zero] dt,
+.by-hand-tally dl > div[data-zero] dd {
+  color: var(--quiet);
+  font-weight: 400;
 }
 
 /* ---- Receipt delivery: one record, three presentations ------------------ */
@@ -1264,7 +1463,9 @@ body:has(main.landing) .site-header {
   top: 0;
   z-index: 20;
   background: var(--band);
-  transition: background-color 240ms ease, box-shadow 240ms ease,
+  transition:
+    background-color 240ms ease,
+    box-shadow 240ms ease,
     border-color 240ms ease;
 }
 
@@ -1291,7 +1492,8 @@ html[data-scrolled] body:has(main.landing) .site-header {
   html[data-motion="on"] .landing [data-reveal][data-revealed] {
     opacity: 1;
     transform: none;
-    transition: opacity 640ms cubic-bezier(0.22, 0.7, 0.3, 1),
+    transition:
+      opacity 640ms cubic-bezier(0.22, 0.7, 0.3, 1),
       transform 640ms cubic-bezier(0.22, 0.7, 0.3, 1);
   }
 }
@@ -1323,11 +1525,8 @@ html[data-scrolled] body:has(main.landing) .site-header {
   content: "";
   position: absolute;
   inset: 0;
-  background-image: linear-gradient(
-      to right,
-      rgb(127 212 204 / 0.06) 1px,
-      transparent 1px
-    ),
+  background-image:
+    linear-gradient(to right, rgb(127 212 204 / 0.06) 1px, transparent 1px),
     linear-gradient(to bottom, rgb(127 212 204 / 0.06) 1px, transparent 1px);
   background-size: 4rem 4rem;
   mask-image: radial-gradient(125% 95% at 50% 0%, #000 18%, transparent 78%);
@@ -1499,8 +1698,12 @@ html[data-scrolled] body:has(main.landing) .site-header {
   padding: 0.78rem 1.4rem;
   border-radius: 10px;
   border: 1px solid transparent;
-  transition: background-color 170ms ease, border-color 170ms ease,
-    color 170ms ease, transform 170ms ease, box-shadow 170ms ease;
+  transition:
+    background-color 170ms ease,
+    border-color 170ms ease,
+    color 170ms ease,
+    transform 170ms ease,
+    box-shadow 170ms ease;
 }
 
 /* Ochre is the colour of the decision the portal will not make for you, so the
@@ -1684,70 +1887,184 @@ html[data-scrolled] body:has(main.landing) .site-header {
 }
 
 @keyframes hs-beat-a {
-  0%, 4% { opacity: 0; }
-  10%, 91% { opacity: 1; }
-  97%, 100% { opacity: 0; }
+  0%,
+  4% {
+    opacity: 0;
+  }
+  10%,
+  91% {
+    opacity: 1;
+  }
+  97%,
+  100% {
+    opacity: 0;
+  }
 }
 
 @keyframes hs-beat-b {
-  0%, 12% { opacity: 0; }
-  18%, 91% { opacity: 1; }
-  97%, 100% { opacity: 0; }
+  0%,
+  12% {
+    opacity: 0;
+  }
+  18%,
+  91% {
+    opacity: 1;
+  }
+  97%,
+  100% {
+    opacity: 0;
+  }
 }
 
 @keyframes hs-beat-c {
-  0%, 20% { opacity: 0; }
-  26%, 91% { opacity: 1; }
-  97%, 100% { opacity: 0; }
+  0%,
+  20% {
+    opacity: 0;
+  }
+  26%,
+  91% {
+    opacity: 1;
+  }
+  97%,
+  100% {
+    opacity: 0;
+  }
 }
 
 @keyframes hs-beat-d {
-  0%, 32% { opacity: 0; }
-  38%, 91% { opacity: 1; }
-  97%, 100% { opacity: 0; }
+  0%,
+  32% {
+    opacity: 0;
+  }
+  38%,
+  91% {
+    opacity: 1;
+  }
+  97%,
+  100% {
+    opacity: 0;
+  }
 }
 
 @keyframes hs-beat-e {
-  0%, 47% { opacity: 0; transform: scale(0.93); }
-  53% { opacity: 1; transform: scale(1.03); }
-  57%, 91% { opacity: 1; transform: scale(1); }
-  97%, 100% { opacity: 0; transform: scale(1); }
+  0%,
+  47% {
+    opacity: 0;
+    transform: scale(0.93);
+  }
+  53% {
+    opacity: 1;
+    transform: scale(1.03);
+  }
+  57%,
+  91% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  97%,
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
 }
 
 @keyframes hs-beat-f {
-  0%, 61% { opacity: 0; }
-  67%, 91% { opacity: 1; }
-  97%, 100% { opacity: 0; }
+  0%,
+  61% {
+    opacity: 0;
+  }
+  67%,
+  91% {
+    opacity: 1;
+  }
+  97%,
+  100% {
+    opacity: 0;
+  }
 }
 
 @keyframes hs-draw-a {
-  0%, 7% { stroke-dashoffset: 1; opacity: 1; }
-  14%, 91% { stroke-dashoffset: 0; opacity: 1; }
-  97%, 100% { stroke-dashoffset: 0; opacity: 0; }
+  0%,
+  7% {
+    stroke-dashoffset: 1;
+    opacity: 1;
+  }
+  14%,
+  91% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  97%,
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
 }
 
 @keyframes hs-draw-b {
-  0%, 15% { stroke-dashoffset: 1; opacity: 1; }
-  22%, 91% { stroke-dashoffset: 0; opacity: 1; }
-  97%, 100% { stroke-dashoffset: 0; opacity: 0; }
+  0%,
+  15% {
+    stroke-dashoffset: 1;
+    opacity: 1;
+  }
+  22%,
+  91% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  97%,
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
 }
 
 @keyframes hs-draw-c {
-  0%, 23% { stroke-dashoffset: 1; opacity: 1; }
-  30%, 91% { stroke-dashoffset: 0; opacity: 1; }
-  97%, 100% { stroke-dashoffset: 0; opacity: 0; }
+  0%,
+  23% {
+    stroke-dashoffset: 1;
+    opacity: 1;
+  }
+  30%,
+  91% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  97%,
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
 }
 
 @keyframes hs-reach-a {
-  0%, 39% { opacity: 0; }
-  45%, 91% { opacity: 1; }
-  97%, 100% { opacity: 0; }
+  0%,
+  39% {
+    opacity: 0;
+  }
+  45%,
+  91% {
+    opacity: 1;
+  }
+  97%,
+  100% {
+    opacity: 0;
+  }
 }
 
 @keyframes hs-reach-b {
-  0%, 42% { opacity: 0; }
-  48%, 91% { opacity: 1; }
-  97%, 100% { opacity: 0; }
+  0%,
+  42% {
+    opacity: 0;
+  }
+  48%,
+  91% {
+    opacity: 1;
+  }
+  97%,
+  100% {
+    opacity: 0;
+  }
 }
 
 /* The illustration borrows the page's own faces, since a CSS variable is not
@@ -2617,7 +2934,9 @@ html[data-scrolled] body:has(main.landing) .site-header {
   border: 1px solid var(--rule);
   border-top: 3px solid var(--seal);
   border-radius: 12px;
-  transition: transform 180ms ease, box-shadow 180ms ease,
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
     border-color 180ms ease;
 }
 
@@ -2823,8 +3142,11 @@ html[data-scrolled] body:has(main.landing) .site-header {
   background: rgb(127 212 204 / 0.1);
   border: 1px solid rgb(127 212 204 / 0.45);
   border-radius: 8px;
-  transition: background-color 150ms ease, color 150ms ease,
-    border-color 150ms ease, transform 150ms ease;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease,
+    transform 150ms ease;
 }
 
 .copy-button:hover {
@@ -2893,7 +3215,9 @@ html[data-scrolled] body:has(main.landing) .site-header {
   border-right: 2px solid var(--seal);
   border-bottom: 2px solid var(--seal);
   transform: rotate(45deg);
-  transition: transform 220ms ease, top 220ms ease;
+  transition:
+    transform 220ms ease,
+    top 220ms ease;
 }
 
 .faq details[open] summary::after {
@@ -2962,8 +3286,11 @@ html[data-scrolled] body:has(main.landing) .site-header {
   font-size: 0.96rem;
   font-weight: 700;
   text-decoration: none;
-  transition: background-color 170ms ease, border-color 170ms ease,
-    color 170ms ease, transform 170ms ease;
+  transition:
+    background-color 170ms ease,
+    border-color 170ms ease,
+    color 170ms ease,
+    transform 170ms ease;
 }
 
 .closing-primary {
@@ -3275,7 +3602,9 @@ html[data-scrolled] body:has(main.landing) .site-header {
 
 .stages li[data-state="current"]::before {
   border-color: var(--seal);
-  box-shadow: inset 0 0 0 2px #fff, inset 0 0 0 6px var(--seal);
+  box-shadow:
+    inset 0 0 0 2px #fff,
+    inset 0 0 0 6px var(--seal);
 }
 
 /* ---- First arrival on a draft -------------------------------------------- */
@@ -3486,7 +3815,9 @@ html[data-scrolled] body:has(main.landing) .site-header {
   grid-template-columns: 11.5rem 1fr;
   padding-left: calc(var(--step) * 1.5);
   border-left: 3px solid transparent;
-  transition: border-color 160ms ease, background-color 160ms ease;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease;
 }
 
 .workspace-main dl > div:has(dd ul) {
@@ -3545,8 +3876,7 @@ html[data-scrolled] body:has(main.landing) .site-header {
 @media (max-width: 34rem) {
   main {
     margin: 0;
-    padding: calc(var(--step) * 4) calc(var(--step) * 2.5)
-      calc(var(--step) * 8);
+    padding: calc(var(--step) * 4) calc(var(--step) * 2.5) calc(var(--step) * 8);
     border-left: none;
     border-right: none;
     border-radius: 0;
@@ -3619,8 +3949,7 @@ html[data-scrolled] body:has(main.landing) .site-header {
 .waiting {
   display: block;
   border-left: 3px solid var(--rule);
-  padding: calc(var(--step) * 2) 0 calc(var(--step) * 2)
-    calc(var(--step) * 2.5);
+  padding: calc(var(--step) * 2) 0 calc(var(--step) * 2) calc(var(--step) * 2.5);
   margin: 0;
   color: var(--quiet);
   max-width: 44ch;

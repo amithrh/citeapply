@@ -7,6 +7,8 @@ import {
   type Page,
 } from "@playwright/test";
 
+import { completeSharedFields } from "../e2e/support/manual-entry.ts";
+
 /**
  * D-6: a real axe scan, not a claim of one. Every screen an applicant or a
  * judge actually reaches is scanned against the WCAG 2.1 A and AA rule sets,
@@ -63,16 +65,7 @@ async function scan(page: Page, screen: string): Promise<void> {
 }
 
 async function completeDraft(page: Page): Promise<void> {
-  for (const link of ["Link enrollment record", "Link household record"]) {
-    for (let index = 0; index < 3; index += 1) {
-      await page.getByRole("button", { name: link }).first().click();
-      await page.waitForTimeout(250);
-    }
-  }
-  await page.getByRole("button", { name: "Save email" }).click();
-  await page
-    .getByRole("button", { name: "I declare this is my address" })
-    .click();
+  await completeSharedFields(page);
 }
 
 test("@a11y the landing page has no WCAG 2.1 AA violations", async ({
@@ -141,7 +134,9 @@ test("@a11y the application, its consent dialog, the review and the receipt have
     // The Conflict packet is the richest screen: it carries the disputed source
     // cards, the reason control, and the refusal copy.
     await page.goto(`${ORIGIN}/`);
-    await page.getByRole("button", { name: "Start with records that disagree" }).click();
+    await page
+      .getByRole("button", { name: "Start with records that disagree" })
+      .click();
     await expect(
       page.getByRole("heading", { name: "Application" }),
     ).toBeVisible();

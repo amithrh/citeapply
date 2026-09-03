@@ -12,6 +12,13 @@ import {
 import { ASSISTED_ACCESS_CATALOG } from "../../ui/components/consent.tsx";
 import { ApplicationController } from "../../ui/controllers/application.tsx";
 import { CoachStrip, FillChoice } from "../../ui/site/first-run.tsx";
+import {
+  ByHandTally,
+  EvidenceEntry,
+  NO_WORK_YET,
+  RecordShelf,
+  type ByHandCounts,
+} from "../../ui/site/manual-entry.tsx";
 import { createCiteApplyBridge } from "../../webmcp/bridge.ts";
 import {
   createCiteApplyDispatch,
@@ -141,7 +148,9 @@ function displayValue(field: string, value: unknown): string {
 }
 
 /** The claim handles a saved answer rests on, in the order it cites them. */
-function citedHandles(field: HumanDraftV1["fields"][number]): readonly string[] {
+function citedHandles(
+  field: HumanDraftV1["fields"][number],
+): readonly string[] {
   if (field.status !== "ready") return [];
   if ("bindings" in field) {
     return field.bindings.map(({ claimHandle }) => claimHandle);
@@ -154,7 +163,9 @@ function citedHandles(field: HumanDraftV1["fields"][number]): readonly string[] 
 
 /** The record's own title, so a candidate is named before it is chosen. */
 function documentTitle(draft: HumanDraftV1, code: string): string {
-  return draft.documents.find((document) => document.code === code)?.title ?? code;
+  return (
+    draft.documents.find((document) => document.code === code)?.title ?? code
+  );
 }
 
 /** Keeps the visible list bounded; a session cannot outgrow the panel. */
@@ -290,6 +301,46 @@ export default function ApplicationPage() {
    * session back.
    */
   const [stale, setStale] = useState(false);
+  /**
+   * The by-hand tally. Every number is an event this page observed: a record
+   * this person opened, an entry they submitted, a line the server accepted, a
+   * refusal they were shown. `openedDocuments` keeps the set so re-opening the
+   * same record does not inflate the count, and `refusedFields` is what makes a
+   * later success a correction rather than a first try.
+   */
+  const [byHand, setByHand] = useState<ByHandCounts>(NO_WORK_YET);
+  const openedDocumentsRef = useRef<Set<string>>(new Set());
+  const refusedFieldsRef = useRef<Set<string>>(new Set());
+
+  const noteDocumentOpened = useCallback((code: string) => {
+    if (openedDocumentsRef.current.has(code)) return;
+    openedDocumentsRef.current.add(code);
+    setByHand((counts) => ({
+      ...counts,
+      documentsOpened: openedDocumentsRef.current.size,
+    }));
+  }, []);
+
+  const noteEntryTyped = useCallback(() => {
+    setByHand((counts) => ({
+      ...counts,
+      entriesTyped: counts.entriesTyped + 1,
+    }));
+  }, []);
+
+  const noteEntryRefused = useCallback((field: string) => {
+    refusedFieldsRef.current.add(field);
+    setByHand((counts) => ({ ...counts, refusals: counts.refusals + 1 }));
+  }, []);
+
+  const noteLinePicked = useCallback((field: string) => {
+    const corrected = refusedFieldsRef.current.delete(field);
+    setByHand((counts) => ({
+      ...counts,
+      linesPicked: counts.linesPicked + 1,
+      corrections: counts.corrections + (corrected ? 1 : 0),
+    }));
+  }, []);
 
   const noteOutcome = useCallback((code: unknown) => {
     if (code === "stale_page") setStale(true);
@@ -353,7 +404,9 @@ export default function ApplicationPage() {
     (entry: AssistedActivityEntry) => {
       // A tool call is the other route by which this tab learns it is stale.
       noteOutcome(entry.outcome);
-      setActivity((entries) => [...entries, entry].slice(-MAX_ACTIVITY_ENTRIES));
+      setActivity((entries) =>
+        [...entries, entry].slice(-MAX_ACTIVITY_ENTRIES),
+      );
     },
     [noteOutcome],
   );
@@ -767,9 +820,7 @@ export default function ApplicationPage() {
             <li key={entry.sequence} data-outcome={entry.outcome}>
               <span className="line">
                 <code>{entry.tool}</code>
-                <strong className="badge">
-                  {outcomeLabel(entry.outcome)}
-                </strong>
+                <strong className="badge">{outcomeLabel(entry.outcome)}</strong>
               </span>
               <span className="meta">
                 <time dateTime={entry.at}>{activityTime(entry.at)}</time>
@@ -804,7 +855,11 @@ export default function ApplicationPage() {
           you are; this says where that is in the whole thing, and which steps
           are already behind you.
         */}
-        <ol className="stages" aria-label="Application stages" data-print="hide">
+        <ol
+          className="stages"
+          aria-label="Application stages"
+          data-print="hide"
+        >
           {STAGES.map((entry) => (
             <li
               key={entry.id}
@@ -839,7 +894,6 @@ export default function ApplicationPage() {
         ) : null}
         {problem === null ? null : <p role="alert">{problem}</p>}
       </header>
-
 
       {receipt !== null ? (
         <section className="receipt" aria-labelledby="stage-heading">
@@ -953,300 +1007,316 @@ export default function ApplicationPage() {
         </p>
       ) : (
         <>
-        <CoachStrip assisted={assistance === "allowed"} />
-        <FillChoice
-          assisted={assistance === "allowed"}
-          stale={stale}
-          onAskForHelp={() => openDisclosureRef.current?.()}
-        />
-        <div className="workspace">
-          <div className="workspace-rail">
-          <ApplicationController
-            consent={consentPort}
-            key={assistance}
-            initialAssistance={assistance}
+          <CoachStrip assisted={assistance === "allowed"} />
+          <FillChoice
+            assisted={assistance === "allowed"}
             stale={stale}
-            onReady={handleControllerReady}
-          >
-            {activityPanel}
-          </ApplicationController>
+            onAskForHelp={() => openDisclosureRef.current?.()}
+          />
+          <div className="workspace">
+            <div className="workspace-rail">
+              <ApplicationController
+                consent={consentPort}
+                key={assistance}
+                initialAssistance={assistance}
+                stale={stale}
+                onReady={handleControllerReady}
+              >
+                {activityPanel}
+              </ApplicationController>
 
-          <section className="boundary" aria-labelledby="boundary-heading">
-            <h2 id="boundary-heading">Where the assistant stops</h2>
-            <div className="boundary-columns">
-              <div className="may">
-                <h3>What the assistant may do</h3>
-                <ul>
-                  {ASSISTED_ACCESS_CATALOG.permittedActions.map((action) => (
-                    <li key={action}>{action}</li>
-                  ))}
-                </ul>
-              </div>
-              <div className="only-you">
-                <h3>What only you can do</h3>
-                <ul>
-                  {ASSISTED_ACCESS_CATALOG.excludedActions.map((action) => (
-                    <li key={action}>{action}</li>
-                  ))}
-                </ul>
-              </div>
+              <ByHandTally counts={byHand} />
+
+              <section className="boundary" aria-labelledby="boundary-heading">
+                <h2 id="boundary-heading">Where the assistant stops</h2>
+                <div className="boundary-columns">
+                  <div className="may">
+                    <h3>What the assistant may do</h3>
+                    <ul>
+                      {ASSISTED_ACCESS_CATALOG.permittedActions.map(
+                        (action) => (
+                          <li key={action}>{action}</li>
+                        ),
+                      )}
+                    </ul>
+                  </div>
+                  <div className="only-you">
+                    <h3>What only you can do</h3>
+                    <ul>
+                      {ASSISTED_ACCESS_CATALOG.excludedActions.map((action) => (
+                        <li key={action}>{action}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </section>
             </div>
-          </section>
-          </div>
 
-          <div className="workspace-main">
-          <section aria-labelledby="progress-heading">
-            <h2 id="progress-heading">Readiness</h2>
-            <p className="progress">
-              {draft.progress.ready} of {draft.progress.total} required answers
-              are ready.
-            </p>
-            <div
-              className="gauge"
-              aria-hidden="true"
-              data-complete={
-                draft.progress.ready === draft.progress.total || undefined
-              }
-            >
-              <span
-                style={{
-                  width: `${Math.round(
-                    (draft.progress.ready / draft.progress.total) * 100,
-                  )}%`,
-                }}
-              />
-            </div>
-            {draft.blockers.length === 0 ? (
-              <p className="clear">Nothing is blocking Review.</p>
-            ) : (
-              <ul className="blockers">
-                {draft.blockers.map((blocker) => (
-                  <li key={`${blocker.code}-${blocker.field}`}>
-                    {blocker.message}
-                  </li>
-                ))}
-              </ul>
-            )}
-            <button
-              type="button"
-              className="primary"
-              disabled={stale}
-              onClick={() => void runAction({ action: "prepare_review" })}
-            >
-              Prepare review
-            </button>
-          </section>
+            <div className="workspace-main">
+              <section aria-labelledby="progress-heading">
+                <h2 id="progress-heading">Readiness</h2>
+                <p className="progress">
+                  {draft.progress.ready} of {draft.progress.total} required
+                  answers are ready.
+                </p>
+                <div
+                  className="gauge"
+                  aria-hidden="true"
+                  data-complete={
+                    draft.progress.ready === draft.progress.total || undefined
+                  }
+                >
+                  <span
+                    style={{
+                      width: `${Math.round(
+                        (draft.progress.ready / draft.progress.total) * 100,
+                      )}%`,
+                    }}
+                  />
+                </div>
+                {draft.blockers.length === 0 ? (
+                  <p className="clear">Nothing is blocking Review.</p>
+                ) : (
+                  <ul className="blockers">
+                    {draft.blockers.map((blocker) => (
+                      <li key={`${blocker.code}-${blocker.field}`}>
+                        {blocker.message}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <button
+                  type="button"
+                  className="primary"
+                  disabled={stale}
+                  onClick={() => void runAction({ action: "prepare_review" })}
+                >
+                  Prepare review
+                </button>
+              </section>
 
-          <section aria-labelledby="fields-heading">
-            <h2 id="fields-heading">Answers</h2>
-            <p className="section-lead">
-              Every control below is yours, with or without an assistant. Nothing
-              here is hidden while assisted access is off — that is simply the
-              application, filled in by hand.
-            </p>
-            <dl>
-              {draft.fields.map((field) => (
-                <div key={field.field}>
-                  <dt>{fieldLabel(field.field)}</dt>
-                  <dd>
-                    {field.status === "ready"
-                      ? "value" in field
-                        ? displayValue(field.field, field.value)
-                        : "Linked"
-                      : field.status === "needs_declaration"
-                        ? `${field.value} — not yet declared`
-                        : field.status === "conflict"
-                          ? "Two accepted sources disagree. You decide."
-                          : field.status === "not_required"
-                            ? "Not required"
-                            : "Not linked yet"}
+              <section aria-labelledby="fields-heading">
+                <h2 id="fields-heading">Answers</h2>
+                <p className="section-lead">
+                  Every control below is yours, with or without an assistant.
+                  Nothing here is hidden while assisted access is off — that is
+                  simply the application, filled in by hand.
+                </p>
+                <RecordShelf
+                  packet={draft.packet}
+                  documents={draft.documents}
+                  onOpened={noteDocumentOpened}
+                />
+                <dl>
+                  {draft.fields.map((field) => (
+                    <div key={field.field}>
+                      <dt>{fieldLabel(field.field)}</dt>
+                      <dd>
+                        {field.status === "ready"
+                          ? "value" in field
+                            ? displayValue(field.field, field.value)
+                            : "Linked"
+                          : field.status === "needs_declaration"
+                            ? `${field.value} — not yet declared`
+                            : field.status === "conflict"
+                              ? "Two accepted sources disagree. You decide."
+                              : field.status === "not_required"
+                                ? "Not required"
+                                : "Not linked yet"}
 
-                    {citedHandles(field).length === 0 ? null : (
-                      <ul>
-                        {citedHandles(field).map((claimHandle) => {
-                          const source = excerpts[claimHandle];
-                          return (
-                            <li key={claimHandle}>
-                              {source === undefined
-                                ? "Loading the source record…"
-                                : `${source.title}: “${source.excerpt}”`}
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    )}
+                        {citedHandles(field).length === 0 ? null : (
+                          <ul>
+                            {citedHandles(field).map((claimHandle) => {
+                              const source = excerpts[claimHandle];
+                              return (
+                                <li key={claimHandle}>
+                                  {source === undefined
+                                    ? "Loading the source record…"
+                                    : `${source.title}: “${source.excerpt}”`}
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        )}
 
-                    {field.active &&
-                    field.status === "missing" &&
-                    field.field !== "preferred_contact_email" ? (
-                      <>
-                        {" "}
-                        {draft.claims
-                          .filter((claim) => claim.kind === field.field)
-                          .map((claim) => (
+                        {field.active &&
+                        field.status === "missing" &&
+                        field.field !== "preferred_contact_email" ? (
+                          <EvidenceEntry
+                            field={field.field}
+                            documents={draft.documents}
+                            claims={draft.claims}
+                            stale={stale}
+                            onEntrySubmitted={noteEntryTyped}
+                            onRefused={() => noteEntryRefused(field.field)}
+                            onLink={async (claimHandle) => {
+                              const result = await runAction({
+                                action: "bind_evidence",
+                                field: field.field,
+                                claimHandle,
+                              });
+                              if (result.ok === true) {
+                                noteLinePicked(field.field);
+                                return true;
+                              }
+                              noteEntryRefused(field.field);
+                              return false;
+                            }}
+                          />
+                        ) : null}
+
+                        {field.field === "preferred_contact_email" ? (
+                          <>
+                            {" "}
+                            <label>
+                              <span>Synthetic .test email address</span>
+                              <input
+                                type="email"
+                                disabled={stale}
+                                value={emailDraft}
+                                onChange={(event) =>
+                                  setEmailDraft(event.target.value)
+                                }
+                              />
+                            </label>
                             <button
-                              key={claim.claimHandle}
                               type="button"
                               disabled={stale}
                               onClick={() =>
                                 void runAction({
-                                  action: "bind_evidence",
-                                  field: field.field,
-                                  claimHandle: claim.claimHandle,
+                                  action: "save_email",
+                                  value: emailDraft,
                                 })
                               }
                             >
-                              Link {claim.document} record
+                              Save email
                             </button>
-                          ))}
-                      </>
-                    ) : null}
+                            {field.status === "needs_declaration" ? (
+                              <button
+                                type="button"
+                                disabled={stale}
+                                onClick={() =>
+                                  void runAction({ action: "declare_email" })
+                                }
+                              >
+                                I declare this is my address
+                              </button>
+                            ) : null}
+                          </>
+                        ) : null}
 
-                    {field.field === "preferred_contact_email" ? (
-                      <>
-                        {" "}
-                        <label>
-                          <span>Synthetic .test email address</span>
-                          <input
-                            type="email"
-                            disabled={stale}
-                            value={emailDraft}
-                            onChange={(event) =>
-                              setEmailDraft(event.target.value)
-                            }
-                          />
-                        </label>
-                        <button
-                          type="button"
-                          disabled={stale}
-                          onClick={() =>
-                            void runAction({
-                              action: "save_email",
-                              value: emailDraft,
-                            })
-                          }
-                        >
-                          Save email
-                        </button>
-                        {field.status === "needs_declaration" ? (
-                          <button
-                            type="button"
-                            disabled={stale}
-                            onClick={() =>
-                              void runAction({ action: "declare_email" })
-                            }
-                          >
-                            I declare this is my address
-                          </button>
-                        ) : null}
-                      </>
-                    ) : null}
-
-                    {field.field === "annual_household_income" &&
-                    field.status === "conflict" ? (
-                      <div className="decide">
-                        <p>
-                          CiteApply will not choose between these. Read both
-                          records and pick the source you stand behind.
-                        </p>
-                        {excerptsPending ? (
-                          <p role="status" aria-live="polite">
-                            Loading both source excerpts…
-                          </p>
-                        ) : null}
-                        {excerptsFailed ? (
-                          <p role="alert">
-                            Some source excerpts could not be loaded. Reload the
-                            page to read them before choosing.
-                          </p>
-                        ) : null}
-                        <label className="reason-choice">
-                          <span>Why you chose this source</span>
-                          <select
-                            value={reason}
-                            required
-                            disabled={stale}
-                            aria-describedby="reason-hint"
-                            onChange={(event) => setReason(event.target.value)}
-                          >
-                            <option value="">
-                              Choose a reason before you decide…
-                            </option>
-                            {CONFLICT_REASONS.map((option) => (
-                              <option key={option.value} value={option.value}>
-                                {option.label}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                        <p id="reason-hint" className="reason-hint">
-                          {reason === ""
-                            ? "Choose a reason to enable the two buttons below. The review and the receipt will quote it back as your reason, so CiteApply will not pick one for you."
-                            : "This reason is recorded on the review and the receipt as yours."}
-                        </p>
-                        <ul className="candidates">
-                          {draft.claims
-                            .filter(
-                              (claim) =>
-                                claim.kind === "annual_household_income",
-                            )
-                            .map((claim) => {
-                              const source = excerpts[claim.claimHandle];
-                              const title =
-                                source?.title ??
-                                documentTitle(draft, claim.document);
-                              return (
-                                <li key={claim.claimHandle}>
-                                  <p className="candidate-source">{title}</p>
-                                  <p className="candidate-excerpt">
-                                    {source === undefined
-                                      ? "Loading this record’s words…"
-                                      : `“${source.excerpt}”`}
-                                  </p>
-                                  <p className="candidate-value">
-                                    Reads as{" "}
-                                    {displayValue(
-                                      claim.kind,
-                                      claim.normalizedValue,
-                                    )}
-                                  </p>
-                                  <button
-                                    type="button"
-                                    disabled={stale || reason === ""}
-                                    aria-describedby="reason-hint"
-                                    onClick={() => {
-                                      if (reason === "") return;
-                                      void runAction({
-                                        action: "resolve_income",
-                                        claimHandle: claim.claimHandle,
-                                        reason,
-                                      });
-                                    }}
+                        {field.field === "annual_household_income" &&
+                        field.status === "conflict" ? (
+                          <div className="decide">
+                            <p>
+                              CiteApply will not choose between these. Read both
+                              records and pick the source you stand behind.
+                            </p>
+                            {excerptsPending ? (
+                              <p role="status" aria-live="polite">
+                                Loading both source excerpts…
+                              </p>
+                            ) : null}
+                            {excerptsFailed ? (
+                              <p role="alert">
+                                Some source excerpts could not be loaded. Reload
+                                the page to read them before choosing.
+                              </p>
+                            ) : null}
+                            <label className="reason-choice">
+                              <span>Why you chose this source</span>
+                              <select
+                                value={reason}
+                                required
+                                disabled={stale}
+                                aria-describedby="reason-hint"
+                                onChange={(event) =>
+                                  setReason(event.target.value)
+                                }
+                              >
+                                <option value="">
+                                  Choose a reason before you decide…
+                                </option>
+                                {CONFLICT_REASONS.map((option) => (
+                                  <option
+                                    key={option.value}
+                                    value={option.value}
                                   >
-                                    Use the {title}
-                                  </button>
-                                </li>
-                              );
-                            })}
-                        </ul>
-                      </div>
-                    ) : null}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          </section>
+                                    {option.label}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                            <p id="reason-hint" className="reason-hint">
+                              {reason === ""
+                                ? "Choose a reason to enable the two buttons below. The review and the receipt will quote it back as your reason, so CiteApply will not pick one for you."
+                                : "This reason is recorded on the review and the receipt as yours."}
+                            </p>
+                            <ul className="candidates">
+                              {draft.claims
+                                .filter(
+                                  (claim) =>
+                                    claim.kind === "annual_household_income",
+                                )
+                                .map((claim) => {
+                                  const source = excerpts[claim.claimHandle];
+                                  const title =
+                                    source?.title ??
+                                    documentTitle(draft, claim.document);
+                                  return (
+                                    <li key={claim.claimHandle}>
+                                      <p className="candidate-source">
+                                        {title}
+                                      </p>
+                                      <p className="candidate-excerpt">
+                                        {source === undefined
+                                          ? "Loading this record’s words…"
+                                          : `“${source.excerpt}”`}
+                                      </p>
+                                      <p className="candidate-value">
+                                        Reads as{" "}
+                                        {displayValue(
+                                          claim.kind,
+                                          claim.normalizedValue,
+                                        )}
+                                      </p>
+                                      <button
+                                        type="button"
+                                        disabled={stale || reason === ""}
+                                        aria-describedby="reason-hint"
+                                        onClick={() => {
+                                          if (reason === "") return;
+                                          void runAction({
+                                            action: "resolve_income",
+                                            claimHandle: claim.claimHandle,
+                                            reason,
+                                          });
+                                        }}
+                                      >
+                                        Use the {title}
+                                      </button>
+                                    </li>
+                                  );
+                                })}
+                            </ul>
+                          </div>
+                        ) : null}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              </section>
 
-          <section aria-labelledby="sources-heading">
-            <h2 id="sources-heading">Synthetic sources</h2>
-            <ul>
-              {draft.documents.map((document) => (
-                <li key={document.code}>{document.title}</li>
-              ))}
-            </ul>
-          </section>
+              <section aria-labelledby="sources-heading">
+                <h2 id="sources-heading">Synthetic sources</h2>
+                <ul>
+                  {draft.documents.map((document) => (
+                    <li key={document.code}>{document.title}</li>
+                  ))}
+                </ul>
+              </section>
+            </div>
           </div>
-        </div>
         </>
       )}
 

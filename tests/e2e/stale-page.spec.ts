@@ -17,13 +17,16 @@ test("@journey a superseded tab stops claiming to be current", async ({
   page,
 }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "Start with records that disagree" }).click();
+  await page
+    .getByRole("button", { name: "Start with records that disagree" })
+    .click();
   await expect(page.getByText("This page is current.")).toBeVisible();
 
-  // Before the takeover, the first tab is current and can act.
-  const link = page.getByRole("button", { name: "Link enrollment record" }).first();
-  await expect(link).toBeEnabled();
-  await link.click();
+  // Before the takeover, the first tab is current and can act. Saving the
+  // email is the shortest mutating act the visible draft offers.
+  const save = page.getByRole("button", { name: "Save email" });
+  await expect(save).toBeEnabled();
+  await save.click();
   await expect(page.getByText("This page is current.")).toBeVisible();
 
   // A second tab on the same session takes the page epoch with it.
@@ -33,7 +36,7 @@ test("@journey a superseded tab stops claiming to be current", async ({
 
   // The first tab does not know yet — it learns from its own next call.
   await expect(page.getByText("This page is current.")).toBeVisible();
-  await page.getByRole("button", { name: "Link enrollment record" }).first().click();
+  await page.getByRole("button", { name: "Save email" }).click();
 
   // ...and having learned, it says so.
   await expect(
@@ -50,7 +53,7 @@ test("@journey a superseded tab stops claiming to be current", async ({
   // Every mutating control on the superseded tab is disabled, so the page
   // never offers an action the server would only refuse.
   await expect(
-    page.getByRole("button", { name: "Link enrollment record" }).first(),
+    page.getByRole("button", { name: "Link this line" }).first(),
   ).toBeDisabled();
   await expect(page.getByRole("button", { name: "Save email" })).toBeDisabled();
   await expect(
@@ -59,9 +62,7 @@ test("@journey a superseded tab stops claiming to be current", async ({
   await expect(
     page.getByRole("button", { name: "Review and allow assisted access" }),
   ).toBeDisabled();
-  await expect(
-    page.getByLabel("Why you chose this source"),
-  ).toBeDisabled();
+  await expect(page.getByLabel("Why you chose this source")).toBeDisabled();
   await expect(
     page.getByRole("button", { name: "Use the Synthetic Income Statement" }),
   ).toBeDisabled();
@@ -76,14 +77,14 @@ test("@journey a superseded tab stops claiming to be current", async ({
   // Reloading wins the session back, and nothing saved was lost.
   await page.getByRole("button", { name: "Reload this page" }).click();
   await expect(page.getByText("This page is current.")).toBeVisible();
-  await expect(
-    page.getByText("This page is no longer current."),
-  ).toHaveCount(0);
+  await expect(page.getByText("This page is no longer current.")).toHaveCount(
+    0,
+  );
   await expect(
     page.getByRole("button", { name: "Prepare review" }),
   ).toBeEnabled();
   // The second tab is now the stale one.
-  await second.getByRole("button", { name: "Link household record" }).first().click();
+  await second.getByRole("button", { name: "Save email" }).click();
   await expect(
     second.getByText("This page is no longer current. Reload to continue."),
   ).toBeVisible();

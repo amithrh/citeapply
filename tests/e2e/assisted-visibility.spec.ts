@@ -1,4 +1,15 @@
-import { chromium, expect, test, type Browser, type Page } from "@playwright/test";
+import {
+  chromium,
+  expect,
+  test,
+  type Browser,
+  type Page,
+} from "@playwright/test";
+
+import {
+  completeSharedFields,
+  linkSupportedIncome,
+} from "./support/manual-entry.ts";
 
 /**
  * D-1 regression: a successful assisted mutation must be visible in the form
@@ -62,7 +73,9 @@ test("@journey an assisted batch is visible in the form without a reload", async
 
   try {
     await page.goto(`${ORIGIN}/`);
-    await page.getByRole("button", { name: "Start with records that agree" }).click();
+    await page
+      .getByRole("button", { name: "Start with records that agree" })
+      .click();
     await expect(
       page.getByRole("heading", { name: "Application" }),
     ).toBeVisible();
@@ -76,7 +89,9 @@ test("@journey an assisted batch is visible in the form without a reload", async
     );
     if (!hasWebMcp) return;
 
-    await expect(page.getByText("six CiteApply tools registered")).toBeVisible();
+    await expect(
+      page.getByText("six CiteApply tools registered"),
+    ).toBeVisible();
     await expect(page.getByText("No assisted tool calls yet.")).toBeVisible();
 
     // The applicant allows assisted access in the visible UI. The agent is
@@ -84,7 +99,9 @@ test("@journey an assisted batch is visible in the form without a reload", async
     await page
       .getByRole("button", { name: "Review and allow assisted access" })
       .click();
-    await page.getByRole("button", { name: "Allow assisted access", exact: true }).click();
+    await page
+      .getByRole("button", { name: "Allow assisted access", exact: true })
+      .click();
     await expect(
       page.getByText("Assisted access is allowed for this page and session."),
     ).toBeVisible();
@@ -126,10 +143,26 @@ test("@journey an assisted batch is visible in the form without a reload", async
           expectedApplicationRevision: versions.applicationRevision,
           expectedRequirementsVersion: versions.requirementsVersion,
           changes: [
-            { kind: "bind_claim", field: "legal_name", claimHandle: handleFor("legal_name") },
-            { kind: "bind_claim", field: "student_id", claimHandle: handleFor("student_id") },
-            { kind: "bind_claim", field: "institution", claimHandle: handleFor("institution") },
-            { kind: "bind_claim", field: "dependency", claimHandle: handleFor("dependency") },
+            {
+              kind: "bind_claim",
+              field: "legal_name",
+              claimHandle: handleFor("legal_name"),
+            },
+            {
+              kind: "bind_claim",
+              field: "student_id",
+              claimHandle: handleFor("student_id"),
+            },
+            {
+              kind: "bind_claim",
+              field: "institution",
+              claimHandle: handleFor("institution"),
+            },
+            {
+              kind: "bind_claim",
+              field: "dependency",
+              claimHandle: handleFor("dependency"),
+            },
           ],
         },
       }),
@@ -138,7 +171,9 @@ test("@journey an assisted batch is visible in the form without a reload", async
 
     // The activity list is the visible proof that the call happened at all.
     await expect(
-      page.getByRole("listitem").filter({ hasText: "apply_evidence_backed_answers" }),
+      page
+        .getByRole("listitem")
+        .filter({ hasText: "apply_evidence_backed_answers" }),
     ).toBeVisible();
 
     // The form itself moved: fewer unlinked rows, and the guardian branch is
@@ -147,7 +182,9 @@ test("@journey an assisted batch is visible in the form without a reload", async
       .poll(async () => page.getByText("Not linked yet").count())
       .toBeLessThan(beforeCount);
     await expect(page.getByText("Guardian name")).toBeVisible();
-    await expect(page.getByText(/of 8 required answers are ready\./)).toBeVisible();
+    await expect(
+      page.getByText(/of 8 required answers are ready\./),
+    ).toBeVisible();
 
     const after = await page.screenshot({ fullPage: true });
     expect(Buffer.compare(before, after)).not.toBe(0);
@@ -170,7 +207,9 @@ test("@journey preparing the Review through a tool closes the visible banner", a
 
   try {
     await page.goto(`${ORIGIN}/`);
-    await page.getByRole("button", { name: "Start with records that agree" }).click();
+    await page
+      .getByRole("button", { name: "Start with records that agree" })
+      .click();
     await expect(
       page.getByRole("heading", { name: "Application" }),
     ).toBeVisible();
@@ -185,23 +224,16 @@ test("@journey preparing the Review through a tool closes the visible banner", a
     if (!hasWebMcp) return;
 
     // Complete the whole Draft with the visible manual controls only.
-    for (const label of ["Link enrollment record", "Link household record"]) {
-      for (let index = 0; index < 3; index += 1) {
-        await page.getByRole("button", { name: label }).first().click();
-        await page.waitForTimeout(250);
-      }
-    }
-    await page.getByRole("button", { name: "Link income record" }).click();
-    await page.getByRole("button", { name: "Save email" }).click();
-    await page
-      .getByRole("button", { name: "I declare this is my address" })
-      .click();
+    await completeSharedFields(page);
+    await linkSupportedIncome(page);
     await expect(page.getByText("Nothing is blocking Review.")).toBeVisible();
 
     await page
       .getByRole("button", { name: "Review and allow assisted access" })
       .click();
-    await page.getByRole("button", { name: "Allow assisted access", exact: true }).click();
+    await page
+      .getByRole("button", { name: "Allow assisted access", exact: true })
+      .click();
     await expect(
       page.getByText("Assisted access is allowed for this page and session."),
     ).toBeVisible();
@@ -242,7 +274,9 @@ test("@journey preparing the Review through a tool closes the visible banner", a
     ).toBeVisible();
     await expect(page.getByText("Assisted access is off.")).toBeVisible();
     await expect(
-      page.getByRole("listitem").filter({ hasText: "prepare_submission_review" }),
+      page
+        .getByRole("listitem")
+        .filter({ hasText: "prepare_submission_review" }),
     ).toBeVisible();
   } finally {
     await browser.close();
