@@ -86,6 +86,33 @@ test("@a11y the landing page has no WCAG 2.1 AA violations", async ({
 });
 
 /**
+ * The refusal an uploaded file gets is new colour on the landing ground and is
+ * announced live, so it is scanned in the state a person actually sees it in.
+ */
+test("@a11y the upload refusal has no WCAG 2.1 AA violations", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.locator("#upload input[type=file]").setInputFiles({
+    name: "not-a-committed-record.pdf",
+    mimeType: "application/pdf",
+    buffer: Buffer.from("%PDF-1.4\n% not one of the committed records\n"),
+  });
+  await page.getByRole("button", { name: "Start with these records" }).click();
+  await expect(page.locator(".upload-refusal")).toBeVisible();
+  // The band arrives on a 640 ms reveal; scanning colour mid-fade measures the
+  // transition rather than the design.
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => getComputedStyle(document.querySelector("#records")!).opacity,
+      ),
+    )
+    .toBe("1");
+  await scan(page, "landing with the upload refusal");
+});
+
+/**
  * Phase 2D added the site shell (masthead and footer on every route) and the
  * "For agents" route. The shell is scanned implicitly by every case here; this
  * case covers the one page that is nothing but the shell and static content.
