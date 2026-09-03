@@ -4,7 +4,7 @@
 
 ## Recording rules (from `docs/hackathon-build/scope.md`, "Demo Path")
 
-- **One continuously recorded Conflict-packet session** in Chrome 152 with
+- **One continuously recorded session on the records that disagree** in Chrome 152 with
   `chrome://flags/#enable-webmcp-testing` enabled. Do not stop recording until
   the receipt renders.
 - **Recording target.** No public deployment exists yet, so record against the
@@ -19,7 +19,7 @@
   and must carry an on-screen label saying so.
 - After the cold open the video returns to the **start of that same session** and
   runs chronologically.
-- The Supported packet and the manual / no-WebMCP flow are regression evidence
+- The records that agree and the manual / no-WebMCP flow are regression evidence
   and judge instructions, **not** competing narratives. Do not show them here.
 - Waiting may be compressed **only** with a visible on-screen label
   (“waiting compressed”). No invocation animation, no precomputed result, no
@@ -34,7 +34,7 @@ the 0:00–0:12 cold open out of the later part of that same take.
 
 ### 0:00–0:12 — Cold open: a genuine call, a visible change
 
-**On screen:** the application page, Conflict packet, split so the DevTools
+**On screen:** the application page, records that disagree, split so the DevTools
 console showing a real `document.modelContext.executeTool(...)` call and its
 JSON result sits beside the form. The result lands, the **Legal name** row flips
 from “Not linked yet” to the bound value with its source excerpt beneath it, and
@@ -46,11 +46,11 @@ of this same recording.”**
 > scholarship portal that just changed in front of you. Nobody typed into that
 > form. Now here is the whole session, from the start."
 
-### 0:12–0:30 — Start the Conflict packet
+### 0:12–0:30 — Start the records that disagree
 
 **On screen:** the landing page. Header reads “Horizon Education Aid —
 Need-Based Scholarship / Fictional demo · Synthetic data only”, headline **“The
-agent cites. You decide.”** Click **Start conflict packet**. The application
+agent cites. You decide.”** Click **Start with records that disagree**. The application
 page loads; point the cursor at the status line, which ends **“WebMCP: six
 CiteApply tools registered.”**
 

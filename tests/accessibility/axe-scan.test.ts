@@ -114,7 +114,7 @@ test("@a11y the application, its consent dialog, the review and the receipt have
     // The Conflict packet is the richest screen: it carries the disputed source
     // cards, the reason control, and the refusal copy.
     await page.goto(`${ORIGIN}/`);
-    await page.getByRole("button", { name: "Start conflict packet" }).click();
+    await page.getByRole("button", { name: "Start with records that disagree" }).click();
     await expect(
       page.getByRole("heading", { name: "Application" }),
     ).toBeVisible();

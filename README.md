@@ -27,9 +27,12 @@ and the server — not the tool descriptions — enforces that boundary.
    start it locally first — *Run the production build*, below, is four commands
    and takes about a minute — then open `http://localhost:3100`. (If a live URL
    is published, it goes here and the rest of this quick start is unchanged.)
-3. **Pick the Conflict packet.** Click **Start conflict packet**. This is the
-   packet that shows the whole point: two accepted sources disagree about
-   income. (**Start supported packet** is the happy path.)
+3. **Pick the records that disagree.** In *The records you will be working
+   from*, click **Start with records that disagree**. This is the set that
+   shows the whole point: two accepted sources disagree about income.
+   (**Start with records that agree** is the happy path.) You can open each of
+   the three PDFs from the same card, or download the set as a zip and upload
+   it back through **Upload your records**.
 4. On the application page, confirm the status line ends
    **“WebMCP: six CiteApply tools registered.”**, then click
    **Review and allow assisted access** → **Allow assisted access**. The
@@ -44,8 +47,8 @@ and the server — not the tool descriptions — enforces that boundary.
    - “Read the evidence index and the active form requirements, then apply every
      supported binding you are allowed to apply in one atomic call.”
    - “Now bind annual household income from the best source you can find.”
-6. **What refusal looks like.** The third prompt cannot succeed on the Conflict
-   packet. The portal returns, verbatim:
+6. **What refusal looks like.** The third prompt cannot succeed on the records
+   that disagree. The portal returns, verbatim:
 
    ```json
    {"ok":false,"error":{"code":"conflict_requires_human",
@@ -206,18 +209,27 @@ carrying the current versions, so the agent can re-read rather than guess.
 
 ## The demonstration
 
-Two synthetic packets, three one-page PDFs each, parsed at runtime — hash-checked,
+Two synthetic record sets, three one-page PDFs each, parsed at runtime — hash-checked,
 size-bounded, and anchored so every displayed excerpt is reconstructed from stored
 page offsets rather than remembered text.
 
-- **Supported packet** — the income statement and the household statement agree.
+- **Records that agree** — the income statement and the household statement agree.
   The portal accepts the binding and keeps the second source as corroboration.
-- **Conflict packet** — the same two source types disagree about annual household
+- **Records that disagree** — the same two source types disagree about annual household
   income (₹540,000 vs ₹480,000). The agent’s attempt to bind income is refused
   with `conflict_requires_human`, and the field stays unresolved until the
   applicant chooses a source *and* states a reason in the visible portal.
 
-Both packets run the same production code path. Only the packet data differs.
+Every one of the six PDFs can be opened from the landing page
+(`GET /api/demo?document=<set>/<name>`), and each set can be downloaded as a
+deterministic zip (`GET /api/demo?records=<set>`). Uploading three PDFs back
+through **Upload your records** posts them to the same route as a multipart
+body capped at 1 MiB; the server hashes each file, and starts a set only when
+the three files are exactly that set's allowlisted documents. Anything else is
+refused with one message that names no file, and no uploaded byte is stored or
+logged.
+
+Both sets run the same production code path. Only the record data differs.
 Binding the dependency field reveals the conditional branch — `guardian_name`
 and `household_size` (`src/domain/fields.ts`) — so the agent must re-read active
 requirements mid-session.
@@ -292,7 +304,7 @@ defaults `HOSTNAME` to `0.0.0.0`, so every `request.url` it builds reads
 `http://0.0.0.0:3100/…`; the exact same-origin check compares that host
 against the `APP_ORIGIN` host (`localhost:3100`), they differ, and **every** API
 request is refused with HTTP 403 `invalid_request` — a landing page that can
-never start a packet. The hostname you bind must be the hostname in
+never start a record set. The hostname you bind must be the hostname in
 `APP_ORIGIN`. (When it does refuse, the server logs one line naming the
 mismatch, so you are not left guessing.)
 
@@ -315,7 +327,7 @@ request 404s: an unstyled page whose buttons do nothing. (The PDF parser used
 to need a hand copy too; that one is fixed, and `next.config.ts` now traces
 `pdfjs-dist` into the standalone output.)
 
-Open the origin you configured, choose a packet, and the application page takes
+Open the origin you configured, choose a set of records, and the application page takes
 over the session and registers the tools.
 
 Details and platform notes: [docs/DEPLOYING.md](docs/DEPLOYING.md).

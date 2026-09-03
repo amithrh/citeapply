@@ -17,7 +17,7 @@ test("@journey a superseded tab stops claiming to be current", async ({
   page,
 }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "Start conflict packet" }).click();
+  await page.getByRole("button", { name: "Start with records that disagree" }).click();
   await expect(page.getByText("This page is current.")).toBeVisible();
 
   // Before the takeover, the first tab is current and can act.

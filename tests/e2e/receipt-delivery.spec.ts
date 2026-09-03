@@ -63,7 +63,7 @@ function onScreenForm(field: string, value: unknown): string {
 test("@journey the receipt's JSON, screen, and print view are the same record", async ({
   page,
 }) => {
-  await reachReceipt(page, "Start supported packet");
+  await reachReceipt(page, "Start with records that agree");
 
   // The three affordances the receipt must offer.
   await expect(page.getByRole("button", { name: "Download JSON" })).toBeVisible();
@@ -129,7 +129,7 @@ test("@journey the conflict receipt keeps both disagreeing excerpts in the file 
   page,
 }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "Start conflict packet" }).click();
+  await page.getByRole("button", { name: "Start with records that disagree" }).click();
   await expect(page.getByRole("heading", { name: "Application" })).toBeVisible();
   for (const link of ["Link enrollment record", "Link household record"]) {
     for (let index = 0; index < 3; index += 1) {

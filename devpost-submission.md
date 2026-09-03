@@ -78,10 +78,10 @@ cannot demonstrate:
 <!-- claim: Next.js App Router on Node runtime, PostgreSQL, 5 migrations — package.json (next 15.5.24, pg 8.23.0), db/migrations/0001..0005 -->
 A complete portal — landing, application, receipt — on Next.js App Router with
 PostgreSQL for all state, exactly eight fields, one conditional branch, two
-packets, six committed one-page PDFs, one deliberate conflict, and one
+record sets, six committed one-page PDFs, one deliberate conflict, and one
 declaration-only field.
 
-- **Evidence is real and anchored.** Selecting a packet reads committed PDF
+- **Evidence is real and anchored.** Selecting a record set reads committed PDF
   bytes at runtime, verifies an allowlisted SHA-256, parses with a pinned
   parser, and stores page/span anchors. Every excerpt shown is reconstructed by
   slicing stored page text at those offsets, so the interface cannot display a
@@ -229,7 +229,7 @@ React 19 · Zod 4 · PostgreSQL 17 · `pg` · `pdfjs-dist` (runtime parsing) ·
 - [ ] Public repository pushed to `REPO_URL`, with the MIT `LICENSE` at the root
 - [ ] `LIVE_URL` reachable over HTTPS, `APP_ORIGIN` matching it exactly
 - [ ] Migrations applied against the production database
-- [ ] Both packets completed end to end on the deployed URL, in real Chrome
+- [ ] Both record sets completed end to end on the deployed URL, in real Chrome
 - [ ] YouTube video public at `VIDEO_URL`, under three minutes, with audio
 - [ ] Description covers WebMCP fit, UX improvement, human+agent, implementation
 - [ ] Devpost entry **submitted**, not left as a draft

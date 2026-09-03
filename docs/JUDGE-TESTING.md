@@ -4,7 +4,7 @@
 against a local production build at `http://localhost:3100`. Build and start it
 exactly as `README.md` → *Run the production build* prescribes — the
 `HOSTNAME=localhost` prefix and the `set -a; . ./.env.local; set +a` line are
-both required, and omitting either produces a page that cannot start a packet.
+both required, and omitting either produces a page that cannot start a record set.
 If a live URL is published, substitute it for `http://localhost:3100`
 throughout; nothing below depends on the origin.
 
@@ -40,14 +40,16 @@ crash. Wait for the stated delay and start again.
 > result comes back as a JSON string. See
 > [verification/genuine-chrome-webmcp.md](verification/genuine-chrome-webmcp.md).
 
-### A1. Start the Conflict packet
+### A1. Start the records that disagree
 
 1. Open `http://localhost:3100`.
 2. **Expected:** header “Horizon Education Aid — Need-Based Scholarship”,
    “Fictional demo · Synthetic data only”, heading “The agent cites. You
    decide.”, a three-sentence explanation, a **Try it with an agent** box, and
-   two paths — **Supported packet** and **Conflict packet**.
-3. Click **Start conflict packet**.
+   under *The records you will be working from*, three cards — **Records that
+   disagree**, **Records that agree** and **Upload your records**. Each set
+   card links to its three PDFs and to a zip of the set.
+3. Click **Start with records that disagree**.
 4. **Expected:** you land on the application page. The heading and the browser
    tab both read **“Application”** — they name the stage you are on, and will
    change to **“Review before submitting”** and then **“Submitted”** as you
@@ -158,7 +160,7 @@ first load, labelled **“Not required”**; binding `dependency` flips them to
 from six to eight. An attempt to work from the stale version returns
 `stale_state` carrying the current versions.
 
-### A8. The refusal (the point of the Conflict packet)
+### A8. The refusal (the point of the records that disagree)
 
 Attempt to bind `annual_household_income` from either income claim.
 
@@ -252,7 +254,7 @@ the agent has no tool that reaches either one.
 
 ### A12. The manual path is complete (optional, 3 minutes)
 
-Start the **Supported packet**, never open the consent dialog, and complete the
+Start the **records that agree**, never open the consent dialog, and complete the
 whole application with the visible buttons only (**Link `<document>` record**,
 **Save email**, **I declare this is my address**, **Prepare review**, **Submit
 this application**). **Expected:** you reach a receipt. Assistance is optional,
@@ -312,7 +314,7 @@ revocation.
 ## B. ChatGPT in-app browser
 
 1. Open the running CiteApply origin in the ChatGPT in-app browser.
-2. **Expected:** the landing page renders identically; **Start conflict packet**
+2. **Expected:** the landing page renders identically; **Start with records that disagree**
    works; the application page loads and shows the readiness, answers, and
    sources sections.
 3. Check the WebMCP status line under the “Application” heading.

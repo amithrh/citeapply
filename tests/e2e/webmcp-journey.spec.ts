@@ -68,7 +68,7 @@ for (const packet of ["supported", "conflict"] as const) {
       await shot(page, `${packet}-step01-landing`);
 
       // 2 start; server parses the packet PDFs at runtime and the form opens
-      const label = packet === "supported" ? "Start supported packet" : "Start conflict packet";
+      const label = packet === "supported" ? "Start with records that agree" : "Start with records that disagree";
       await page.getByRole("button", { name: label }).click();
       await expect(page.getByRole("heading", { name: "Application" })).toBeVisible();
       await expect(page.getByText("six CiteApply tools registered")).toBeVisible();

@@ -62,7 +62,7 @@ test("@journey an assisted batch is visible in the form without a reload", async
 
   try {
     await page.goto(`${ORIGIN}/`);
-    await page.getByRole("button", { name: "Start supported packet" }).click();
+    await page.getByRole("button", { name: "Start with records that agree" }).click();
     await expect(
       page.getByRole("heading", { name: "Application" }),
     ).toBeVisible();
@@ -170,7 +170,7 @@ test("@journey preparing the Review through a tool closes the visible banner", a
 
   try {
     await page.goto(`${ORIGIN}/`);
-    await page.getByRole("button", { name: "Start supported packet" }).click();
+    await page.getByRole("button", { name: "Start with records that agree" }).click();
     await expect(
       page.getByRole("heading", { name: "Application" }),
     ).toBeVisible();

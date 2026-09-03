@@ -33,7 +33,7 @@ async function completeSharedFields(page: Page): Promise<void> {
 test("@journey the Supported packet reaches a receipt with no conflict warning", async ({
   page,
 }) => {
-  await startPacket(page, "Start supported packet");
+  await startPacket(page, "Start with records that agree");
   await completeSharedFields(page);
   await page.getByRole("button", { name: "Link income record" }).click();
 
@@ -55,7 +55,7 @@ test("@journey the Supported packet reaches a receipt with no conflict warning",
 test("@journey the Conflict packet cannot reach Review until the applicant decides", async ({
   page,
 }) => {
-  await startPacket(page, "Start conflict packet");
+  await startPacket(page, "Start with records that disagree");
 
   // Before anything else, the portal has already refused to pick a value.
   await expect(
@@ -138,7 +138,7 @@ test("@journey the Conflict packet cannot reach Review until the applicant decid
 });
 
 test("@journey returning to draft withdraws the frozen review", async ({ page }) => {
-  await startPacket(page, "Start supported packet");
+  await startPacket(page, "Start with records that agree");
   await completeSharedFields(page);
   await page.getByRole("button", { name: "Link income record" }).click();
   await page.getByRole("button", { name: "Prepare review" }).click();
@@ -154,7 +154,7 @@ test("@journey returning to draft withdraws the frozen review", async ({ page })
 test("@journey assistance is optional and the manual path never depends on it", async ({
   page,
 }) => {
-  await startPacket(page, "Start supported packet");
+  await startPacket(page, "Start with records that agree");
   // This browser has no WebMCP, and the application is still fully completable.
   await expect(page.getByText("WebMCP is unavailable in this browser")).toBeVisible();
   await completeSharedFields(page);
