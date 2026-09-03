@@ -1,10 +1,29 @@
 # The CiteApply demo video
 
-`citeapply-demo.mp4` — 1920×1080, H.264 / AAC. The shot list and the locked
-narration it follows are `docs/VIDEO-SCRIPT.md`; the recording rules it obeys
-are `docs/hackathon-build/scope.md` → *Demo Path*.
+`citeapply-demo.mp4` — **2:48.0**, 1920×1080, H.264 / AAC. The shot list and
+narration behind the recorded session are `docs/VIDEO-SCRIPT.md`; the recording
+rules it obeys are `docs/hackathon-build/scope.md` → *Demo Path*, with the one
+deliberate departure noted under **Opening** below.
+
+## Opening (0:00–0:32)
+
+The film now opens on a spoken title card: **CiteApply**, *The agent cites. You
+decide.*, **Team: Amit Mishra (solo) · The WebMCP Challenge**, and the problem
+statement — who, what and why before any footage.
+
+**The cold-open excerpt was cut to make room for it.** `scope.md` asks for a
+labelled same-session excerpt showing a genuine tool result by 0:10; that beat
+and its narration ("That was a real WebMCP tool call…") were dropped so the
+introduction could lead and the film could still finish under 3:00. The
+excerpt's material is not lost — it is the same `apply_evidence_backed_answers`
+mutation, seen in its true chronological place at 1:00. The narration paragraph
+about the six tools and redacted reads ("CiteApply is a fictional aid portal…"
+is kept; "The agent can see the tools before I've allowed anything…" and the
+tool-name card were dropped) is now covered by the opening instead.
 
 ## The session
+
+The recorded session is unchanged by the re-cut.
 
 **Recorded 2026-09-03, 22:26–22:28 IST** (the raw take begins at
 `2026-09-03T16:56:36Z`; the exact instant and every event timestamp are in
@@ -51,15 +70,16 @@ duration.
 
 | Film time | Session time | Rate | On-screen label |
 |-----------|--------------|------|-----------------|
-| 0:57–1:10 | 0:24.7–0:51.5 | 2.05× faster | `sped up 2× · waiting compressed` |
-| 1:10–1:24 | 0:51.5–0:59.4 | 0.55× slower | `slowed 0.55× · nothing cut` |
-| 0:17–0:30 | 0:00–0:10.9 | 0.84× slower | — (slower than real time; nothing is hidden) |
-| 1:44–2:04 | 1:19.5–1:35.7 | 0.84× slower | — |
-| 2:18–2:36 | 1:50.2–2:05.7 | 0.88× slower | — |
+| 0:58–1:11 | 0:24.7–0:51.5 | 2.05× faster | `sped up 2× · waiting compressed` |
+| 1:11–1:25 | 0:51.5–0:59.4 | 0.55× slower | `slowed 0.55× · nothing cut` |
+| 0:32–0:45 | 0:00–0:10.9 | 0.84× slower | — (slower than real time; nothing is hidden) |
+| 1:45–2:05 | 1:19.5–1:35.7 | 0.84× slower | — |
+| 2:19–2:37 | 1:50.2–2:05.7 | 0.88× slower | — |
 
-All other footage plays at 1.0×. The cold open (0:00–0:12) is an excerpt from
-**0:48 of this same take** and carries the persistent label *"Excerpt from 0:48
-of this same recording"*. A discreet `Synthetic data only · fictional program`
+All other footage plays at 1.0×. One stretch of the session is not in the film
+at all: **0:10.9–0:12.0**, a one-second gap between the shot that ends on the
+loaded application page and the shot that opens on the consent disclosure.
+Nothing happens in it. A discreet `Synthetic data only · fictional program`
 label sits in the bottom band throughout.
 
 ## How it was composed
@@ -84,8 +104,23 @@ teal `#0f6b6a` / `#084140` and ochre `#8c4b05`; type is Newsreader / Public Sans
 
 Real synthesised speech — **Kokoro-82M** (`kokoro-onnx`), voice `bf_emma`, speed
 1.04, driven through the HyperFrames TTS model files. It is not a human read and
-not a placeholder. One WAV per paragraph in `audio/` (`n01.wav`–`n10.wav`), with
-the exact text spoken in the matching `.txt`. Total speech 2:31.
+not a placeholder. One WAV per paragraph in `audio/` (`n00.wav`–`n10.wav`), with
+the exact text spoken in the matching `.txt`. Total speech in the current cut
+2:26. `n01.wav` (the cold open) and `n03.wav` (the redacted-read beat) were
+generated and are kept in `audio/`, but are **not** in the film.
+
+`n00.wav` is the opening, written for this cut:
+
+> Hi, I'm Amit, and this is CiteApply, my entry for the WebMCP Challenge. The
+> problem: filling in a document-backed form like a scholarship application is
+> hard, not because of typing, but because of judgment. Which record proves each
+> answer? What if two records disagree? Today an AI assistant can guess values
+> into a form, and the website has no idea where they came from. CiteApply is a
+> scholarship portal that publishes six WebMCP tools of its own, so an agent can
+> cite answers from the applicant's records, and the site, not the model, decides
+> what is allowed. Let me show you.
+
+The rest is the script's narration.
 
 The narration is the word-for-word text from `docs/VIDEO-SCRIPT.md`, with only
 the changes a speech synthesiser needs (code identifiers spoken as words,
@@ -169,6 +204,8 @@ semicolons and em-dashes resolved into sentences):
   transcoded copy the film is cut from.
 
 ## Links on the end card
+
+The end card also names the team: **CiteApply — Team: Amit Mishra**.
 
 - `https://citeapply.vercel.app` — **provisional.** `README.md` still carries the
   `LIVE_URL` placeholder at the time of this render, so this is the expected
