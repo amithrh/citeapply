@@ -679,6 +679,27 @@ export default function ApplicationPage() {
     : webmcpUnavailable
       ? "unavailable"
       : assistanceOf(snapshot);
+  /**
+   * The applicant moves through three stages on one URL, and until now the
+   * page's own heading and tab title said "Application" at every one of them —
+   * so a screen-reader user, a tab-strip scan and a recorded demo all lost the
+   * single most important piece of orientation the page has. The stage names
+   * are the ones already on screen, so the heading, the title and the
+   * product's own vocabulary stay one thing.
+   */
+  const stage: "draft" | "review" | "receipt" =
+    receipt !== null ? "receipt" : review !== null ? "review" : "draft";
+  const stageHeading =
+    stage === "receipt"
+      ? "Submitted"
+      : stage === "review"
+        ? "Review before submitting"
+        : "Application";
+
+  useEffect(() => {
+    document.title = `${stageHeading} — CiteApply`;
+  }, [stageHeading]);
+
   const statusLine = stale
     ? "This page is no longer current. Reload to continue."
     : established
@@ -694,7 +715,9 @@ export default function ApplicationPage() {
         <p>
           <strong>Fictional demo · Synthetic data only</strong>
         </p>
-        <h1>Application</h1>
+        <h1 id="stage-heading" data-stage={stage}>
+          {stageHeading}
+        </h1>
         <p role="status" aria-live="polite" data-stale={stale || undefined}>
           {statusLine} WebMCP: {bridgeStatus}.
         </p>
@@ -716,8 +739,7 @@ export default function ApplicationPage() {
 
 
       {receipt !== null ? (
-        <section className="receipt" aria-labelledby="receipt-heading">
-          <h2 id="receipt-heading">Submitted</h2>
+        <section className="receipt" aria-labelledby="stage-heading">
           <p>
             Horizon Education Aid accepted this synthetic application on{" "}
             {instantLabel(receipt.submittedAt)}.
@@ -778,8 +800,7 @@ export default function ApplicationPage() {
           </div>
         </section>
       ) : review !== null ? (
-        <section className="frozen" aria-labelledby="review-heading">
-          <h2 id="review-heading">Review before submitting</h2>
+        <section className="frozen" aria-labelledby="stage-heading">
           <p>
             This frozen review is exactly what will be submitted. Assisted
             access is closed while you review it.

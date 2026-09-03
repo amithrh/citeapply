@@ -78,6 +78,32 @@ h1 {
   margin: calc(var(--step) * 2) 0 calc(var(--step) * 1.5);
 }
 
+/*
+ * The applicant crosses two one-way thresholds on a single URL, and the
+ * heading is where that is now said. The "Frozen" and "Accepted" stamps used
+ * to sit on the review and receipt section headings; they belong on the stage
+ * heading, which is the thing that changed.
+ */
+h1[data-stage="review"]::before,
+h1[data-stage="receipt"]::before {
+  display: block;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--seal);
+  margin-bottom: 0.4rem;
+}
+
+h1[data-stage="review"]::before {
+  content: "Frozen";
+}
+
+h1[data-stage="receipt"]::before {
+  content: "Accepted";
+}
+
 h2 {
   font-family: var(--serif);
   font-size: 1.3rem;
@@ -441,17 +467,6 @@ select:hover {
   margin: 0 calc(var(--step) * -3) calc(var(--step) * 5);
 }
 
-.frozen h2::before {
-  content: "Frozen";
-  display: block;
-  font-family: var(--mono);
-  font-size: 0.68rem;
-  font-weight: 500;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--seal);
-  margin-bottom: 0.4rem;
-}
 
 .frozen .meta {
   font-family: var(--mono);
@@ -484,16 +499,6 @@ select:hover {
   padding: calc(var(--step) * 4) calc(var(--step) * 3);
 }
 
-.receipt h2::before {
-  content: "Accepted";
-  display: block;
-  font-family: var(--mono);
-  font-size: 0.68rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--seal);
-  margin-bottom: 0.4rem;
-}
 
 .receipt .identifiers dd {
   font-family: var(--mono);
@@ -905,7 +910,7 @@ dialog > div:last-child {
     padding: 0.5cm 0 0;
   }
 
-  .receipt h2::before {
+  h1[data-stage="receipt"]::before {
     color: var(--ink);
   }
 
