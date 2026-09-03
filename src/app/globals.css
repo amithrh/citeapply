@@ -660,3 +660,96 @@ dialog > div:last-child {
   margin: auto 0 0;
   width: 100%;
 }
+
+/* ---- Receipt delivery: one record, three presentations ------------------ */
+
+.receipt .identifiers dd code {
+  font-size: 0.78rem;
+}
+
+.receipt h3 {
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--ink);
+  margin: calc(var(--step) * 4) 0 calc(var(--step) * 1.5);
+}
+
+.delivery {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: calc(var(--step) * 1.5);
+  border-top: 1px solid #c2ddda;
+  margin-top: calc(var(--step) * 4);
+  padding-top: calc(var(--step) * 3);
+}
+
+.delivery button {
+  margin: 0;
+}
+
+.delivery a {
+  color: var(--seal);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.delivery [role="alert"] {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+/*
+ * Print is the receipt on paper: the page's controls, navigation and assisted
+ * machinery are not part of the record, so they are dropped, and the accepted
+ * answers and their sources are kept exactly as the screen shows them.
+ */
+@media print {
+  :root {
+    --paper: #fff;
+    --panel: #fff;
+    --seal-soft: #fff;
+  }
+
+  body {
+    background: #fff;
+    font-size: 11pt;
+  }
+
+  main {
+    max-width: none;
+    padding: 0;
+  }
+
+  [data-print="hide"] {
+    display: none !important;
+  }
+
+  .receipt {
+    border: none;
+    border-top: 2pt solid var(--ink);
+    border-radius: 0;
+    background: #fff;
+    padding: 0.5cm 0 0;
+  }
+
+  .receipt h2::before {
+    color: var(--ink);
+  }
+
+  .receipt dl > div,
+  .receipt dl {
+    border-color: #999;
+  }
+
+  .receipt dl > div {
+    break-inside: avoid;
+  }
+
+  a[href]::after {
+    content: "";
+  }
+}

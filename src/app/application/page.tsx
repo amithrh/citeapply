@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
@@ -54,6 +55,7 @@ type SourceExcerpt = Readonly<{
 }>;
 
 type ReceiptRecord = Readonly<{
+  schema?: string;
   receiptId: string;
   submittedAt: string;
   acceptedApplicationRevision: number;
@@ -90,6 +92,17 @@ function fieldLabel(field: string): string {
   const [first, ...rest] = words;
   if (first === undefined) return field;
   return [first.charAt(0).toUpperCase() + first.slice(1), ...rest].join(" ");
+}
+
+const INSTANT = new Intl.DateTimeFormat("en-IN", {
+  dateStyle: "long",
+  timeStyle: "short",
+});
+
+/** A submission time a person can read, from the instant that was stored. */
+function instantLabel(instant: string): string {
+  const parsed = new Date(instant);
+  return Number.isNaN(parsed.getTime()) ? instant : INSTANT.format(parsed);
 }
 
 const RUPEES = new Intl.NumberFormat("en-IN", {
@@ -151,6 +164,10 @@ export default function ApplicationPage() {
   >({});
   const [excerptsPending, setExcerptsPending] = useState(false);
   const [excerptsFailed, setExcerptsFailed] = useState(false);
+  const [deliveryBusy, setDeliveryBusy] = useState<"json" | "print" | null>(
+    null,
+  );
+  const [deliveryProblem, setDeliveryProblem] = useState<string | null>(null);
 
   const adoptSnapshot = useCallback((next: HumanSnapshotV1) => {
     authorityRef.current = {
@@ -381,6 +398,73 @@ export default function ApplicationPage() {
     }
   };
 
+  /**
+   * Screen, file, and print are three presentations of one stored record.
+   * Both delivery controls re-read `/api/receipt`, so the file a judge saves
+   * and the page they saved it from are the same accepted submission — the
+   * export modes write nothing and cannot alter what was accepted.
+   */
+  const loadDelivery = useCallback(
+    async (mode: "export_json" | "prepare_print"): Promise<unknown | null> => {
+      const result = (await postJson(
+        "/api/receipt",
+        { mode },
+        authorityRef.current.pageCapability,
+      )) as {
+        ok?: boolean;
+        data?: { delivery?: { receipt?: unknown } };
+        error?: { message?: string };
+      };
+      if (result.ok === true && result.data?.delivery?.receipt !== undefined) {
+        return result.data.delivery.receipt;
+      }
+      setDeliveryProblem(
+        result.error?.message ??
+          "CiteApply could not read this receipt. Try again in a moment.",
+      );
+      return null;
+    },
+    [],
+  );
+
+  const downloadReceiptJson = useCallback(
+    async (receiptId: string) => {
+      setDeliveryBusy("json");
+      setDeliveryProblem(null);
+      try {
+        const record = await loadDelivery("export_json");
+        if (record === null) return;
+        const url = URL.createObjectURL(
+          new Blob([`${JSON.stringify(record, null, 2)}\n`], {
+            type: "application/json",
+          }),
+        );
+        const anchorElement = document.createElement("a");
+        anchorElement.href = url;
+        anchorElement.download = `citeapply-receipt-${receiptId}.json`;
+        document.body.append(anchorElement);
+        anchorElement.click();
+        anchorElement.remove();
+        URL.revokeObjectURL(url);
+      } finally {
+        setDeliveryBusy(null);
+      }
+    },
+    [loadDelivery],
+  );
+
+  const printReceipt = useCallback(async () => {
+    setDeliveryBusy("print");
+    setDeliveryProblem(null);
+    try {
+      const record = await loadDelivery("prepare_print");
+      if (record === null) return;
+      window.print();
+    } finally {
+      setDeliveryBusy(null);
+    }
+  }, [loadDelivery]);
+
   const submitted =
     snapshot !== null && snapshot.stage === "submitted" ? snapshot : null;
 
@@ -494,7 +578,7 @@ export default function ApplicationPage() {
         {problem === null ? null : <p role="alert">{problem}</p>}
       </header>
 
-      <section aria-labelledby="assisted-activity-heading">
+      <section aria-labelledby="assisted-activity-heading" data-print="hide">
         <h2 id="assisted-activity-heading">Assisted activity</h2>
         {activity.length === 0 ? (
           <p>No assisted tool calls yet.</p>
@@ -524,16 +608,27 @@ export default function ApplicationPage() {
         <section className="receipt" aria-labelledby="receipt-heading">
           <h2 id="receipt-heading">Submitted</h2>
           <p>
-            Your synthetic application was accepted at {receipt.submittedAt}.
+            Horizon Education Aid accepted this synthetic application on{" "}
+            {instantLabel(receipt.submittedAt)}.
           </p>
-          <dl>
+          {receipt.acceptedReview.warnings.map((warning) => (
+            <p key={warning.code} role="note">
+              {warning.message}
+            </p>
+          ))}
+
+          <dl className="identifiers">
             <div>
               <dt>Receipt</dt>
-              <dd>{receipt.receiptId}</dd>
+              <dd>
+                <code>{receipt.receiptId}</code>
+              </dd>
             </div>
             <div>
-              <dt>Review</dt>
-              <dd>{receipt.acceptedReview.shortId}</dd>
+              <dt>Accepted review</dt>
+              <dd>
+                <code>{receipt.acceptedReview.shortId}</code>
+              </dd>
             </div>
             <div>
               <dt>Content hash</dt>
@@ -542,9 +637,50 @@ export default function ApplicationPage() {
               </dd>
             </div>
           </dl>
-          {receipt.acceptedReview.warnings.map((warning) => (
-            <p key={warning.code}>{warning.message}</p>
-          ))}
+
+          <h3>Accepted answers</h3>
+          <dl>
+            {receipt.acceptedReview.diffs.map((diff) => (
+              <div key={diff.field}>
+                <dt>{fieldLabel(diff.field)}</dt>
+                <dd>
+                  {"value" in diff.final
+                    ? displayValue(diff.field, diff.final.value)
+                    : ""}
+                  {diff.excerpts.length === 0 ? null : (
+                    <ul>
+                      {diff.excerpts.map((excerpt) => (
+                        <li key={excerpt.claimHandle}>
+                          {excerpt.title}: “{excerpt.excerpt}”
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </dd>
+              </div>
+            ))}
+          </dl>
+
+          <div className="delivery" data-print="hide">
+            {deliveryProblem === null ? null : (
+              <p role="alert">{deliveryProblem}</p>
+            )}
+            <button
+              type="button"
+              aria-busy={deliveryBusy === "json" || undefined}
+              onClick={() => void downloadReceiptJson(receipt.receiptId)}
+            >
+              {deliveryBusy === "json" ? "Preparing JSON…" : "Download JSON"}
+            </button>
+            <button
+              type="button"
+              aria-busy={deliveryBusy === "print" || undefined}
+              onClick={() => void printReceipt()}
+            >
+              {deliveryBusy === "print" ? "Preparing print…" : "Print"}
+            </button>
+            <Link href="/">Start a new synthetic demo</Link>
+          </div>
         </section>
       ) : review !== null ? (
         <section className="frozen" aria-labelledby="review-heading">
