@@ -20,9 +20,40 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
 
 `APP_ORIGIN` is not cosmetic. Same-origin enforcement compares the request URL,
 `Host`, `Origin`, and `Sec-Fetch-Site` against it, and the key derivation is
-salted with it. If it does not match the origin the browser actually used, every
-request is refused as `stale_page`, and changing it later invalidates all live
-sessions.
+salted with it. The comparison is **exact**: scheme and `host:port`, character
+for character (`src/server/security/origin.ts`). If it does not match the origin
+the browser actually used — or the host the server bound to — every request is
+refused with HTTP 403 `invalid_request`, and changing it later invalidates all
+live sessions. Each refusal writes one server-side line naming which of the four
+checks failed, with no values beyond the two hosts being compared.
+
+## Running the standalone build
+
+```bash
+npm run build
+cp -R .next/static .next/standalone/.next/static
+set -a; . ./.env.local; set +a          # the standalone server does not read .env.local
+HOSTNAME=localhost PORT=3100 node .next/standalone/server.js
+```
+
+Two things about that command line are load-bearing.
+
+**`HOSTNAME` must be the hostname in `APP_ORIGIN`.** Next's standalone server
+defaults `HOSTNAME` to `0.0.0.0`. `request.url` then reads
+`http://0.0.0.0:3100/…`, the exact same-origin check compares that host against
+the `APP_ORIGIN` host, and every request — including the first `GET /api/demo` —
+returns 403. In production, bind the host that matches the deployed
+`APP_ORIGIN`; behind a proxy that terminates TLS, that means the proxy must
+forward the public `Host` header unchanged.
+
+**`.next/standalone/server.js` does not read `.env.local`.** It `chdir`s into
+its own directory and has none of Next's dotenv loading, so the three variables
+must already be in its environment: source the file (`set -a; . ./.env.local;
+set +a`), pass `node --env-file=.env.local`, or set them in the platform's own
+environment configuration (which is what Vercel and Netlify do for you).
+
+`npm run dev` rewrites `.next/` and removes the standalone build; rebuild before
+starting the standalone server again.
 
 ## Migrations
 

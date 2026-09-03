@@ -260,17 +260,42 @@ Create `.env.local` with the three required variables:
 | `APP_ORIGIN` | the exact origin you serve from, e.g. `http://localhost:3100` |
 
 `APP_ORIGIN` is not cosmetic: same-origin enforcement and key derivation both
-use it, and a mismatch refuses every request as `stale_page`.
+use it. The same-origin check is **exact** — it compares the scheme and the
+`host:port` of the request URL, the `Host` header and the `Origin` header
+against `APP_ORIGIN`, character for character. A mismatch refuses every request,
+including the very first `GET /api/demo`, with HTTP 403 `invalid_request`, and
+the landing page can then only say “CiteApply could not prepare a synthetic
+start.”
 
-For iteration, `npm run dev -- -p 3100` works.
+For iteration, `npm run dev -- -p 3100` works. Note that `npm run dev` rewrites
+`.next/` and **removes the standalone build**; after a dev run you must
+`npm run build` again before `node .next/standalone/server.js` will start.
 
 ### Run the production build
 
 ```bash
 npm run build
 cp -R .next/static .next/standalone/.next/static
-PORT=3100 node .next/standalone/server.js
+set -a; . ./.env.local; set +a          # the standalone server does not read .env.local
+HOSTNAME=localhost PORT=3100 node .next/standalone/server.js
 ```
+
+`HOSTNAME=localhost` is required, not optional. Next's standalone server
+defaults `HOSTNAME` to `0.0.0.0`, so every `request.url` it builds reads
+`http://0.0.0.0:3100/…`; the exact same-origin check compares that host
+against the `APP_ORIGIN` host (`localhost:3100`), they differ, and **every** API
+request is refused with HTTP 403 `invalid_request` — a landing page that can
+never start a packet. The hostname you bind must be the hostname in
+`APP_ORIGIN`. (When it does refuse, the server logs one line naming the
+mismatch, so you are not left guessing.)
+
+The `set -a; . ./.env.local; set +a` line is also required.
+`.next/standalone/server.js` `chdir`s into its own directory and is a plain Node
+process — it has none of Next's dotenv loading, so it never reads the
+`.env.local` you created above and would start with `APP_ORIGIN`,
+`DATABASE_URL` and `CITEAPPLY_MASTER_KEY` all unset. Sourcing the file into the
+shell first (or `node --env-file=.env.local .next/standalone/server.js` on
+Node 24) puts them in the environment the server actually inherits.
 
 The `cp -R` line is required, not optional. `next build` with
 `output: "standalone"` emits a self-contained server tree under

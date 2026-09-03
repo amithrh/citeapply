@@ -18,6 +18,36 @@ export class RequestOriginError extends Error {
   }
 }
 
+/**
+ * The response body for an origin refusal is deliberately opaque: it discloses
+ * nothing about the configured origin to a caller that failed the check. That
+ * leaves an operator whose own server is misconfigured — the standalone server
+ * bound to `0.0.0.0` while `APP_ORIGIN` says `localhost`, say — with a demo
+ * that refuses everything and a completely silent log. This writes exactly one
+ * line per refusal naming which comparison failed, so that failure is
+ * self-diagnosing.
+ *
+ * Only host-shaped identifiers are ever printed, and only after
+ * `printableHost` has accepted them, so no request body, cookie, token,
+ * capability, field value or arbitrary caller-supplied string can reach the
+ * log through this path.
+ */
+const HOST_SHAPED = /^[A-Za-z0-9._:/[\]-]{1,255}$/;
+
+function printableHost(value: string | null): string {
+  if (value === null) return "<absent>";
+  if (!HOST_SHAPED.test(value)) return "<unprintable>";
+  return value;
+}
+
+function refuse(detail: string): never {
+  // The one place in the codebase that writes to the operator's log on
+  // purpose; see the comment above RequestOriginError for why.
+  // eslint-disable-next-line no-console
+  console.error(`origin check refused: ${detail}`);
+  throw new RequestOriginError();
+}
+
 function parseConfiguredOrigin(value: string | undefined): URL {
   if (value === undefined || value.length === 0 || value.length > 2_048) {
     throw new Error("APP_ORIGIN is required.");
@@ -72,24 +102,34 @@ function requireExactRequestUrl(
   try {
     url = new URL(requestUrl);
   } catch {
-    throw new RequestOriginError();
+    refuse("the request URL could not be parsed");
   }
 
-  if (url.protocol !== policy.protocol || url.host !== policy.host) {
-    throw new RequestOriginError();
+  if (url.protocol !== policy.protocol) {
+    refuse(
+      `request scheme ${url.protocol}// does not match APP_ORIGIN scheme ${policy.protocol}//`,
+    );
+  }
+  if (url.host !== policy.host) {
+    refuse(
+      `request host ${printableHost(url.host)} does not match APP_ORIGIN host ${policy.host}` +
+        ` (if this server bound 0.0.0.0, set HOSTNAME to the APP_ORIGIN hostname)`,
+    );
   }
 }
 
 function requireHost(headers: HeaderReader, policy: OriginPolicy): void {
   const host = headers.get("host");
   if (host === null || host !== policy.host || host.includes(",")) {
-    throw new RequestOriginError();
+    refuse(
+      `Host header ${printableHost(host)} does not match APP_ORIGIN host ${policy.host}`,
+    );
   }
 }
 
 function requireSameOriginFetch(headers: HeaderReader): void {
   if (headers.get("sec-fetch-site") !== "same-origin") {
-    throw new RequestOriginError();
+    refuse("the request did not carry Sec-Fetch-Site: same-origin");
   }
 }
 
@@ -109,8 +149,11 @@ export function requireSameOriginMutation(
   policy: OriginPolicy,
 ): void {
   requireSameOriginRead(requestUrl, headers, policy);
-  if (headers.get("origin") !== policy.origin) {
-    throw new RequestOriginError();
+  const origin = headers.get("origin");
+  if (origin !== policy.origin) {
+    refuse(
+      `Origin header ${printableHost(origin)} does not match APP_ORIGIN ${policy.origin}`,
+    );
   }
 }
 
