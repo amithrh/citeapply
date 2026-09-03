@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { ConsentDialog } from "../components/consent.tsx";
 
@@ -31,6 +31,14 @@ export type ApplicationControllerProps = Readonly<{
    * page from offering an action it no longer has the authority to take.
    */
   stale?: boolean;
+  /**
+   * Lets the page open this controller's own disclosure from somewhere else on
+   * the screen — the two-way choice at the top of the draft. It hands out no
+   * authority: the only thing exposed is the request to show the dialog, and
+   * allowing access still happens here, behind the same disclosure and the
+   * same button.
+   */
+  onReady?: (api: Readonly<{ openDisclosure: () => void }>) => void;
   children?: ReactNode;
 }>;
 
@@ -45,6 +53,7 @@ export function ApplicationController({
   consent,
   initialAssistance = "off",
   stale = false,
+  onReady,
   children,
 }: ApplicationControllerProps) {
   const [assistance, setAssistance] =
@@ -54,6 +63,14 @@ export function ApplicationController({
   const [status, setStatus] = useState(INITIAL_STATUS[initialAssistance]);
   const busyRef = useRef(false);
   const operationSequenceRef = useRef(0);
+
+  useEffect(() => {
+    onReady?.({
+      openDisclosure: () => {
+        if (!busyRef.current) setDisclosureOpen(true);
+      },
+    });
+  }, [onReady]);
 
   const handleAllow = async () => {
     if (busyRef.current || assistance === "unavailable") {

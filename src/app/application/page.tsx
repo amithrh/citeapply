@@ -11,6 +11,7 @@ import {
 } from "../../contracts/http.ts";
 import { ASSISTED_ACCESS_CATALOG } from "../../ui/components/consent.tsx";
 import { ApplicationController } from "../../ui/controllers/application.tsx";
+import { CoachStrip, FillChoice } from "../../ui/site/first-run.tsx";
 import { createCiteApplyBridge } from "../../webmcp/bridge.ts";
 import {
   createCiteApplyDispatch,
@@ -691,6 +692,14 @@ export default function ApplicationPage() {
 
   // Assisted access is reported by the server, never remembered by this page.
   // A superseded tab has none, whatever it was last told, so `stale` wins.
+  const openDisclosureRef = useRef<(() => void) | null>(null);
+  const handleControllerReady = useCallback(
+    (api: Readonly<{ openDisclosure: () => void }>) => {
+      openDisclosureRef.current = api.openDisclosure;
+    },
+    [],
+  );
+
   const assistance: "off" | "allowed" | "unavailable" = stale
     ? "off"
     : webmcpUnavailable
@@ -943,6 +952,13 @@ export default function ApplicationPage() {
           first view.
         </p>
       ) : (
+        <>
+        <CoachStrip assisted={assistance === "allowed"} />
+        <FillChoice
+          assisted={assistance === "allowed"}
+          stale={stale}
+          onAskForHelp={() => openDisclosureRef.current?.()}
+        />
         <div className="workspace">
           <div className="workspace-rail">
           <ApplicationController
@@ -950,6 +966,7 @@ export default function ApplicationPage() {
             key={assistance}
             initialAssistance={assistance}
             stale={stale}
+            onReady={handleControllerReady}
           >
             {activityPanel}
           </ApplicationController>
@@ -1230,6 +1247,7 @@ export default function ApplicationPage() {
           </section>
           </div>
         </div>
+        </>
       )}
 
       {stage === "draft" ? null : activityPanel}
