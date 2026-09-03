@@ -51,7 +51,34 @@ export function privateJsonResponse(
   );
 }
 
-const SUPPORT_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+/**
+ * A read-only file answer for the committed synthetic records. It carries the
+ * same privacy and sniffing protections as the JSON API, minus the two headers
+ * that would stop Chrome's own PDF viewer from rendering a same-origin document
+ * opened in a new tab.
+ */
+export function privateFileResponse(
+  bytes: Uint8Array,
+  init: Readonly<{ contentType: string; disposition: string }>,
+): Response {
+  const body = new Uint8Array(bytes);
+  return new Response(body, {
+    status: 200,
+    headers: {
+      "Cache-Control": PRIVATE_NO_STORE,
+      "Content-Type": init.contentType,
+      "Content-Disposition": init.disposition,
+      "Content-Length": String(body.byteLength),
+      "Cross-Origin-Resource-Policy": "same-origin",
+      "Origin-Agent-Cluster": "?1",
+      "Referrer-Policy": "no-referrer",
+      "X-Content-Type-Options": "nosniff",
+      "X-Frame-Options": "DENY",
+    },
+  });
+}
+
+const SUPPORT_ALPHABET ="0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 
 /** A fresh, value-free reference so two failures are never conflated. */
 export function supportReference(): string {
