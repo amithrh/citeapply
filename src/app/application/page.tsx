@@ -19,11 +19,27 @@ import {
   RecordShelf,
   type ByHandCounts,
 } from "../../ui/site/manual-entry.tsx";
+import {
+  runDemo,
+  type DemoStepReport,
+  type DemoSummary,
+  type DemoTally,
+} from "../../ui/demo/client.ts";
+import {
+  hostRegisteredTools,
+  invokeOver,
+  prefersReducedMotion,
+  WATCH_REQUEST_KEY,
+  type RegisteredTool,
+} from "../../ui/demo/runner.ts";
+import { HandoffPanel, NarrationStrip } from "../../ui/demo/watch.tsx";
 import { createCiteApplyBridge } from "../../webmcp/bridge.ts";
+import { materializeModelContextTools } from "../../webmcp/descriptors.ts";
 import {
   createCiteApplyDispatch,
   type AssistedActivityEntry,
 } from "../../webmcp/invoke.ts";
+import { BridgeInactiveFailureSchema } from "../../contracts/outcomes.ts";
 
 type Authority = Readonly<{
   pageCapability: string | null;
@@ -342,6 +358,30 @@ export default function ApplicationPage() {
     }));
   }, []);
 
+  /**
+   * The scripted demonstration client. `demoTools` holds the six tool objects
+   * the browser handed back (or, where there is no WebMCP host, the six the
+   * descriptor layer built) — the client is given nothing else, so there is
+   * nothing else it can call.
+   */
+  const demoToolsRef = useRef<readonly RegisteredTool[] | null>(null);
+  const demoThroughRef = useRef<"host" | "page">("page");
+  const demoAbortRef = useRef<AbortController | null>(null);
+  const demoSkipRef = useRef<(() => void) | null>(null);
+  const [watchRunning, setWatchRunning] = useState(false);
+  const [watchWanted, setWatchWanted] = useState(false);
+  const [watchStep, setWatchStep] = useState<DemoStepReport | null>(null);
+  const [watchTally, setWatchTally] = useState<DemoTally>({
+    toolCalls: 0,
+    answersCited: 0,
+    refusals: 0,
+  });
+  const [watchSummary, setWatchSummary] = useState<DemoSummary | null>(null);
+  const [watchHighlight, setWatchHighlight] = useState<readonly string[]>([]);
+  const [watchProblem, setWatchProblem] = useState<string | null>(null);
+  /** True once the client has its six tool objects, by either route. */
+  const [demoReady, setDemoReady] = useState(false);
+
   const noteOutcome = useCallback((code: unknown) => {
     if (code === "stale_page") setStale(true);
   }, []);
@@ -460,21 +500,20 @@ export default function ApplicationPage() {
       adoptSnapshot(takeover.data.snapshot);
       setEstablished(true);
 
-      const bridge = createCiteApplyBridge(
-        createCiteApplyDispatch(
-          () => ({
-            pageCapability: authorityRef.current.pageCapability,
-            consentCapability: authorityRef.current.consentCapability,
-            localDirty: false,
-          }),
-          fetch,
-          {
-            onActivity: recordActivity,
-            onMutationProjection: adoptProjection,
-            onMutationUnprojected: () => void reconcile(),
-          },
-        ),
+      const dispatch = createCiteApplyDispatch(
+        () => ({
+          pageCapability: authorityRef.current.pageCapability,
+          consentCapability: authorityRef.current.consentCapability,
+          localDirty: false,
+        }),
+        fetch,
+        {
+          onActivity: recordActivity,
+          onMutationProjection: adoptProjection,
+          onMutationUnprojected: () => void reconcile(),
+        },
       );
+      const bridge = createCiteApplyBridge(dispatch);
       const registered = await bridge.registerOnce();
       if (cancelled) return;
       if (registered.registered) {
@@ -485,6 +524,40 @@ export default function ApplicationPage() {
         setBridgeStatus("WebMCP is unavailable in this browser");
         setWebmcpUnavailable(true);
       }
+
+      /*
+       * The scripted demonstration client gets its tools here and nowhere
+       * else. With a WebMCP host present it receives exactly what that host
+       * hands any client — the objects `getTools()` returns — and calls them
+       * through `executeTool`. Without a host there is nothing to route
+       * through, so the page materializes the same descriptors the bridge
+       * would have registered, over this same dispatcher: same endpoint, same
+       * injected headers, same closed input schemas, same server validation.
+       * Either way the client holds six tool objects and no other reach into
+       * this application.
+       */
+      const hosted = await hostRegisteredTools();
+      if (cancelled) return;
+      if (hosted !== null && hosted.length > 0) {
+        demoToolsRef.current = hosted;
+        demoThroughRef.current = "host";
+      } else {
+        demoToolsRef.current = materializeModelContextTools(dispatch, {
+          captureInvocation: () => ({ generation: 0 }),
+          isInvocationCurrent: () => true,
+          inactiveResult: () =>
+            BridgeInactiveFailureSchema.parse({
+              ok: false,
+              error: {
+                code: "assistance_unavailable",
+                message: "Assisted access is not active on this page.",
+                safeActions: ["use_visible_application"],
+              },
+            }),
+        }) as readonly RegisteredTool[];
+        demoThroughRef.current = "page";
+      }
+      setDemoReady(true);
     };
 
     void establish();
@@ -529,6 +602,81 @@ export default function ApplicationPage() {
     },
     [adoptSnapshot, noteOutcome],
   );
+
+  /**
+   * Holds each step on screen long enough to read, and lets the watcher cut
+   * the wait short. A reader who has asked for reduced motion gets no pause at
+   * all — the same nine steps, the same nine sentences, arriving at once.
+   */
+  const waitFor = useCallback(
+    (milliseconds: number) =>
+      new Promise<void>((resolve) => {
+        if (milliseconds <= 0) {
+          resolve();
+          return;
+        }
+        const finish = () => {
+          clearTimeout(timer);
+          demoSkipRef.current = null;
+          resolve();
+        };
+        const timer = setTimeout(finish, milliseconds);
+        demoSkipRef.current = finish;
+      }),
+    [],
+  );
+
+  const runWatch = useCallback(async () => {
+    const tools = demoToolsRef.current;
+    if (tools === null || tools.length === 0) {
+      setWatchProblem(
+        "This page has not finished registering its tools. Try again in a moment.",
+      );
+      return;
+    }
+
+    demoAbortRef.current?.abort();
+    const controller = new AbortController();
+    demoAbortRef.current = controller;
+    setWatchProblem(null);
+    setWatchSummary(null);
+    setWatchStep(null);
+    setWatchTally({ toolCalls: 0, answersCited: 0, refusals: 0 });
+    setWatchHighlight([]);
+    setWatchRunning(true);
+
+    try {
+      await runDemo({
+        invoke: invokeOver(tools, demoThroughRef.current),
+        observer: {
+          onStep: setWatchStep,
+          onTally: setWatchTally,
+          onHighlight: setWatchHighlight,
+          onFinished: setWatchSummary,
+        },
+        pause: prefersReducedMotion() ? 0 : 3200,
+        waitFor,
+        signal: controller.signal,
+        newRequestId: () => crypto.randomUUID(),
+      });
+    } catch (error) {
+      if (!controller.signal.aborted) {
+        setWatchProblem(
+          "The demonstration stopped early. Everything the server already accepted is still saved.",
+        );
+      }
+      void error;
+    } finally {
+      if (demoAbortRef.current === controller) demoAbortRef.current = null;
+      setWatchRunning(false);
+    }
+  }, [waitFor]);
+
+  const stopWatch = useCallback(() => {
+    demoAbortRef.current?.abort();
+    demoSkipRef.current?.();
+    setWatchRunning(false);
+  }, []);
 
   const consentPort = {
     allowAssistedAccess: async () => {
@@ -753,11 +901,63 @@ export default function ApplicationPage() {
     [],
   );
 
+  /*
+   * Two different facts used to be reported as one. Whether this browser
+   * exposes WebMCP is a fact about the browser, and the status line above says
+   * it plainly. Whether assisted access is allowed is a fact about the session
+   * on the server, and it is grantable here whatever the browser can do —
+   * because a client running inside this page reaches the same six tools
+   * through the same descriptors, the same dispatcher and the same server
+   * checks. Only a page that has no tool set at all is genuinely unavailable.
+   */
   const assistance: "off" | "allowed" | "unavailable" = stale
     ? "off"
-    : webmcpUnavailable
+    : webmcpUnavailable && !demoReady
       ? "unavailable"
       : assistanceOf(snapshot);
+
+  /**
+   * Watching the assistant work is not a way around the disclosure. If access
+   * is off, this opens the very same dialog the rail opens and stops there —
+   * the run begins only once a person has pressed Allow assisted access, and
+   * `watchWanted` is the only thing that survives the wait.
+   */
+  const startWatch = useCallback(() => {
+    if (watchRunning) return;
+    if (assistance === "allowed") {
+      void runWatch();
+      return;
+    }
+    if (assistance === "unavailable" || stale) return;
+    setWatchWanted(true);
+    openDisclosureRef.current?.();
+  }, [assistance, runWatch, stale, watchRunning]);
+
+  useEffect(() => {
+    if (!watchWanted || assistance !== "allowed" || watchRunning) return;
+    setWatchWanted(false);
+    void runWatch();
+  }, [assistance, runWatch, watchRunning, watchWanted]);
+
+  /**
+   * The landing page's "Watch an assistant fill it in" starts a record set and
+   * asks for the run. The request is a page preference, not authority: it can
+   * only reach the disclosure, and the human still has to allow access.
+   */
+  const landingHandoffRef = useRef(false);
+  useEffect(() => {
+    if (!established || landingHandoffRef.current) return;
+    landingHandoffRef.current = true;
+    let asked = false;
+    try {
+      asked = window.sessionStorage.getItem(WATCH_REQUEST_KEY) === "yes";
+      window.sessionStorage.removeItem(WATCH_REQUEST_KEY);
+    } catch {
+      asked = false;
+    }
+    if (asked) startWatch();
+  }, [established, startWatch]);
+
   /**
    * The applicant moves through three stages on one URL, and until now the
    * page's own heading and tab title said "Application" at every one of them —
@@ -798,6 +998,59 @@ export default function ApplicationPage() {
    * where there is no Assisted access section — it stays at the foot of the
    * page, so the transcript still survives the whole journey.
    */
+  /**
+   * What this application actually is, in its own numbers: how many records it
+   * was opened from, how many answers it currently requires, and which of the
+   * things it still needs are acts no tool on this page can perform. All three
+   * are read off the live draft, so the comparison panel later has nothing
+   * constant in it.
+   */
+  const sessionShape =
+    draft === null
+      ? null
+      : {
+          records: draft.documents.length,
+          requiredAnswers: draft.progress.total,
+          decisions: [
+            ...(draft.fields[7].status === "conflict"
+              ? [
+                  "Read both income records and choose the one you stand behind.",
+                ]
+              : []),
+            "Declare that the contact address is yours.",
+            "Confirm and submit the review.",
+          ],
+        };
+
+  const watchPanel = (
+    <section
+      className="watch-invite"
+      aria-labelledby="watch-invite-heading"
+      data-print="hide"
+    >
+      <h2 id="watch-invite-heading">Watch an assistant</h2>
+      <p>
+        A scripted client on this page will call the same six tools an agent in
+        your browser would, against the same server. You allow access first, and
+        the decisions stay yours.
+      </p>
+      <button
+        type="button"
+        className="primary"
+        disabled={stale || !demoReady || watchRunning || watchSummary !== null}
+        aria-busy={watchRunning || undefined}
+        onClick={startWatch}
+      >
+        {watchRunning
+          ? "Running…"
+          : watchSummary === null
+            ? "Watch an assistant fill this in"
+            : "It has finished — the rest is yours"}
+      </button>
+      {watchProblem === null ? null : <p role="alert">{watchProblem}</p>}
+    </section>
+  );
+
   const activityPanel = (
     <section
       className="activity-panel"
@@ -1013,6 +1266,22 @@ export default function ApplicationPage() {
             stale={stale}
             onAskForHelp={() => openDisclosureRef.current?.()}
           />
+          {watchStep === null && watchSummary === null ? null : (
+            <NarrationStrip
+              step={watchStep}
+              tally={watchTally}
+              finished={!watchRunning}
+              onSkip={() => demoSkipRef.current?.()}
+              onStop={stopWatch}
+            />
+          )}
+          {watchSummary === null || sessionShape === null ? null : (
+            <HandoffPanel
+              summary={watchSummary}
+              shape={sessionShape}
+              byHand={byHand}
+            />
+          )}
           <div className="workspace">
             <div className="workspace-rail">
               <ApplicationController
@@ -1022,6 +1291,7 @@ export default function ApplicationPage() {
                 stale={stale}
                 onReady={handleControllerReady}
               >
+                {watchPanel}
                 {activityPanel}
               </ApplicationController>
 
@@ -1109,7 +1379,12 @@ export default function ApplicationPage() {
                 />
                 <dl>
                   {draft.fields.map((field) => (
-                    <div key={field.field}>
+                    <div
+                      key={field.field}
+                      data-watched={
+                        watchHighlight.includes(field.field) || undefined
+                      }
+                    >
                       <dt>{fieldLabel(field.field)}</dt>
                       <dd>
                         {field.status === "ready"

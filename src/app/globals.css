@@ -1064,6 +1064,351 @@ dialog > div:last-child {
   font-weight: 400;
 }
 
+/* ---- Watching an assistant work ---------------------------------------- */
+
+/*
+ * The rail's invitation. It is the only teal-filled control in the rail,
+ * because it is the only thing there that starts something.
+ */
+.watch-invite p {
+  font-size: 0.84rem;
+  margin: 0 0 calc(var(--step) * 1.5);
+}
+
+.watch-invite button {
+  width: 100%;
+}
+
+/*
+ * The narration strip. It is the dark board the masthead and the footer are
+ * made of, brought into the page for as long as the run lasts — so a watcher
+ * knows at a glance that something other than the form is speaking, and the
+ * form beneath it is left entirely alone.
+ */
+.watch-strip {
+  position: sticky;
+  top: calc(var(--step) * 1.5);
+  z-index: 3;
+  background: var(--band);
+  color: var(--band-ink);
+  border: 1px solid var(--band);
+  border-radius: 4px;
+  padding: calc(var(--step) * 3) calc(var(--step) * 3.5);
+  margin: 0 0 calc(var(--step) * 3);
+  box-shadow: 0 14px 34px -24px rgb(10 47 51 / 0.6);
+}
+
+/* Once it has stopped, the strip stops behaving like a live thing: it lets go
+   of the top of the screen and hands the page to the panel below it. */
+.watch-strip[data-finished] {
+  position: static;
+  box-shadow: none;
+}
+
+.watch-strip-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--step);
+  margin-bottom: calc(var(--step) * 1.5);
+}
+
+.watch-strip h2 {
+  font-family: var(--serif);
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: #fff;
+  margin: 0;
+}
+
+.watch-progress {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--band-ink);
+  opacity: 0.75;
+  margin: 0;
+}
+
+/* One sentence at a time, set large enough to read from across a room. */
+.watch-narration {
+  font-family: var(--serif);
+  font-size: 1.16rem;
+  line-height: 1.45;
+  color: #fff;
+  max-width: 46rem;
+  margin: 0 0 calc(var(--step) * 2);
+  min-height: 3.4rem;
+}
+
+.watch-call {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: calc(var(--step) * 1.5);
+  margin: 0 0 calc(var(--step) * 2);
+  min-height: 1.7rem;
+}
+
+.watch-call code {
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  color: var(--band-ink);
+  background: rgb(255 255 255 / 0.07);
+  border-radius: 3px;
+  padding: 0.15rem 0.5rem;
+}
+
+/* An acceptance and a refusal are the same kind of fact, so they are the same
+   kind of badge; only the colour says which happened. */
+.watch-badge {
+  font-family: var(--sans);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  border-radius: 2px;
+  padding: 0.2rem 0.55rem;
+  background: rgb(255 255 255 / 0.12);
+  color: var(--band-ink);
+}
+
+.watch-badge[data-outcome="ok"] {
+  background: #d7ece9;
+  color: #0a4442;
+}
+
+.watch-badge[data-outcome="conflict_requires_human"],
+.watch-badge[data-outcome="not_ready_for_review"] {
+  background: #f6d9ad;
+  color: #5f3203;
+}
+
+.watch-counter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--step) * 3);
+  font-size: 0.85rem;
+  color: var(--band-ink);
+  margin: 0 0 calc(var(--step) * 2);
+  padding-top: calc(var(--step) * 2);
+  border-top: 1px solid rgb(255 255 255 / 0.13);
+}
+
+.watch-counter b {
+  font-family: var(--mono);
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #fff;
+  margin-right: 0.35rem;
+}
+
+.watch-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--step);
+  margin-bottom: calc(var(--step) * 2);
+}
+
+.watch-controls button {
+  background: transparent;
+  border-color: rgb(255 255 255 / 0.35);
+  color: #fff;
+}
+
+.watch-controls button:hover {
+  background: rgb(255 255 255 / 0.12);
+  color: #fff;
+}
+
+/* Always on screen while the client runs, and again on the panel it leaves. */
+.watch-honesty {
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--band-ink);
+  opacity: 0.82;
+  max-width: 44rem;
+  margin: 0;
+}
+
+.handoff .watch-honesty {
+  color: var(--quiet);
+  opacity: 1;
+  border-top: 1px solid var(--rule);
+  padding-top: calc(var(--step) * 2);
+  margin-top: calc(var(--step) * 3);
+}
+
+/* The row the last call touched. Under reduced motion it simply is marked;
+   nothing moves and nothing fades. */
+.workspace-main dl > div[data-watched] {
+  border-left-color: var(--seal);
+  background: rgb(15 110 107 / 0.08);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .workspace-main dl > div[data-watched] {
+    animation: watched-row 900ms ease-out;
+  }
+
+  @keyframes watched-row {
+    from {
+      background: rgb(15 110 107 / 0.22);
+    }
+  }
+}
+
+/* ---- The hand-off, and the two columns ---------------------------------- */
+
+.handoff {
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-top: 3px solid var(--seal);
+  border-radius: 4px;
+  padding: calc(var(--step) * 4);
+  margin: 0 0 calc(var(--step) * 3);
+}
+
+.handoff h2 {
+  font-family: var(--serif);
+  font-size: 1.6rem;
+  font-weight: 500;
+  margin: 0 0 var(--step);
+}
+
+.handoff-lead {
+  font-size: 1rem;
+  max-width: 44rem;
+  margin: 0 0 calc(var(--step) * 2);
+}
+
+.handoff-left {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 calc(var(--step) * 2);
+}
+
+.handoff-left li {
+  border-left: 3px solid var(--decide);
+  padding-left: calc(var(--step) * 1.75);
+  margin-bottom: calc(var(--step) * 1.25);
+  color: var(--decide);
+  font-size: 0.95rem;
+}
+
+.handoff-refused {
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--quiet);
+  max-width: 44rem;
+  margin: 0 0 calc(var(--step) * 4);
+}
+
+.handoff h3 {
+  font-family: var(--serif);
+  font-size: 1.3rem;
+  font-weight: 500;
+  margin: 0 0 var(--step);
+}
+
+.handoff-shape {
+  font-size: 0.95rem;
+  color: var(--quiet);
+  max-width: 44rem;
+  margin: 0 0 calc(var(--step) * 2.5);
+}
+
+/* Two count sheets side by side. Neither column is the winner: the left one is
+   what a person did, the right one is what a client did, and the decisions
+   listed underneath belong to the left column whichever way the form is
+   filled. */
+.difference {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: calc(var(--step) * 3);
+  margin-bottom: calc(var(--step) * 3);
+}
+
+.difference-column {
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: calc(var(--step) * 2.5);
+}
+
+.difference-column[data-side="assisted"] {
+  border-color: var(--seal);
+  background: var(--seal-soft);
+}
+
+.difference-column h4 {
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--quiet);
+  margin: 0 0 calc(var(--step) * 1.5);
+}
+
+.difference-column dl {
+  display: block;
+  margin: 0;
+}
+
+.difference-column dl > div {
+  display: flex;
+  align-items: baseline;
+  gap: calc(var(--step) * 0.75);
+  padding: 0.35rem 0;
+  border: none;
+}
+
+.difference-column dt {
+  font-size: 0.88rem;
+  font-weight: 400;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.difference-column dl > div::after {
+  content: "";
+  order: 1;
+  flex: 1 1 auto;
+  min-width: calc(var(--step) * 2);
+  border-bottom: 1px dotted var(--rule);
+  transform: translateY(-0.25rem);
+}
+
+.difference-column dd {
+  order: 2;
+  font-family: var(--mono);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0;
+}
+
+.difference-empty {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--quiet);
+  margin: 0 0 calc(var(--step) * 1.5);
+}
+
+.difference-decisions {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.difference-decisions li {
+  border-left: 3px solid var(--decide);
+  padding-left: calc(var(--step) * 1.75);
+  margin-bottom: calc(var(--step) * 1.25);
+  font-size: 0.92rem;
+  color: var(--decide);
+}
+
 /* ---- Receipt delivery: one record, three presentations ------------------ */
 
 .receipt .identifiers dd code {
