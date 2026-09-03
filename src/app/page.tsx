@@ -1,10 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 import type { PacketCode } from "../contracts/common.ts";
-import { HeroFigure } from "../ui/site/hero-figure.tsx";
+import { CopyButton } from "../ui/site/copy-button.tsx";
+import {
+  AtomicMark,
+  CommitmentFigure,
+  EvidenceFigure,
+  NoSubmitMark,
+  RequirementsFigure,
+  SameHashMark,
+  ToolsMark,
+} from "../ui/site/figures.tsx";
+import { HeroScene } from "../ui/site/hero-scene.tsx";
+import { LandingMotion } from "../ui/site/motion.tsx";
 
 type FailureBody = Readonly<{
   ok?: boolean;
@@ -64,6 +75,48 @@ async function startSyntheticDemo(packet: PacketCode): Promise<string | null> {
 }
 
 /**
+ * Four facts about this build, each one checkable in the repository rather
+ * than asserted here: the tool count the surface manifest freezes, the number
+ * of paths by which an agent can submit, the number of calls a whole batch of
+ * bound answers takes, and the fact that the manual and assisted walks end on
+ * the same frozen content hash. No adoption figure, no benchmark, no logo.
+ */
+const PROOF = [
+  {
+    figure: "6",
+    label: "WebMCP tools registered",
+    detail:
+      "Declared on document.modelContext when the application page loads. Four read; two can move the draft.",
+    mark: <ToolsMark />,
+    tone: "seal",
+  },
+  {
+    figure: "0",
+    label: "ways an agent can submit",
+    detail:
+      "No tool submits, confirms, resolves a conflict or loads a receipt. The server refuses those calls; it does not merely omit them.",
+    mark: <NoSubmitMark />,
+    tone: "decide",
+  },
+  {
+    figure: "1",
+    label: "call to bind a whole batch",
+    detail:
+      "apply_evidence_backed_answers is atomic and version-checked. Every entry validates, or nothing changes.",
+    mark: <AtomicMark />,
+    tone: "seal",
+  },
+  {
+    figure: "=",
+    label: "same review, either way",
+    detail:
+      "By hand or assisted, the walk ends on the same frozen review and the same content hash on the receipt.",
+    mark: <SameHashMark />,
+    tone: "ink",
+  },
+] as const;
+
+/**
  * The six tools the page registers on `document.modelContext`, with the two
  * hints that matter to anyone deciding how far to trust one: whether it can
  * change the saved application, and whether what it returns came out of an
@@ -93,18 +146,18 @@ const TOOLS = [
       "Lists the claims parsed from this packet's records as opaque handles. No raw PDF, no storage path, no full excerpt.",
   },
   {
-    name: "apply_evidence_backed_answers",
-    writes: true,
-    untrusted: true,
-    summary:
-      "Links handles to answers in one atomic, version-checked call. Every entry validates or nothing changes.",
-  },
-  {
     name: "get_validation_issues",
     writes: false,
     untrusted: false,
     summary:
       "Reads what is currently blocking review, in order. It changes nothing.",
+  },
+  {
+    name: "apply_evidence_backed_answers",
+    writes: true,
+    untrusted: true,
+    summary:
+      "Links handles to answers in one atomic, version-checked call. Every entry validates or nothing changes.",
   },
   {
     name: "prepare_submission_review",
@@ -114,6 +167,79 @@ const TOOLS = [
       "Freezes a ready draft into a review for you to inspect, then closes assisted access. It returns readiness, not the review.",
   },
 ] as const;
+
+const READ_TOOLS = TOOLS.filter((tool) => !tool.writes);
+const WRITE_TOOLS = TOOLS.filter((tool) => tool.writes);
+
+/** The two facing walks, beat for beat, with the beats only you can take. */
+const MANUAL_BEATS = [
+  { text: "Open each of the three records and read them.", human: false },
+  {
+    text: "Find the sentence that answers a question, then link that record to the answer.",
+    human: false,
+  },
+  {
+    text: "Notice when answering one question makes two more apply, and go back for those.",
+    human: false,
+  },
+  { text: "Type and save your email, then declare it is yours.", human: true },
+  {
+    text: "Read both income records, choose a reason, and stand behind one of them.",
+    human: true,
+  },
+  { text: "Prepare the review, read it, and submit.", human: true },
+] as const;
+
+const ASSISTED_BEATS = [
+  {
+    text: "It reads the active requirements and the evidence index through the page's own tools.",
+    human: false,
+  },
+  {
+    text: "It binds every supported answer in one atomic call — all of them or none, checked against the version it read.",
+    human: false,
+  },
+  {
+    text: "Two questions become required; it re-reads and binds those too.",
+    human: false,
+  },
+  {
+    text: "It can propose the synthetic email, but the field still reads “not yet declared” until you say so.",
+    human: true,
+  },
+  {
+    text: "It asks for the income answer and is refused. Nothing is written.",
+    human: true,
+  },
+  {
+    text: "It prepares the review, then loses access. You read it and you submit.",
+    human: true,
+  },
+] as const;
+
+/**
+ * The three things to say to an assistant, in order. These strings are the
+ * product's own instructions and are copied to the clipboard verbatim; they
+ * are not reworded for the page.
+ */
+const PROMPTS = [
+  "Read this application's requirements and evidence index, then fill in every answer you can support from the records.",
+  "More questions just appeared. Re-read the active requirements and bind those too.",
+  "Now prepare the submission review.",
+] as const;
+
+const CHROME_FLAG = "chrome://flags/#enable-webmcp-testing";
+const CHROME_SWITCH = "--enable-features=WebMCPTesting";
+
+/** The refusal, exactly as the server sends it. */
+const REFUSAL_PAYLOAD = `{
+  "ok": false,
+  "error": {
+    "code": "conflict_requires_human",
+    "message": "Income sources disagree. Resolve this in CiteApply.",
+    "safeActions": ["resolve_in_visible_application"]
+  }
+}`;
 
 const FAQ = [
   {
@@ -127,11 +253,40 @@ const FAQ = [
       "Choose a packet, declare your email address, resolve a disagreement between two records, return from a review, confirm or submit the application, or load, print or export a receipt. The server refuses those calls; it is not a matter of the tool descriptions asking nicely.",
   },
   {
+    question: "What if I bring no assistant at all?",
+    answer:
+      "Then you have the whole product. Every control is on the page with or without assisted access, and nothing is hidden while it is off. In a browser without WebMCP the application page says so plainly and stays completely usable.",
+  },
+  {
     question: "What is stored, and for how long?",
     answer:
       "Your answers, which record each one cites, and the review and receipt you produce — all against a session cookie that lasts 60 minutes. Because the packets are synthetic, none of it is anyone's real data, and there is nothing here worth keeping.",
   },
 ] as const;
+
+/** A titled band with its own reading column. */
+function Band({
+  id,
+  className,
+  labelledBy,
+  children,
+}: Readonly<{
+  id?: string;
+  className: string;
+  labelledBy: string;
+  children: ReactNode;
+}>) {
+  return (
+    <section
+      id={id}
+      className={className}
+      aria-labelledby={labelledBy}
+      data-reveal=""
+    >
+      <div className="wrap">{children}</div>
+    </section>
+  );
+}
 
 export default function LandingPage() {
   const [busy, setBusy] = useState<PacketCode | null>(null);
@@ -158,80 +313,121 @@ export default function LandingPage() {
 
   return (
     <main className="landing">
-      <header className="hero" id="apply">
-        <div className="hero-text">
-          <p className="hero-cycle">
-            Applications for the 2026–27 cycle are open until 30 June 2026.
-          </p>
-          <h1>The agent cites. You decide.</h1>
-          <p className="stamp">Fictional demo · Synthetic data only</p>
-          <p className="hero-lead">
-            CiteApply is a scholarship application an assistant can help you fill
-            in, but only from three source records and only up to the point where
-            judgment starts. The page registers six WebMCP tools on itself, so an
-            agent in your browser works against the portal&apos;s own rules,
-            version checks and refusals instead of guessing at the form. It can
-            read requirements, cite evidence and bind answers; it can never
-            resolve a conflict between sources, declare your email, or submit —
-            those stay in the visible interface, with you.
-          </p>
-        </div>
-        <HeroFigure />
+      <LandingMotion />
 
-        <div className="apply" aria-labelledby="demo-paths-heading" role="group">
-        <h2 id="demo-paths-heading">Start a synthetic application</h2>
-        <p className="section-lead">
-          Both packets carry the same eight questions and the same three
-          records. They differ in one thing: whether the records agree.
-        </p>
-        {error === null ? null : (
-          <div role="alert">
-            <p>{error}</p>
-            {lastPacket === null ? null : (
-              <button type="button" onClick={() => start(lastPacket)}>
-                Try again
-              </button>
-            )}
+      {/* ---- Hero ------------------------------------------------------ */}
+      <section className="hero" aria-labelledby="hero-heading">
+        <div className="hero-ground" aria-hidden="true">
+          <span className="glow glow-seal" />
+          <span className="glow glow-decide" />
+        </div>
+        <div className="wrap hero-grid">
+          <div className="hero-text">
+            <p className="hero-cycle">
+              <span className="pip" aria-hidden="true" />
+              Applications for the 2026–27 cycle are open until 30 June 2026
+            </p>
+            <h1 id="hero-heading">
+              The agent cites.
+              <br />
+              You decide.
+            </h1>
+            <p className="hero-lead">
+              CiteApply is a scholarship application an assistant can help you
+              fill in — but only from three source records, and only up to the
+              point where judgment starts. The page registers six WebMCP tools
+              on itself, so an agent in your browser works against the
+              portal&apos;s own rules, version checks and refusals instead of
+              guessing at the form.
+            </p>
+
+            <div
+              className="hero-cta"
+              id="apply"
+              role="group"
+              aria-labelledby="apply-heading"
+            >
+              <h2 id="apply-heading">Start a synthetic application</h2>
+              <p className="cta-lead">
+                Both packets carry the same eight questions and the same three
+                records. They differ in one thing: whether the records agree.
+              </p>
+              {error === null ? null : (
+                <div className="cta-error" role="alert">
+                  <p>{error}</p>
+                  {lastPacket === null ? null : (
+                    <button type="button" onClick={() => start(lastPacket)}>
+                      Try again
+                    </button>
+                  )}
+                </div>
+              )}
+              <div className="cta-row">
+                <button
+                  type="button"
+                  className="cta cta-decide"
+                  aria-busy={busy === "conflict" || undefined}
+                  onClick={() => start("conflict")}
+                >
+                  {busy === "conflict" ? "Starting…" : "Start conflict packet"}
+                </button>
+                <button
+                  type="button"
+                  className="cta cta-seal"
+                  aria-busy={busy === "supported" || undefined}
+                  onClick={() => start("supported")}
+                >
+                  {busy === "supported"
+                    ? "Starting…"
+                    : "Start supported packet"}
+                </button>
+              </div>
+              <p className="cta-note">
+                The conflict packet is the interesting one: two accepted records
+                disagree about income, the portal refuses to choose, and so does
+                the agent. The supported packet is the same application with
+                records that agree.
+              </p>
+              <p className="cta-secondary">
+                <Link href="/agents">See how agents help</Link>
+              </p>
+            </div>
+
+            <p className="stamp">Fictional demo · Synthetic data only</p>
           </div>
-        )}
-        <div className="packets">
-          <article>
-            <h3>Supported packet</h3>
-            <p>
-              All three records agree, so every answer can be linked to a source
-              and corroborated.
-            </p>
-            <button
-              type="button"
-              aria-busy={busy === "supported" || undefined}
-              onClick={() => start("supported")}
-            >
-              {busy === "supported" ? "Starting…" : "Start supported packet"}
-            </button>
-          </article>
-          <article className="interesting">
-            <h3>Conflict packet</h3>
-            <p>
-              Two accepted records disagree about income. This is the
-              interesting one: the portal refuses to choose, and so does the
-              agent.
-            </p>
-            <button
-              type="button"
-              aria-busy={busy === "conflict" || undefined}
-              onClick={() => start("conflict")}
-            >
-              {busy === "conflict" ? "Starting…" : "Start conflict packet"}
-            </button>
-          </article>
-        </div>
-        <p className="apply-secondary">
-          <Link href="/agents">See how agents help</Link>
-        </p>
-        </div>
-      </header>
 
-      <section id="scholarship" aria-labelledby="scholarship-heading">
+          <div className="hero-art">
+            <HeroScene />
+          </div>
+        </div>
+      </section>
+
+      {/* ---- Proof strip ----------------------------------------------- */}
+      <section className="proof" aria-labelledby="proof-heading" data-reveal="">
+        <div className="wrap">
+          <h2 id="proof-heading">What this build actually guarantees</h2>
+          <ul className="proof-tiles">
+            {PROOF.map((item) => (
+              <li key={item.label} data-tone={item.tone}>
+                <span className="proof-mark" aria-hidden="true">
+                  {item.mark}
+                </span>
+                <p className="proof-figure">
+                  <strong>{item.figure}</strong> {item.label}
+                </p>
+                <p className="proof-detail">{item.detail}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      {/* ---- The program ----------------------------------------------- */}
+      <Band
+        id="scholarship"
+        className="section facts-band"
+        labelledBy="scholarship-heading"
+      >
         <h2 id="scholarship-heading">What the scholarship is</h2>
         <p className="section-lead">
           Horizon Education Aid is a need-based award for students already
@@ -270,9 +466,178 @@ export default function LandingPage() {
             </dd>
           </div>
         </dl>
-      </section>
+      </Band>
 
-      <section id="how-it-works" aria-labelledby="how-heading">
+      {/* ---- Features -------------------------------------------------- */}
+      <div className="features">
+        <Band className="section feature" labelledBy="evidence-heading">
+          <div className="feature-grid">
+            <div className="feature-text">
+              <p className="feature-kicker">Evidence, not guesses</p>
+              <h2 id="evidence-heading">Every answer names its source</h2>
+              <p>
+                An answer here is a link to a record, not a string an assistant
+                thought was plausible. The application shows what the answer is,
+                which document it came from, and the sentence in that document
+                it rests on — and the tools hand out opaque claim handles rather
+                than raw PDFs or storage paths.
+              </p>
+              <p>
+                Where a second record says the same thing, the answer is marked
+                corroborated. Where nothing supports it, the answer is not
+                written at all.
+              </p>
+            </div>
+            <div className="feature-art">
+              <EvidenceFigure />
+            </div>
+          </div>
+        </Band>
+
+        <Band className="section feature feature-dark" labelledBy="refusal-heading">
+          <div className="feature-grid">
+            <div className="feature-text">
+              <p className="feature-kicker">The refusal</p>
+              <h2 id="refusal-heading">
+                The most important thing this agent does is stop
+              </h2>
+              <p>
+                When two accepted records disagree about income, the write is
+                refused. Not deferred, not guessed at with a confidence score —
+                refused, with the reason and the one safe thing to do instead.
+                The saved application does not move, and the choice stays on the
+                page in front of you.
+              </p>
+              <p>
+                This is the server&apos;s own response, sent verbatim to the
+                calling agent:
+              </p>
+            </div>
+            <div className="feature-art">
+              <div className="payload">
+                <p className="payload-head">
+                  <span className="payload-dot" aria-hidden="true" />
+                  <code>apply_evidence_backed_answers</code>
+                  <span className="payload-status">409</span>
+                </p>
+                <pre>
+                  <code>{REFUSAL_PAYLOAD}</code>
+                </pre>
+              </div>
+            </div>
+          </div>
+        </Band>
+
+        <Band className="section feature" labelledBy="requirements-heading">
+          <div className="feature-grid">
+            <div className="feature-text">
+              <p className="feature-kicker">A form that moves</p>
+              <h2 id="requirements-heading">
+                Requirements that change underneath the agent
+              </h2>
+              <p>
+                Six questions apply when the application opens. Answer the
+                household one and two more become required — the guardian&apos;s
+                name and the household size — so the form the agent read a
+                moment ago is no longer the form in front of it.
+              </p>
+              <p>
+                That is why <code>get_form_requirements</code> returns rules
+                rather than a field-to-answer map, and why every write carries
+                the version it was based on. An agent working from a stale
+                picture is refused rather than allowed to overwrite.
+              </p>
+            </div>
+            <div className="feature-art">
+              <RequirementsFigure />
+            </div>
+          </div>
+        </Band>
+
+        <Band className="section feature" labelledBy="commitment-heading">
+          <div className="feature-grid">
+            <div className="feature-text">
+              <p className="feature-kicker">One human commitment</p>
+              <h2 id="commitment-heading">
+                You read the frozen review, and only you submit
+              </h2>
+              <p>
+                Preparing a review freezes exactly what you approved and closes
+                assisted access in the same movement. From there the assistant
+                has nothing left to do: it cannot return from the review, cannot
+                confirm, and cannot load, print or export the receipt.
+              </p>
+              <p>
+                Both walks end in the same place — the same frozen review, and
+                the same content hash printed on the same receipt.
+              </p>
+            </div>
+            <div className="feature-art">
+              <CommitmentFigure />
+            </div>
+          </div>
+        </Band>
+      </div>
+
+      {/* ---- Two walks -------------------------------------------------- */}
+      <Band
+        id="comparison"
+        className="section compare-band"
+        labelledBy="comparison-heading"
+      >
+        <h2 id="comparison-heading">With and without an assistant</h2>
+        <p className="section-lead">
+          The manual path is the whole product; the assisted path is the same
+          product with a second pair of hands. Both are real here, and you can
+          walk either one. The beats in ochre are the ones that are yours in
+          both.
+        </p>
+        <div className="compare">
+          <article className="lane lane-manual">
+            <h3>Filling it in yourself</h3>
+            <ol>
+              {MANUAL_BEATS.map((beat) => (
+                <li key={beat.text} data-human={beat.human || undefined}>
+                  <span className="beat-text">{beat.text}</span>
+                  {beat.human ? <span className="beat-tag">yours</span> : null}
+                </li>
+              ))}
+            </ol>
+          </article>
+          <article className="lane lane-assisted">
+            <h3>Asking an assistant</h3>
+            <ol>
+              {ASSISTED_BEATS.map((beat, index) => (
+                <li key={beat.text} data-human={beat.human || undefined}>
+                  <span className="beat-text">
+                    {beat.text}
+                    {index === 4 ? (
+                      <>
+                        {" "}
+                        <code>conflict_requires_human</code>
+                      </>
+                    ) : null}
+                  </span>
+                  {beat.human ? <span className="beat-tag">yours</span> : null}
+                </li>
+              ))}
+            </ol>
+          </article>
+        </div>
+        <p className="converge">
+          Both paths reach the same three decisions that are only yours, and the
+          same frozen review — the same content hash on the same receipt. The
+          assistant removes the reading and the retyping. It does not remove
+          you.
+        </p>
+      </Band>
+
+      {/* ---- How it works ----------------------------------------------- */}
+      <Band
+        id="how-it-works"
+        className="section how-band"
+        labelledBy="how-heading"
+      >
         <h2 id="how-heading">How it works</h2>
         <ol className="steps">
           <li>
@@ -294,93 +659,32 @@ export default function LandingPage() {
           <li>
             <h3>You settle what the records cannot</h3>
             <p>
-              When two accepted records disagree, or when a declaration is
-              yours to make, the portal stops and hands you the decision. Then
-              it freezes exactly what you approved and submits that.
+              When two accepted records disagree, or when a declaration is yours
+              to make, the portal stops and hands you the decision. Then it
+              freezes exactly what you approved and submits that.
             </p>
           </li>
         </ol>
-      </section>
+      </Band>
 
-      <section id="comparison" aria-labelledby="comparison-heading">
-        <h2 id="comparison-heading">With and without an assistant</h2>
-        <p className="section-lead">
-          The manual path is the whole product; the assisted path is the same
-          product with a second pair of hands. Both are real here, and you can
-          walk either one.
-        </p>
-        <div className="compare">
-          <article className="compare-col manual">
-            <h3>Filling it in yourself</h3>
-            <ol>
-              <li>Open each of the three records and read them.</li>
-              <li>
-                Find the sentence that answers a question, then link that record
-                to the answer.
-              </li>
-              <li>
-                Notice when answering one question makes two more apply, and go
-                back for those.
-              </li>
-              <li>Type and save your email, then declare it is yours.</li>
-              <li>
-                Read both income records, choose a reason, and stand behind one
-                of them.
-              </li>
-              <li>Prepare the review, read it, and submit.</li>
-            </ol>
-          </article>
-          <article className="compare-col assisted">
-            <h3>Asking an assistant</h3>
-            <ol>
-              <li>
-                It reads the active requirements and the evidence index through
-                the page&apos;s own tools.
-              </li>
-              <li>
-                It binds every supported answer in one atomic call — all of them
-                or none, checked against the version it read.
-              </li>
-              <li>
-                Two questions become required; it re-reads and binds those too.
-              </li>
-              <li>
-                It can propose the synthetic email, but the field still reads
-                &ldquo;not yet declared&rdquo; until you say so.
-              </li>
-              <li>
-                It asks for the income answer and is refused:{" "}
-                <code>conflict_requires_human</code>. Nothing is written.
-              </li>
-              <li>It prepares the review for you, and then loses access.</li>
-            </ol>
-          </article>
-        </div>
-        <p className="converge">
-          Both paths reach the same three decisions that are only yours, and the
-          same frozen review — the same content hash on the same receipt. The
-          assistant removes the reading and the retyping. It does not remove
-          you.
-        </p>
-      </section>
-
-      <section id="tools" aria-labelledby="tools-heading">
+      {/* ---- The six tools ---------------------------------------------- */}
+      <Band id="tools" className="section tools-band" labelledBy="tools-heading">
         <h2 id="tools-heading">The six tools this page registers</h2>
         <p className="section-lead">
           Every tool is declared on <code>document.modelContext</code> with the
           hints below. Four only read. The two that can change something are
           version-checked and refuse rather than guess.
         </p>
+
+        <h3 className="tool-group">Four that only read</h3>
         <ul className="tools">
-          {TOOLS.map((tool) => (
-            <li key={tool.name} data-writes={tool.writes || undefined}>
+          {READ_TOOLS.map((tool) => (
+            <li key={tool.name}>
               <p className="tool-name">
                 <code>{tool.name}</code>
               </p>
               <p className="tool-hints">
-                <span className={tool.writes ? "hint-write" : "hint-read"}>
-                  {tool.writes ? "can change the draft" : "readOnly"}
-                </span>
+                <span className="hint-read">readOnly</span>
                 <span className={tool.untrusted ? "hint-untrusted" : "hint-own"}>
                   {tool.untrusted
                     ? "untrusted content"
@@ -391,33 +695,90 @@ export default function LandingPage() {
             </li>
           ))}
         </ul>
-      </section>
 
-      <section
+        <h3 className="tool-group tool-group-write">
+          Two that can change the draft
+        </h3>
+        <ul className="tools">
+          {WRITE_TOOLS.map((tool) => (
+            <li key={tool.name} data-writes="">
+              <p className="tool-name">
+                <code>{tool.name}</code>
+              </p>
+              <p className="tool-hints">
+                <span className="hint-write">can change the draft</span>
+                <span className={tool.untrusted ? "hint-untrusted" : "hint-own"}>
+                  {tool.untrusted
+                    ? "untrusted content"
+                    : "the portal's own rules"}
+                </span>
+              </p>
+              <p className="tool-summary">{tool.summary}</p>
+            </li>
+          ))}
+        </ul>
+      </Band>
+
+      {/* ---- Try it ------------------------------------------------------ */}
+      <Band
         id="quick-start"
-        className="quick-start"
-        aria-labelledby="agent-heading"
+        className="section quick-start"
+        labelledBy="agent-heading"
       >
         <h2 id="agent-heading">Try it with an agent</h2>
-        <p>
-          Enable WebMCP in Chrome at{" "}
-          <code>chrome://flags/#enable-webmcp-testing</code>. If you launch
-          Chrome yourself, the same switch is{" "}
-          <code>--enable-features=WebMCPTesting</code>. Then start the Conflict
-          packet, allow assisted access on the application page, and ask your
-          assistant:
+        <p className="section-lead">
+          Turn WebMCP on in Chrome, start the conflict packet, allow assisted
+          access on the application page, and say these three things in order.
         </p>
-        <ol className="prompts">
-          <li>
-            Read this application&apos;s requirements and evidence index, then
-            fill in every answer you can support from the records.
-          </li>
-          <li>
-            More questions just appeared. Re-read the active requirements and
-            bind those too.
-          </li>
-          <li>Now prepare the submission review.</li>
-        </ol>
+
+        <div className="console">
+          <div className="console-head">
+            <span className="console-dots" aria-hidden="true">
+              <i />
+              <i />
+              <i />
+            </span>
+            <span className="console-title">Turn WebMCP on</span>
+          </div>
+          <div className="console-body">
+            <div className="console-row">
+              <p className="console-label">Chrome flag</p>
+              <code className="console-value">{CHROME_FLAG}</code>
+              <CopyButton value={CHROME_FLAG} describedAs="the Chrome flag" />
+            </div>
+            <div className="console-row">
+              <p className="console-label">Launch switch</p>
+              <code className="console-value">{CHROME_SWITCH}</code>
+              <CopyButton
+                value={CHROME_SWITCH}
+                describedAs="the launch switch"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="console">
+          <div className="console-head">
+            <span className="console-dots" aria-hidden="true">
+              <i />
+              <i />
+              <i />
+            </span>
+            <span className="console-title">Then say this, in order</span>
+          </div>
+          <ol className="prompts">
+            {PROMPTS.map((prompt, index) => (
+              <li key={prompt}>
+                <span className="prompt-text">{prompt}</span>
+                <CopyButton
+                  value={prompt}
+                  describedAs={`prompt ${index + 1}`}
+                />
+              </li>
+            ))}
+          </ol>
+        </div>
+
         <p>
           Now ask it to pick an income figure. It comes back{" "}
           <code>conflict_requires_human</code>, the saved application does not
@@ -429,18 +790,42 @@ export default function LandingPage() {
             Full instructions, including the ChatGPT in-app browser
           </Link>
         </p>
-      </section>
+      </Band>
 
-      <section id="faq" aria-labelledby="faq-heading">
+      {/* ---- Questions --------------------------------------------------- */}
+      <Band id="faq" className="section faq-band" labelledBy="faq-heading">
         <h2 id="faq-heading">Common questions</h2>
-        <dl className="faq">
+        <div className="faq">
           {FAQ.map((item) => (
-            <div key={item.question}>
-              <dt>{item.question}</dt>
-              <dd>{item.answer}</dd>
-            </div>
+            <details key={item.question}>
+              <summary>{item.question}</summary>
+              <p>{item.answer}</p>
+            </details>
           ))}
-        </dl>
+        </div>
+      </Band>
+
+      {/* ---- Closing band ------------------------------------------------ */}
+      <section className="closing" aria-labelledby="closing-heading" data-reveal="">
+        <div className="hero-ground" aria-hidden="true">
+          <span className="glow glow-seal" />
+        </div>
+        <div className="wrap">
+          <h2 id="closing-heading">Walk it yourself — it takes two minutes</h2>
+          <p>
+            Nothing you enter is submitted anywhere, the records are invented,
+            and the session lasts an hour. Take the conflict packet if you only
+            have time for one.
+          </p>
+          <p className="closing-links">
+            <Link className="closing-primary" href="#apply">
+              Choose a packet
+            </Link>
+            <Link className="closing-secondary" href="/agents">
+              Read the agent instructions
+            </Link>
+          </p>
+        </div>
       </section>
     </main>
   );

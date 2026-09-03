@@ -389,9 +389,6 @@ button[aria-disabled="true"]:hover {
 }
 
 /* The two moments that commit something the applicant is responsible for. */
-/* The packet chooser now lives in the hero rather than a <section>, so the
-   primary treatment keys off the chooser itself. */
-.packets article button,
 #allow-assisted-access-button,
 button.primary {
   background: var(--seal);
@@ -399,7 +396,6 @@ button.primary {
   color: #fff;
 }
 
-.packets article button:hover,
 #allow-assisted-access-button:hover,
 button.primary:hover {
   background: #0b5754;
@@ -980,40 +976,7 @@ dialog > div:last-child {
   }
 }
 
-/* ---- Landing: two paths, and how to bring an agent ---------------------- */
-
-.packets {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
-  gap: calc(var(--step) * 2);
-}
-
-.packets > article {
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 0;
-}
-
-.packets > article > button {
-  margin: auto 0 0;
-}
-
-/* Ochre is the colour of a decision the portal will not make for you, so the
-   packet built around one wears it. */
-.packets > .interesting {
-  border-color: var(--decide);
-  border-top-width: 3px;
-}
-
-.packets > .interesting > button {
-  background: var(--decide);
-  border-color: var(--decide);
-}
-
-.packets > .interesting > button:hover {
-  background: #6f3c04;
-  border-color: #6f3c04;
-}
+/* ---- Bringing an agent: the prompts, on both the landing and /agents ---- */
 
 /* The prompts are things to say, in order, so they are numbered. */
 .prompts {
@@ -1262,119 +1225,733 @@ dd ul[data-resolved] li:not([data-chosen])::after {
 /* Landing                                                                   */
 /* ======================================================================== */
 
-.landing > header,
-.agents > header {
-  border-bottom: 2px solid var(--ink);
-  padding-bottom: calc(var(--step) * 4);
-  margin-bottom: calc(var(--step) * 7);
+/*
+ * The landing page is the one route that is not a filed sheet. It is the
+ * program's shopfront, so it drops the document frame entirely and becomes a
+ * stack of full-bleed bands, each carrying its own ground and its own reading
+ * column. Every other route keeps the sheet.
+ */
+main.landing {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
 }
 
-.hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
-  align-items: start;
-  gap: calc(var(--step) * 3) calc(var(--step) * 7);
+.landing .wrap {
+  max-width: 76rem;
+  margin: 0 auto;
+  padding: 0 calc(var(--step) * 4);
+}
+
+/* The only thing the masthead's shade is keyed off: has the reader left the
+   top of the document. Zero height, so it can shift nothing. */
+#scroll-sentinel {
+  height: 1px;
+  margin-bottom: -1px;
 }
 
 /*
- * The chooser sits inside the hero, spanning it, because the first thing the
- * page asks of anyone is which of the two packets they want — and the whole
- * demonstration is one click away from the headline.
+ * A masthead that follows the reader is right for a long marketing page and
+ * wrong for the application, whose own rail is already sticky. `:has()` scopes
+ * it to this route and leaves every other page exactly as Phase 2D left it.
  */
-.hero .apply {
-  grid-column: 1 / -1;
-  margin-top: calc(var(--step) * 1);
-  padding-top: calc(var(--step) * 4);
-  border-top: 1px solid var(--rule);
+body:has(main.landing) .site-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--band);
+  transition: background-color 240ms ease, box-shadow 240ms ease,
+    border-color 240ms ease;
 }
 
-.hero .apply h2 {
-  font-size: 1.5rem;
-  margin-bottom: calc(var(--step) * 1.5);
+html[data-scrolled] body:has(main.landing) .site-header {
+  background: rgb(8 40 44 / 0.86);
+  backdrop-filter: saturate(140%) blur(12px);
+  -webkit-backdrop-filter: saturate(140%) blur(12px);
+  box-shadow: 0 14px 34px -22px rgb(2 18 20 / 0.95);
+}
+
+/*
+ * Sections arrive as you reach them. The hidden half of this only ever applies
+ * under `html[data-motion="on"]`, which JavaScript sets after mount — so with
+ * no JavaScript the page is simply visible — and the whole rule is inside a
+ * `no-preference` query, so asking for less motion also means asking for none
+ * of this.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  html[data-motion="on"] .landing [data-reveal] {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  html[data-motion="on"] .landing [data-reveal][data-revealed] {
+    opacity: 1;
+    transform: none;
+    transition: opacity 640ms cubic-bezier(0.22, 0.7, 0.3, 1),
+      transform 640ms cubic-bezier(0.22, 0.7, 0.3, 1);
+  }
+}
+
+/* ---- Hero --------------------------------------------------------------- */
+
+.hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background-color: #06232a;
+  color: #c9dedf;
+  padding: clamp(2.25rem, 3.5vw, 3.25rem) 0 clamp(2.75rem, 5vw, 4.5rem);
+}
+
+/*
+ * The hero's ground: an engraved grid fading out downward, two soft lamps in
+ * the product's own two colours, and a vignette to settle it. Three gradients
+ * and a blur — no asset, nothing to fetch under `default-src 'self'`.
+ */
+.hero-ground {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.hero-ground::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(
+      to right,
+      rgb(127 212 204 / 0.06) 1px,
+      transparent 1px
+    ),
+    linear-gradient(to bottom, rgb(127 212 204 / 0.06) 1px, transparent 1px);
+  background-size: 4rem 4rem;
+  mask-image: radial-gradient(125% 95% at 50% 0%, #000 18%, transparent 78%);
+  -webkit-mask-image: radial-gradient(
+    125% 95% at 50% 0%,
+    #000 18%,
+    transparent 78%
+  );
+}
+
+.hero-ground::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgb(3 18 21 / 0.5) 0%,
+    rgb(3 18 21 / 0) 34%,
+    rgb(3 18 21 / 0.72) 100%
+  );
+}
+
+.glow {
+  position: absolute;
+  display: block;
+  border-radius: 50%;
+  filter: blur(72px);
+}
+
+.glow-seal {
+  width: 44rem;
+  height: 30rem;
+  left: -13rem;
+  top: -11rem;
+  background: radial-gradient(circle, rgb(18 129 123 / 0.55), transparent 68%);
+}
+
+.glow-decide {
+  width: 32rem;
+  height: 26rem;
+  right: -9rem;
+  bottom: -11rem;
+  background: radial-gradient(circle, rgb(150 96 24 / 0.45), transparent 68%);
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.04fr) minmax(0, 0.96fr);
+  gap: clamp(2rem, 4vw, 4.5rem);
+  align-items: center;
+}
+
+.hero-text {
+  min-width: 0;
 }
 
 .hero-cycle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
   margin: 0;
-  font-size: 0.88rem;
+  padding: 0.3rem 0.85rem 0.3rem 0.65rem;
+  border: 1px solid rgb(127 212 204 / 0.34);
+  border-radius: 999px;
+  background: rgb(127 212 204 / 0.09);
+  color: #a7ded7;
+  font-size: 0.82rem;
   font-weight: 600;
-  color: var(--seal);
+  max-width: none;
+}
+
+.pip {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: #7fd4cc;
+  box-shadow: 0 0 0 3px rgb(127 212 204 / 0.18);
+  flex: none;
 }
 
 .hero h1 {
-  font-size: clamp(2.4rem, 1.4rem + 3.4vw, 3.6rem);
-  margin: calc(var(--step) * 1.5) 0 calc(var(--step) * 2);
-  max-width: 14ch;
+  font-family: var(--serif);
+  font-size: clamp(2.5rem, 1.35rem + 3.8vw, 4.15rem);
+  font-weight: 500;
+  line-height: 0.99;
+  letter-spacing: -0.028em;
+  color: #ffffff;
+  margin: clamp(0.9rem, 1.6vw, 1.15rem) 0 clamp(0.9rem, 1.5vw, 1.15rem);
 }
 
-.hero .stamp {
-  margin-bottom: calc(var(--step) * 2.5);
-}
-
-.hero-lead {
-  font-size: 1.04rem;
-  line-height: 1.7;
-  color: #2c3d4b;
-  max-width: 58ch;
+.hero .hero-lead {
+  font-size: clamp(1rem, 0.94rem + 0.3vw, 1.14rem);
+  line-height: 1.62;
+  color: #b6cdd0;
+  max-width: 46ch;
   margin: 0;
 }
 
-.hero-figure {
+/* The one thing the page asks of anyone, one click from the headline. */
+.hero-cta {
+  margin-top: clamp(1.25rem, 2.2vw, 1.6rem);
+  padding: clamp(1.15rem, 1.8vw, 1.5rem);
+  border: 1px solid rgb(127 212 204 / 0.22);
+  border-radius: 16px;
+  background: linear-gradient(
+    180deg,
+    rgb(255 255 255 / 0.07),
+    rgb(255 255 255 / 0.02)
+  );
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.hero-cta h2 {
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  font-weight: 500;
+  color: #ffffff;
+  margin: 0 0 0.4rem;
+}
+
+.cta-lead {
+  margin: 0 0 0.95rem;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: #a9c3c5;
+  max-width: 48ch;
+}
+
+.cta-error {
+  border-left: 3px solid #e8a94e;
+  padding-left: 0.9rem;
+  margin: 0 0 1.1rem;
+  background: none;
+  color: #f4dcb4;
+}
+
+.cta-error p {
+  margin: 0 0 0.5rem;
+  font-size: 0.92rem;
+  color: inherit;
+}
+
+.cta-error button {
+  background: rgb(232 169 78 / 0.14);
+  border-color: rgb(232 169 78 / 0.6);
+  color: #f6ddb5;
+  margin: 0;
+}
+
+.cta-error button:hover {
+  background: #e8a94e;
+  border-color: #e8a94e;
+  color: #2a1503;
+}
+
+.cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 0 0 1rem;
+}
+
+.landing button.cta {
+  margin: 0;
+  font-size: 0.98rem;
+  font-weight: 700;
+  padding: 0.78rem 1.4rem;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  transition: background-color 170ms ease, border-color 170ms ease,
+    color 170ms ease, transform 170ms ease, box-shadow 170ms ease;
+}
+
+/* Ochre is the colour of the decision the portal will not make for you, so the
+   packet built around one leads. */
+.landing button.cta-decide {
+  background: #e8a94e;
+  border-color: #e8a94e;
+  color: #2a1503;
+  box-shadow: 0 12px 26px -14px rgb(232 169 78 / 0.85);
+}
+
+.landing button.cta-decide:hover {
+  background: #f4bb69;
+  border-color: #f4bb69;
+  color: #2a1503;
+  transform: translateY(-2px);
+}
+
+.landing button.cta-seal {
+  background: rgb(127 212 204 / 0.1);
+  border-color: rgb(127 212 204 / 0.5);
+  color: #cdeee9;
+}
+
+.landing button.cta-seal:hover {
+  background: rgb(127 212 204 / 0.2);
+  border-color: #7fd4cc;
+  color: #ffffff;
+  transform: translateY(-2px);
+}
+
+.cta-note {
+  margin: 0 0 0.85rem;
+  font-size: 0.86rem;
+  line-height: 1.6;
+  color: #95b2b5;
+  max-width: 52ch;
+}
+
+.cta-secondary {
+  margin: 0;
+}
+
+.cta-secondary a {
+  color: #7fd4cc;
+  font-weight: 600;
+  text-underline-offset: 3px;
+}
+
+.landing .stamp {
+  display: inline-block;
+  margin: clamp(1.4rem, 2.5vw, 2rem) 0 0;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid rgb(232 169 78 / 0.55);
+  border-radius: 4px;
+  background: rgb(232 169 78 / 0.1);
+  color: #f0c07e;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  max-width: none;
+}
+
+.hero-art {
+  min-width: 0;
+}
+
+.hero-scene {
+  margin: 0;
+}
+
+.hero-scene svg {
+  display: block;
   width: 100%;
   height: auto;
-  max-width: 30rem;
-  justify-self: end;
-  margin-top: calc(var(--step) * -1);
+  filter: drop-shadow(0 30px 58px rgb(2 15 18 / 0.6));
+}
+
+.hero-scene figcaption {
+  margin: 0.9rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: #8fabae;
+  text-align: right;
+}
+
+/* ---- The hero illustration's own timeline -------------------------------- */
+
+/*
+ * Every animated part shares one 18s linear loop with no delay and no
+ * randomness, so the composition at a given moment is the same on every loop
+ * and a screenshot of it is reproducible. The resting style of every element
+ * is the *finished* diagram; the keyframes only take things away and hand them
+ * back, which is why `animation: none` — what a reduced-motion reader gets,
+ * since the whole block is inside a `no-preference` query — shows the complete
+ * drawing rather than an empty frame.
+ */
+.hs-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+}
+
+.hs-beat-e {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hs-beat-a,
+  .hs-beat-b,
+  .hs-beat-c,
+  .hs-beat-d,
+  .hs-beat-e,
+  .hs-beat-f,
+  .hs-draw-a,
+  .hs-draw-b,
+  .hs-draw-c,
+  .hs-reach-a,
+  .hs-reach-b {
+    animation-duration: 18s;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+  }
+
+  .hs-beat-a {
+    animation-name: hs-beat-a;
+  }
+  .hs-beat-b {
+    animation-name: hs-beat-b;
+  }
+  .hs-beat-c {
+    animation-name: hs-beat-c;
+  }
+  .hs-beat-d {
+    animation-name: hs-beat-d;
+  }
+  .hs-beat-e {
+    animation-name: hs-beat-e;
+  }
+  .hs-beat-f {
+    animation-name: hs-beat-f;
+  }
+  .hs-draw-a {
+    animation-name: hs-draw-a;
+  }
+  .hs-draw-b {
+    animation-name: hs-draw-b;
+  }
+  .hs-draw-c {
+    animation-name: hs-draw-c;
+  }
+  .hs-reach-a {
+    animation-name: hs-reach-a;
+  }
+  .hs-reach-b {
+    animation-name: hs-reach-b;
+  }
+}
+
+@keyframes hs-beat-a {
+  0%, 4% { opacity: 0; }
+  10%, 91% { opacity: 1; }
+  97%, 100% { opacity: 0; }
+}
+
+@keyframes hs-beat-b {
+  0%, 12% { opacity: 0; }
+  18%, 91% { opacity: 1; }
+  97%, 100% { opacity: 0; }
+}
+
+@keyframes hs-beat-c {
+  0%, 20% { opacity: 0; }
+  26%, 91% { opacity: 1; }
+  97%, 100% { opacity: 0; }
+}
+
+@keyframes hs-beat-d {
+  0%, 32% { opacity: 0; }
+  38%, 91% { opacity: 1; }
+  97%, 100% { opacity: 0; }
+}
+
+@keyframes hs-beat-e {
+  0%, 47% { opacity: 0; transform: scale(0.93); }
+  53% { opacity: 1; transform: scale(1.03); }
+  57%, 91% { opacity: 1; transform: scale(1); }
+  97%, 100% { opacity: 0; transform: scale(1); }
+}
+
+@keyframes hs-beat-f {
+  0%, 61% { opacity: 0; }
+  67%, 91% { opacity: 1; }
+  97%, 100% { opacity: 0; }
+}
+
+@keyframes hs-draw-a {
+  0%, 7% { stroke-dashoffset: 1; opacity: 1; }
+  14%, 91% { stroke-dashoffset: 0; opacity: 1; }
+  97%, 100% { stroke-dashoffset: 0; opacity: 0; }
+}
+
+@keyframes hs-draw-b {
+  0%, 15% { stroke-dashoffset: 1; opacity: 1; }
+  22%, 91% { stroke-dashoffset: 0; opacity: 1; }
+  97%, 100% { stroke-dashoffset: 0; opacity: 0; }
+}
+
+@keyframes hs-draw-c {
+  0%, 23% { stroke-dashoffset: 1; opacity: 1; }
+  30%, 91% { stroke-dashoffset: 0; opacity: 1; }
+  97%, 100% { stroke-dashoffset: 0; opacity: 0; }
+}
+
+@keyframes hs-reach-a {
+  0%, 39% { opacity: 0; }
+  45%, 91% { opacity: 1; }
+  97%, 100% { opacity: 0; }
+}
+
+@keyframes hs-reach-b {
+  0%, 42% { opacity: 0; }
+  48%, 91% { opacity: 1; }
+  97%, 100% { opacity: 0; }
+}
+
+/* The illustration borrows the page's own faces, since a CSS variable is not
+   valid in an SVG presentation attribute. */
+.hs-label {
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.hs-mono {
+  font-family: var(--mono);
+  font-size: 9.5px;
+}
+
+.hs-ledger-title {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.hs-stamp {
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.hs-note {
+  font-family: var(--sans);
+  font-size: 10.5px;
+  font-weight: 600;
+}
+
+.hs-chip {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+}
+
+/* The section drawings borrow the page's own faces, for the same reason the
+   hero illustration does. */
+.fig-label {
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.fig-value {
+  font-family: var(--sans);
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.fig-count {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 500;
+}
+
+.fig-chip {
+  font-family: var(--sans);
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.fig-quote {
+  font-family: var(--serif);
+  font-size: 15px;
+}
+
+.fig-meta {
+  font-family: var(--sans);
+  font-size: 11.5px;
+  font-weight: 500;
+}
+
+.fig-hash {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 500;
+}
+
+/* ---- Proof strip --------------------------------------------------------- */
+
+.proof {
+  background: var(--band);
+  color: #cfe3e2;
+  padding: clamp(2.5rem, 4vw, 3.75rem) 0;
+  border-top: 1px solid rgb(127 212 204 / 0.16);
+}
+
+.proof h2 {
+  font-family: var(--serif);
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: #e8f3f1;
+  margin: 0 0 clamp(1.25rem, 2.5vw, 2rem);
+}
+
+.proof-tiles {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(0.9rem, 1.8vw, 1.5rem);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.proof-tiles > li {
+  margin: 0;
+  padding: 1.2rem 1.2rem 1.35rem;
+  border: 1px solid rgb(127 212 204 / 0.2);
+  border-radius: 14px;
+  background: linear-gradient(
+    180deg,
+    rgb(255 255 255 / 0.055),
+    rgb(255 255 255 / 0.015)
+  );
+}
+
+.proof-mark svg {
+  display: block;
+  width: 1.35rem;
+  height: 1.35rem;
+}
+
+.proof-tiles > li[data-tone="seal"] .proof-mark {
+  color: #7fd4cc;
+}
+
+.proof-tiles > li[data-tone="decide"] .proof-mark {
+  color: #f0b866;
+}
+
+.proof-tiles > li[data-tone="ink"] .proof-mark {
+  color: #dbeceb;
+}
+
+.proof-figure {
+  margin: 0.75rem 0 0.4rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: #e3f1ef;
+  max-width: none;
+}
+
+.proof-figure strong {
+  display: block;
+  font-family: var(--serif);
+  font-size: clamp(2.1rem, 1.4rem + 1.6vw, 2.9rem);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: #ffffff;
+  margin-bottom: 0.35rem;
+}
+
+.proof-detail {
+  margin: 0;
+  font-size: 0.83rem;
+  line-height: 1.6;
+  color: #a5c2c3;
+  max-width: none;
+}
+
+/* ---- Bands on the light ground ------------------------------------------ */
+
+.landing .section {
+  margin: 0;
+  padding: clamp(3rem, 5.5vw, 5.5rem) 0;
+  background-color: var(--paper);
+  border-top: 1px solid var(--edge);
+}
+
+.features > .feature:nth-child(even),
+.how-band,
+.quick-start {
+  background-color: var(--field);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgb(18 33 46 / 0.028) 0 1px,
+    transparent 1px 4rem
+  );
+}
+
+.landing .section > .wrap > h2 {
+  font-family: var(--serif);
+  font-size: clamp(1.7rem, 1.2rem + 1.5vw, 2.35rem);
+  font-weight: 500;
+  line-height: 1.14;
+  letter-spacing: -0.018em;
+  color: var(--ink);
+  margin: 0 0 0.9rem;
+  padding: 0;
+  border: none;
 }
 
 .section-lead {
-  font-size: 0.98rem;
+  font-size: 1.02rem;
+  line-height: 1.65;
   color: var(--quiet);
-  max-width: 62ch;
-  margin: calc(var(--step) * -1) 0 calc(var(--step) * 3);
+  max-width: 60ch;
+  margin: 0 0 clamp(1.75rem, 3vw, 2.5rem);
 }
 
-.landing > section,
-.agents > section {
-  margin-bottom: calc(var(--step) * 9);
-  scroll-margin-top: calc(var(--step) * 3);
-}
-
-.landing > section > h2,
-.agents > section > h2 {
-  font-size: 1.65rem;
-  padding-bottom: calc(var(--step) * 1.5);
-  border-bottom: 1px solid var(--rule);
-  margin-bottom: calc(var(--step) * 3);
-}
-
-/* ---- Apply ------------------------------------------------------------- */
-
-.apply-secondary {
-  margin: calc(var(--step) * 3) 0 0;
-}
-
-.apply-secondary a,
-.landing p a,
-.agents p a {
+.landing p a {
   color: var(--seal);
   font-weight: 600;
   text-underline-offset: 3px;
 }
 
-/* ---- The program's own facts ------------------------------------------- */
+/* ---- The program's own facts -------------------------------------------- */
 
 .facts {
-  border-top: 2px solid var(--ink);
+  border-top: 1px solid var(--rule);
 }
 
 .facts > div {
-  grid-template-columns: 11rem 1fr;
+  grid-template-columns: 12rem 1fr;
   align-items: baseline;
 }
 
 .facts dt {
   font-family: var(--serif);
-  font-size: 1.05rem;
+  font-size: 1.08rem;
   font-weight: 500;
   color: var(--ink);
   text-transform: none;
@@ -1383,44 +1960,380 @@ dd ul[data-resolved] li:not([data-chosen])::after {
 
 .facts dd {
   font-size: 0.98rem;
+  line-height: 1.65;
   color: #2c3d4b;
   max-width: 58ch;
+}
+
+/* ---- Features ------------------------------------------------------------ */
+
+.features {
+  display: block;
+}
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(2rem, 4vw, 4rem);
+  align-items: center;
+}
+
+/* Alternating, so the eye has to travel and the four sections do not read as
+   one list of cards. */
+.features > .feature:nth-child(even) .feature-text {
+  order: 2;
+}
+
+.features > .feature:nth-child(even) .feature-art {
+  order: 1;
+}
+
+.feature-text {
+  min-width: 0;
+}
+
+.feature-art {
+  min-width: 0;
+}
+
+.feature-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0 0 0.65rem;
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--seal);
+  max-width: none;
+}
+
+.feature-kicker::before {
+  content: "";
+  width: 1.6rem;
+  height: 2px;
+  border-radius: 1px;
+  background: currentColor;
+}
+
+.feature-text p {
+  font-size: 1rem;
+  line-height: 1.7;
+  color: #2c3d4b;
+  max-width: 54ch;
+}
+
+.feature-figure {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 18px 34px rgb(10 47 51 / 0.14));
+}
+
+.landing .features > .feature-dark {
+  background-color: var(--band);
+  background-image: none;
+  border-top-color: rgb(127 212 204 / 0.18);
+}
+
+.feature-dark .feature-kicker {
+  color: #7fd4cc;
+}
+
+.feature-dark > .wrap h2 {
+  color: #ffffff;
+}
+
+.feature-dark .feature-text p {
+  color: #b9d1d2;
+}
+
+.feature-dark p code {
+  background: rgb(127 212 204 / 0.14);
+  color: #c3e9e4;
+}
+
+/* ---- The refusal, as the server sends it -------------------------------- */
+
+.payload {
+  border: 1px solid #17565a;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #041a1f;
+  box-shadow: 0 26px 54px -30px rgb(0 0 0 / 0.9);
+}
+
+.payload-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0.7rem 1rem;
+  background: #07242a;
+  border-bottom: 1px solid #17565a;
+  max-width: none;
+}
+
+.payload-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: #e8a94e;
+  flex: none;
+}
+
+.payload-head code {
+  background: none;
+  padding: 0;
+  white-space: normal;
+  word-break: break-word;
+  font-size: 0.78rem;
+  color: #a8ddd6;
+}
+
+.payload-status {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: #f0b866;
+  border: 1px solid rgb(240 184 102 / 0.5);
+  border-radius: 999px;
+  padding: 0.05rem 0.5rem;
+  flex: none;
+}
+
+.payload pre {
+  margin: 0;
+  padding: 1.1rem 1rem 1.3rem;
+  overflow-x: auto;
+}
+
+.payload pre code {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  line-height: 1.75;
+  color: #d7e9e6;
+  white-space: pre;
+  word-break: normal;
+  background: none;
+  padding: 0;
+}
+
+/* ---- With and without an assistant -------------------------------------- */
+
+.compare {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(1.25rem, 2.5vw, 2.25rem);
+}
+
+.lane {
+  margin: 0;
+  padding: clamp(1.25rem, 2vw, 1.75rem);
+  background: #ffffff;
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+}
+
+.lane-manual {
+  border-top: 3px solid #8fa3ae;
+}
+
+.lane-assisted {
+  border-top: 3px solid var(--seal);
+}
+
+.lane h3 {
+  font-family: var(--serif);
+  font-size: 1.2rem;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--ink);
+  margin: 0 0 1.25rem;
+}
+
+.lane ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.lane li {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4rem 0.6rem;
+  margin: 0;
+  padding: 0 0 1.35rem 2.1rem;
+  font-size: 0.94rem;
+  line-height: 1.6;
+  color: #2c3d4b;
+}
+
+/* A timeline, not a checklist: each beat is a stop on one thread. */
+.lane li::before {
+  content: "";
+  position: absolute;
+  left: 0.4rem;
+  top: 1.15rem;
+  bottom: -0.15rem;
+  width: 2px;
+  background: var(--rule);
+}
+
+.lane li:last-child::before {
+  display: none;
+}
+
+.lane li::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.28rem;
+  width: 0.85rem;
+  height: 0.85rem;
+  box-sizing: border-box;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 2px solid #9fb3bd;
+}
+
+.lane-assisted li::after {
+  border-color: var(--seal);
+}
+
+/* The beats that are yours are the same three in both lanes, and they are the
+   whole argument of this section — so they are marked identically in both. */
+.lane li[data-human] {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.lane li[data-human]::after {
+  border-color: var(--decide);
+  background: var(--decide);
+  box-shadow: 0 0 0 3px rgb(140 75 5 / 0.15);
+}
+
+.beat-text {
+  flex: 1 1 14rem;
+}
+
+.beat-tag {
+  flex: none;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--decide);
+  background: var(--decide-soft);
+  border: 1px solid rgb(140 75 5 / 0.35);
+  border-radius: 999px;
+  padding: 0.05rem 0.55rem;
+}
+
+/* Beats sit on the same rows in both lanes, so the three ochre ones line up
+   across the gap and the argument is visible before it is read. */
+@supports (grid-template-rows: subgrid) {
+  .compare {
+    grid-template-rows: auto repeat(6, auto);
+  }
+
+  .lane {
+    display: grid;
+    grid-row: 1 / span 7;
+    grid-template-rows: subgrid;
+  }
+
+  .lane ol {
+    display: grid;
+    grid-row: 2 / span 6;
+    grid-template-rows: subgrid;
+  }
+}
+
+.converge {
+  margin: clamp(1.75rem, 3vw, 2.5rem) 0 0;
+  padding: clamp(1.25rem, 2vw, 1.6rem) clamp(1.25rem, 2vw, 1.75rem);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: linear-gradient(
+    100deg,
+    rgb(140 75 5 / 0.07),
+    rgb(15 110 107 / 0.07)
+  );
+  font-size: 1.02rem;
+  line-height: 1.7;
+  color: var(--ink);
+  max-width: none;
 }
 
 /* ---- How it works: a genuine sequence, so it is numbered ---------------- */
 
 .steps {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
-  gap: calc(var(--step) * 4);
+  gap: clamp(1.5rem, 3vw, 2.75rem);
   list-style: none;
   counter-reset: step;
   margin: 0;
   padding: 0;
 }
 
+/*
+ * One thread through all three. It is drawn per step rather than across the
+ * whole grid, so it ends on the third marker instead of running off the end,
+ * and it disappears by itself when the steps stack into one column.
+ */
+.landing .steps > li:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 2.5rem;
+  right: calc(-1 * clamp(1.5rem, 3vw, 2.75rem) - 0.3rem);
+  top: 1.05rem;
+  height: 2px;
+  border-radius: 1px;
+  background: linear-gradient(90deg, var(--seal), rgb(140 75 5 / 0.55));
+}
+
+.landing .steps > li:first-child::after {
+  background: var(--seal);
+}
+
 .steps > li {
   counter-increment: step;
-  margin: 0;
-  padding-top: calc(var(--step) * 4);
-  border-top: 3px solid var(--seal);
   position: relative;
+  margin: 0;
+  padding-top: 3.4rem;
 }
 
 .steps > li::before {
   content: counter(step);
   position: absolute;
-  top: calc(var(--step) * 1.25);
+  top: 0;
   left: 0;
-  font-family: var(--mono);
-  font-size: 0.75rem;
-  font-weight: 500;
+  width: 2.2rem;
+  height: 2.2rem;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 2px solid var(--seal);
   color: var(--seal);
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.steps > li:last-child::before {
+  border-color: var(--decide);
+  color: var(--decide);
 }
 
 .steps h3 {
   font-family: var(--serif);
-  font-size: 1.12rem;
+  font-size: 1.15rem;
   font-weight: 500;
   text-transform: none;
   letter-spacing: 0;
@@ -1429,112 +2342,36 @@ dd ul[data-resolved] li:not([data-chosen])::after {
 }
 
 .steps p {
-  font-size: 0.94rem;
+  font-size: 0.95rem;
+  line-height: 1.65;
   color: var(--quiet);
   margin: 0;
 }
 
-/* ---- With and without an assistant ------------------------------------- */
+/* ---- The six tools ------------------------------------------------------- */
 
-.compare {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
-  gap: calc(var(--step) * 4);
-}
-
-.compare-col {
-  margin: 0;
-  padding: calc(var(--step) * 3.5);
-  background: #fff;
-}
-
-/*
- * Doing it by hand is not the lesser path — it is the whole application, and
- * it wears the colour of the decisions it is made of. The assisted column
- * wears the evidence teal, because that is all the assistant contributes.
- */
-.compare-col.manual {
-  border-left: 4px solid var(--decide);
-}
-
-.compare-col.assisted {
-  border-left: 4px solid var(--seal);
-}
-
-.compare-col h3 {
+.tool-group {
   font-family: var(--serif);
-  font-size: 1.15rem;
+  font-size: 1.1rem;
   font-weight: 500;
   text-transform: none;
   letter-spacing: 0;
   color: var(--ink);
-  margin: 0 0 calc(var(--step) * 2.5);
+  margin: 0 0 1.1rem;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid var(--rule);
 }
 
-.compare-col ol {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  counter-reset: beat;
+.tool-group-write {
+  margin-top: clamp(2rem, 3.5vw, 3rem);
+  border-bottom-color: rgb(140 75 5 / 0.35);
+  color: var(--decide);
 }
-
-.compare-col li {
-  counter-increment: beat;
-  position: relative;
-  padding: 0 0 calc(var(--step) * 2) calc(var(--step) * 4.5);
-  font-size: 0.94rem;
-  line-height: 1.6;
-  color: #2c3d4b;
-  margin: 0;
-}
-
-/* A timeline, not a checklist: each beat is a stop on one thread. */
-.compare-col li::before {
-  content: "";
-  position: absolute;
-  left: calc(var(--step) * 1.4);
-  top: 0.55rem;
-  bottom: -0.15rem;
-  width: 1px;
-  background: var(--rule);
-}
-
-.compare-col li:last-child::before {
-  bottom: auto;
-  height: 0;
-}
-
-.compare-col li::after {
-  content: "";
-  position: absolute;
-  left: calc(var(--step) * 0.9);
-  top: 0.4rem;
-  width: 0.55rem;
-  height: 0.55rem;
-  border-radius: 999px;
-  background: #fff;
-  border: 2px solid var(--seal);
-}
-
-.compare-col.manual li::after {
-  border-color: var(--decide);
-}
-
-.converge {
-  border-left: 3px solid var(--ink);
-  padding-left: calc(var(--step) * 2.5);
-  margin: calc(var(--step) * 4) 0 0;
-  font-size: 1rem;
-  line-height: 1.65;
-  max-width: 66ch;
-}
-
-/* ---- The six tools ------------------------------------------------------ */
 
 .tools {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
-  gap: calc(var(--step) * 3);
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: clamp(1rem, 2vw, 1.4rem);
   list-style: none;
   margin: 0;
   padding: 0;
@@ -1542,20 +2379,33 @@ dd ul[data-resolved] li:not([data-chosen])::after {
 
 .tools > li {
   margin: 0;
-  padding: calc(var(--step) * 3);
-  background: #fff;
+  padding: 1.25rem;
+  background: #ffffff;
   border: 1px solid var(--rule);
   border-top: 3px solid var(--seal);
-  border-radius: 4px;
+  border-radius: 12px;
+  transition: transform 180ms ease, box-shadow 180ms ease,
+    border-color 180ms ease;
 }
 
-/* The two that can move the saved application are marked as such. */
+.tools > li:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 22px 40px -26px rgb(10 47 51 / 0.6);
+  border-color: #bacdd3;
+  border-top-color: var(--seal);
+}
+
 .tools > li[data-writes] {
   border-top-color: var(--decide);
 }
 
+.tools > li[data-writes]:hover {
+  border-top-color: var(--decide);
+}
+
 .tool-name {
-  margin: 0 0 calc(var(--step) * 1.5);
+  margin: 0 0 0.75rem;
+  max-width: none;
 }
 
 .tool-name code {
@@ -1568,16 +2418,16 @@ dd ul[data-resolved] li:not([data-chosen])::after {
 .tool-hints {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--step);
-  margin: 0 0 calc(var(--step) * 1.5);
+  gap: 0.4rem;
+  margin: 0 0 0.75rem;
+  max-width: none;
 }
 
 .tool-hints span {
   font-size: 0.68rem;
   font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  padding: 0.1rem 0.45rem;
+  letter-spacing: 0.04em;
+  padding: 0.1rem 0.5rem;
   border-radius: 999px;
   border: 1px solid currentColor;
 }
@@ -1597,68 +2447,458 @@ dd ul[data-resolved] li:not([data-chosen])::after {
 .tool-summary {
   margin: 0;
   font-size: 0.9rem;
-  line-height: 1.55;
+  line-height: 1.6;
   color: var(--quiet);
 }
 
-.tool-consent {
-  margin: calc(var(--step) * 1.5) 0 0;
-  padding-top: calc(var(--step) * 1.5);
-  border-top: 1px solid var(--rule);
-  font-size: 0.8rem;
-  color: var(--quiet);
+/* ---- Try it with an agent ----------------------------------------------- */
+
+.console {
+  border: 1px solid #17565a;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #062229;
+  margin: 0 0 clamp(1.25rem, 2.5vw, 1.75rem);
+  box-shadow: 0 26px 54px -32px rgb(4 22 26 / 0.9);
 }
 
-/* ---- Try it with an agent ---------------------------------------------- */
-
-.quick-start {
-  background: var(--seal-soft);
-  border: 1px solid #bcd8d6;
-  border-left: 4px solid var(--seal);
-  border-radius: 4px;
-  padding: calc(var(--step) * 4);
+.console-head {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.7rem 1rem;
+  background: #08282f;
+  border-bottom: 1px solid #17565a;
 }
 
-.quick-start > h2 {
-  border-bottom-color: #bcd8d6;
+.console-dots {
+  display: flex;
+  gap: 0.35rem;
 }
 
-.quick-start p {
-  font-size: 0.96rem;
+.console-dots i {
+  display: block;
+  width: 0.58rem;
+  height: 0.58rem;
+  border-radius: 50%;
+  background: #1d4d51;
+}
+
+.console-dots i:first-child {
+  background: #7fd4cc;
+}
+
+.console-title {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #a8ddd6;
+}
+
+.console-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 1rem;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid rgb(23 86 90 / 0.6);
+}
+
+.console-row:last-child {
+  border-bottom: none;
+}
+
+.console-label {
+  margin: 0;
+  flex: none;
+  min-width: 7.5rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #7fbdb6;
+  max-width: none;
+}
+
+.console-value {
+  flex: 1 1 16rem;
+  font-family: var(--mono);
+  font-size: 0.84rem;
+  color: #d7e9e6;
+  background: none;
+  padding: 0;
+  white-space: normal;
+  word-break: break-all;
+}
+
+.quick-start .prompts {
+  max-width: none;
+  list-style: none;
+  counter-reset: prompt;
+  margin: 0;
+  padding: 0;
 }
 
 .quick-start .prompts li {
+  counter-increment: prompt;
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.7rem 1rem;
+  margin: 0;
+  padding: 0.95rem 1rem 0.95rem 2.9rem;
+  border-bottom: 1px solid rgb(23 86 90 / 0.6);
+}
+
+.quick-start .prompts li:last-child {
+  border-bottom: none;
+}
+
+.quick-start .prompts li::before {
+  content: counter(prompt);
+  position: absolute;
+  left: 1.05rem;
+  top: 1.05rem;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: #7fd4cc;
+}
+
+.prompt-text {
+  flex: 1 1 20rem;
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  line-height: 1.65;
+  color: #d7e9e6;
+}
+
+.copy {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex: none;
+}
+
+.copy-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #bfe6e1;
+  background: rgb(127 212 204 / 0.1);
+  border: 1px solid rgb(127 212 204 / 0.45);
+  border-radius: 8px;
+  transition: background-color 150ms ease, color 150ms ease,
+    border-color 150ms ease, transform 150ms ease;
+}
+
+.copy-button:hover {
+  background: rgb(127 212 204 / 0.22);
+  border-color: #7fd4cc;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.copy-button svg {
+  width: 0.85rem;
+  height: 0.85rem;
+  flex: none;
+}
+
+.copy-status {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #7fd4cc;
+}
+
+.quick-start > .wrap > p {
+  font-size: 0.98rem;
+  line-height: 1.7;
   color: #2c3d4b;
 }
 
-/* ---- Common questions --------------------------------------------------- */
+/* ---- Common questions ---------------------------------------------------- */
 
 .faq {
-  border-top: 2px solid var(--ink);
+  border-top: 1px solid var(--rule);
+  max-width: 54rem;
 }
 
-.faq > div {
-  grid-template-columns: 18rem 1fr;
+.faq details {
+  border-bottom: 1px solid var(--rule);
 }
 
-.faq dt {
+.faq summary {
+  position: relative;
+  cursor: pointer;
+  list-style: none;
+  padding: 1.15rem 2.75rem 1.15rem 0;
   font-family: var(--serif);
-  font-size: 1.05rem;
+  font-size: 1.12rem;
   font-weight: 500;
   color: var(--ink);
-  text-transform: none;
-  letter-spacing: 0;
+  transition: color 150ms ease;
 }
 
-.faq dd {
-  font-size: 0.95rem;
+.faq summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq summary:hover {
+  color: var(--seal);
+}
+
+.faq summary::after {
+  content: "";
+  position: absolute;
+  right: 0.55rem;
+  top: 1.5rem;
+  width: 0.62rem;
+  height: 0.62rem;
+  border-right: 2px solid var(--seal);
+  border-bottom: 2px solid var(--seal);
+  transform: rotate(45deg);
+  transition: transform 220ms ease, top 220ms ease;
+}
+
+.faq details[open] summary::after {
+  transform: rotate(-135deg);
+  top: 1.75rem;
+}
+
+.faq details p {
+  margin: 0 0 1.4rem;
+  font-size: 0.97rem;
+  line-height: 1.7;
   color: var(--quiet);
-  max-width: 58ch;
+  max-width: 64ch;
 }
 
+/* ---- Closing ------------------------------------------------------------- */
+
+.closing {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background-color: #06232a;
+  color: #c9dedf;
+  padding: clamp(3rem, 5vw, 4.75rem) 0;
+  text-align: center;
+}
+
+.closing .glow-seal {
+  left: 50%;
+  top: auto;
+  bottom: -18rem;
+  transform: translateX(-50%);
+}
+
+.closing h2 {
+  font-family: var(--serif);
+  font-size: clamp(1.8rem, 1.2rem + 2vw, 2.75rem);
+  font-weight: 500;
+  line-height: 1.14;
+  letter-spacing: -0.022em;
+  color: #ffffff;
+  margin: 0 0 0.85rem;
+}
+
+.closing p {
+  margin: 0 auto 1.5rem;
+  max-width: 52ch;
+  font-size: 1rem;
+  line-height: 1.7;
+  color: #b6cdd0;
+}
+
+.closing-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  justify-content: center;
+  margin-bottom: 0;
+}
+
+.closing-primary,
+.closing-secondary {
+  display: inline-block;
+  padding: 0.75rem 1.45rem;
+  border-radius: 10px;
+  font-size: 0.96rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background-color 170ms ease, border-color 170ms ease,
+    color 170ms ease, transform 170ms ease;
+}
+
+.closing-primary {
+  background: #e8a94e;
+  color: #2a1503;
+  border: 1px solid #e8a94e;
+}
+
+.closing-primary:hover {
+  background: #f4bb69;
+  border-color: #f4bb69;
+  transform: translateY(-2px);
+}
+
+.closing-secondary {
+  border: 1px solid rgb(127 212 204 / 0.5);
+  color: #cdeee9;
+}
+
+.closing-secondary:hover {
+  border-color: #7fd4cc;
+  background: rgb(127 212 204 / 0.14);
+  color: #ffffff;
+  transform: translateY(-2px);
+}
+
+.closing a:focus-visible {
+  outline: 2px solid #7fd4cc;
+  outline-offset: 3px;
+}
+
+/*
+ * Nothing that only JavaScript can undo may survive into print: a printed
+ * landing page must be the whole landing page.
+ */
+@media print {
+  html[data-motion="on"] .landing [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* ---- Landing: responsive ------------------------------------------------- */
+
+@media (max-width: 68rem) {
+  .proof-tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 62rem) {
+  .hero-grid {
+    grid-template-columns: 1fr;
+    gap: clamp(2rem, 5vw, 3rem);
+  }
+
+  .hero-art {
+    max-width: 34rem;
+  }
+
+  .hero-scene figcaption {
+    text-align: left;
+  }
+
+  .feature-grid {
+    grid-template-columns: 1fr;
+    gap: clamp(1.75rem, 4vw, 2.5rem);
+  }
+
+  .features > .feature:nth-child(even) .feature-text,
+  .features > .feature:nth-child(even) .feature-art {
+    order: 0;
+  }
+
+  .feature-art {
+    max-width: 34rem;
+  }
+
+  .compare {
+    grid-template-columns: 1fr;
+  }
+
+  /* One column: the rows no longer face each other, so subgrid would only
+     stretch beats for no reason. */
+  @supports (grid-template-rows: subgrid) {
+    .compare {
+      grid-template-rows: none;
+    }
+
+    .lane {
+      display: block;
+      grid-row: auto;
+    }
+
+    .lane ol {
+      display: block;
+      grid-row: auto;
+    }
+  }
+
+  .landing .steps > li:not(:last-child)::after {
+    display: none;
+  }
+}
+
+@media (max-width: 40rem) {
+  .landing .wrap {
+    padding: 0 calc(var(--step) * 2.5);
+  }
+
+  .proof-tiles {
+    grid-template-columns: 1fr;
+  }
+
+  .landing button.cta {
+    width: 100%;
+    text-align: center;
+  }
+
+  .console-label {
+    min-width: 0;
+  }
+
+  .facts > div {
+    grid-template-columns: 1fr;
+    gap: var(--step);
+  }
+}
 /* ======================================================================== */
 /* For agents                                                                */
 /* ======================================================================== */
+
+/*
+ * /agents is still a filed sheet, not a shopfront, so it keeps the section
+ * rhythm the landing page used to share with it. These four rules were part of
+ * that shared block and now belong to this page alone.
+ */
+.agents > header {
+  border-bottom: 2px solid var(--ink);
+  padding-bottom: calc(var(--step) * 4);
+  margin-bottom: calc(var(--step) * 7);
+}
+
+.agents > section {
+  margin-bottom: calc(var(--step) * 9);
+  scroll-margin-top: calc(var(--step) * 3);
+}
+
+.agents > section > h2 {
+  font-size: 1.65rem;
+  padding-bottom: calc(var(--step) * 1.5);
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: calc(var(--step) * 3);
+}
+
+.agents .hero-lead {
+  font-size: 1.04rem;
+  line-height: 1.7;
+  color: #2c3d4b;
+  max-width: 58ch;
+  margin: 0;
+}
+
+.agents p a {
+  color: var(--seal);
+  font-weight: 600;
+  text-underline-offset: 3px;
+}
 
 .agents > header > p:first-child {
   margin: 0;
@@ -2000,21 +3240,6 @@ dd ul[data-resolved] li:not([data-chosen])::after {
     box-shadow: none;
     background: #fff;
   }
-}
-
-/* The hero illustration borrows the page's own faces rather than the browser's
-   default, since a CSS variable is not valid in an SVG presentation attribute. */
-.figure-label {
-  font-family: var(--sans);
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.figure-stamp {
-  font-family: var(--sans);
-  font-size: 12.5px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
 }
 
 /* Waiting is a state with a shape, not a sentence floating on an empty page. */
