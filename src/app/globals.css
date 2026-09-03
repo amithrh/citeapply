@@ -457,7 +457,7 @@ select:hover {
   margin-bottom: 0.4rem;
 }
 
-.receipt dd {
+.receipt .identifiers dd {
   font-family: var(--mono);
   font-size: 0.82rem;
 }
@@ -821,8 +821,14 @@ dialog > div:last-child {
     padding: 0;
   }
 
-  [data-print="hide"] {
+  [data-print="hide"],
+  main > header [role="status"] {
     display: none !important;
+  }
+
+  main > header {
+    margin-bottom: 0.4cm;
+    padding-bottom: 0.3cm;
   }
 
   .receipt {
@@ -909,4 +915,48 @@ section li code {
   padding: 0.1rem 0.3rem;
   white-space: nowrap;
   word-break: normal;
+}
+
+/* ---- A resolved disagreement, on the frozen record ---------------------- */
+
+/*
+ * The applicant's choice is the one thing on a frozen document that no source
+ * produced, so it wears the colour the product reserves for human judgment and
+ * keeps the record it set aside in view beside the one it stood behind.
+ */
+.resolved {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--decide);
+  border-left: 3px solid var(--decide);
+  padding-left: calc(var(--step) * 1.75);
+  margin: var(--step) 0 0;
+  max-width: 62ch;
+}
+
+dd ul[data-resolved] {
+  border-left-color: var(--decide);
+}
+
+dd ul[data-resolved] li[data-chosen] {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+dd ul[data-resolved] li[data-chosen]::after {
+  content: " — you chose this";
+  font-family: var(--sans);
+  font-weight: 600;
+  color: var(--decide);
+}
+
+dd ul[data-resolved] li:not([data-chosen])::after {
+  content: " — not chosen";
+  font-family: var(--sans);
+  color: var(--quiet);
+}
+
+.frozen .answer,
+.receipt .answer {
+  font-size: 1.08rem;
 }

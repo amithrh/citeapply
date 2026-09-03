@@ -167,6 +167,73 @@ function assistanceOf(snapshot: HumanSnapshotV1 | null): "off" | "allowed" {
   return snapshot.view.assistance === "allowed" ? "allowed" : "off";
 }
 
+const REASON_PROSE: Readonly<Record<string, string>> = {
+  more_recent: "it is the more recent source",
+  corrected_record: "it is the corrected record",
+  confirmed_for_application: "you confirmed this figure for the application",
+};
+
+/**
+ * One row of a frozen document. Where the applicant resolved a disagreement,
+ * the row says so in their words: which record they stood behind, why, and
+ * which record they set aside — both excerpts stay, so a reader can check the
+ * decision rather than take the winning number on trust.
+ */
+function FrozenRow({
+  diff,
+}: Readonly<{ diff: HumanReviewV1["diffs"][number] }>) {
+  const final = diff.final;
+  const resolution =
+    "resolution" in final && typeof final.resolution !== "string"
+      ? final.resolution
+      : null;
+  return (
+    <div>
+      <dt>{fieldLabel(diff.field)}</dt>
+      <dd>
+        <span className="answer">
+          {"value" in final ? displayValue(diff.field, final.value) : ""}
+        </span>
+        {resolution === null ? null : (
+          <p className="resolved">
+            You chose the {expectedTitleOf(resolution.chosen.document)} because{" "}
+            {REASON_PROSE[resolution.reason] ?? resolution.reason}.
+          </p>
+        )}
+        {diff.excerpts.length === 0 ? null : (
+          <ul data-resolved={resolution === null ? undefined : true}>
+            {diff.excerpts.map((excerpt) => (
+              <li
+                key={excerpt.claimHandle}
+                data-chosen={
+                  resolution === null
+                    ? undefined
+                    : excerpt.claimHandle === resolution.chosen.claimHandle ||
+                      undefined
+                }
+              >
+                {excerpt.title}: “{excerpt.excerpt}”
+              </li>
+            ))}
+          </ul>
+        )}
+      </dd>
+    </div>
+  );
+}
+
+/** The record title a binding's document code stands for. */
+function expectedTitleOf(document: string): string {
+  switch (document) {
+    case "enrollment":
+      return "Synthetic Enrollment Record";
+    case "household":
+      return "Synthetic Household Statement";
+    default:
+      return "Synthetic Income Statement";
+  }
+}
+
 export default function ApplicationPage() {
   const authorityRef = useRef<Authority>(INITIAL_AUTHORITY);
   const [snapshot, setSnapshot] = useState<HumanSnapshotV1 | null>(null);
@@ -637,23 +704,7 @@ export default function ApplicationPage() {
           <h3>Accepted answers</h3>
           <dl>
             {receipt.acceptedReview.diffs.map((diff) => (
-              <div key={diff.field}>
-                <dt>{fieldLabel(diff.field)}</dt>
-                <dd>
-                  {"value" in diff.final
-                    ? displayValue(diff.field, diff.final.value)
-                    : ""}
-                  {diff.excerpts.length === 0 ? null : (
-                    <ul>
-                      {diff.excerpts.map((excerpt) => (
-                        <li key={excerpt.claimHandle}>
-                          {excerpt.title}: “{excerpt.excerpt}”
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </dd>
-              </div>
+              <FrozenRow key={diff.field} diff={diff} />
             ))}
           </dl>
 
@@ -696,23 +747,7 @@ export default function ApplicationPage() {
           ))}
           <dl>
             {review.diffs.map((diff) => (
-              <div key={diff.field}>
-                <dt>{fieldLabel(diff.field)}</dt>
-                <dd>
-                  {"value" in diff.final
-                    ? displayValue(diff.field, diff.final.value)
-                    : ""}
-                  {diff.excerpts.length === 0 ? null : (
-                    <ul>
-                      {diff.excerpts.map((excerpt) => (
-                        <li key={excerpt.claimHandle}>
-                          {excerpt.title}: “{excerpt.excerpt}”
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </dd>
-              </div>
+              <FrozenRow key={diff.field} diff={diff} />
             ))}
           </dl>
           <button
