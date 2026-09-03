@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { InvalidRequestFailureSchema } from "../../src/contracts/outcomes.ts";
 import { TOOL_NAMES } from "../../src/contracts/webmcp.ts";
 import { createCiteApplyBridge } from "../../src/webmcp/bridge.ts";
 import type { CiteApplyToolDispatch } from "../../src/webmcp/descriptors.ts";
@@ -178,7 +179,73 @@ test("a deactivated bridge stops dispatching without unregistering", async () =>
   assert.equal(stub.tools.size, 6);
 });
 
-test("a malformed tool argument never reaches dispatch", async () => {
+test("a malformed tool argument is a structured refusal, not a thrown error", async () => {
+  // D-P2-5. The closed input schema must keep a malformed argument away from
+  // the server — that part always worked. What it must ALSO do is tell the
+  // agent why, in the same shape as every other refusal in the system. It used
+  // to throw the raw ZodError at the host, which Chrome surfaced as
+  // "UnknownError: Tool was executed but the invocation failed": no code, no
+  // safeActions, nothing to act on. This was the one failure in CiteApply that
+  // was not a structured refusal.
+  const recorder = { calls: [] as unknown[] };
+  const stub = createStubModelContext();
+  const bridge = createCiteApplyBridge(
+    stubDispatch(recorder),
+    stub.context as never,
+  );
+  await bridge.registerOnce();
+  const token = bridge.beginActivation();
+  assert.ok(token !== null);
+  bridge.activate(token);
+
+  // Every kind of malformation an agent can produce against a closed schema:
+  // an unknown enum value, an unknown key, a missing required key, a wrong
+  // type, and a non-object payload.
+  const malformed: readonly [string, unknown][] = [
+    ["get_application_state", { mode: "everything" }],
+    ["get_application_state", { detail: "full" }],
+    ["get_application_state", {}],
+    ["get_application_state", { mode: 7 }],
+    ["get_application_state", { mode: "redacted", extra: true }],
+    ["get_evidence_index", { unexpected: 1 }],
+    ["apply_evidence_backed_answers", { bindings: [] }],
+    ["prepare_submission_review", { contentHash: "nope" }],
+  ];
+
+  for (const [name, input] of malformed) {
+    const tool = stub.tools.get(name);
+    assert.ok(tool !== undefined, name);
+    const result = (await tool.execute(
+      input as Record<string, unknown>,
+      { signal: new AbortController().signal },
+    )) as unknown;
+
+    // The refusal is exactly the shape the contracts define for
+    // invalid_request, and it round-trips through that schema.
+    assert.deepEqual(
+      result,
+      {
+        ok: false,
+        error: {
+          code: "invalid_request",
+          message: "The request is not valid.",
+          safeActions: ["use_visible_application"],
+        },
+      },
+      `${name} ${JSON.stringify(input)}`,
+    );
+    assert.equal(InvalidRequestFailureSchema.safeParse(result).success, true);
+    // It survives the JSON round trip a host performs to hand the result
+    // back to the agent, so nothing about it is lossy.
+    assert.deepEqual(JSON.parse(JSON.stringify(result)) as unknown, result);
+  }
+
+  // And none of them reached the server.
+  assert.equal(recorder.calls.length, 0);
+});
+
+test("a well-formed tool argument still reaches dispatch", async () => {
+  // The guard above must refuse only what the schema refuses.
   const recorder = { calls: [] as unknown[] };
   const stub = createStubModelContext();
   const bridge = createCiteApplyBridge(
@@ -192,13 +259,11 @@ test("a malformed tool argument never reaches dispatch", async () => {
 
   const tool = stub.tools.get("get_application_state");
   assert.ok(tool !== undefined);
-  await assert.rejects(
-    tool.execute(
-      { mode: "everything" },
-      { signal: new AbortController().signal },
-    ),
+  await tool.execute(
+    { mode: "redacted" },
+    { signal: new AbortController().signal },
   );
-  assert.equal(recorder.calls.length, 0);
+  assert.equal(recorder.calls.length, 1);
 });
 
 test("a client that passes no options object can still invoke a tool", async () => {

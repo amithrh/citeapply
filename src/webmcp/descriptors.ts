@@ -1,4 +1,8 @@
-import type { BridgeInactiveFailure } from "../contracts/outcomes.ts";
+import {
+  InvalidRequestFailureSchema,
+  type BridgeInactiveFailure,
+  type SharedOnly,
+} from "../contracts/outcomes.ts";
 import {
   TOOL_ANNOTATIONS,
   TOOL_DESCRIPTIONS,
@@ -73,6 +77,34 @@ function deepFreezeJson<const T>(value: T): T {
   return Object.freeze(value);
 }
 
+/**
+ * The one refusal in the system that was not a refusal. A tool argument the
+ * closed input schema rejects — a wrong key name, say — never reaches the
+ * server, which is right; but `.parse` threw the raw ZodError straight at the
+ * host, and Chrome surfaced that to the agent as
+ * `UnknownError: Tool was executed but the invocation failed`: no code, no
+ * safeActions, nothing an agent could act on. Every other failure in CiteApply
+ * is a structured refusal that names what to do instead, and a malformed
+ * argument is now one too.
+ *
+ * This is the shape the contracts already define for invalid_request
+ * (`InvalidRequestFailureSchema`), built through the schema so it cannot
+ * drift, and it is already a member of every tool's callback result union — so
+ * nothing about the agent surface is widened. The ZodError itself is
+ * deliberately not forwarded: it would echo the caller's own input back to it,
+ * and the message is a fixed literal in the contract.
+ */
+const INVALID_REQUEST_RESULT: SharedOnly<"invalid_request"> = Object.freeze(
+  InvalidRequestFailureSchema.parse({
+    ok: false,
+    error: {
+      code: "invalid_request",
+      message: "The request is not valid.",
+      safeActions: ["use_visible_application"],
+    },
+  }),
+);
+
 function throwIfAborted(signal: AbortSignal | undefined): void {
   if (signal?.aborted === true) {
     throw new DOMException("The operation was aborted.", "AbortError");
@@ -123,9 +155,11 @@ export function materializeModelContextTools(
           const invocation = lifecycle.captureInvocation();
           if (invocation === null) return lifecycle.inactiveResult();
 
-          const parsedInput = TOOL_INPUT_SCHEMAS[descriptor.name].parse(
+          const parsed = TOOL_INPUT_SCHEMAS[descriptor.name].safeParse(
             rawInput,
-          ) as never;
+          );
+          if (!parsed.success) return INVALID_REQUEST_RESULT;
+          const parsedInput = parsed.data as never;
 
           throwIfAborted(signal);
           if (!lifecycle.isInvocationCurrent(invocation)) {
