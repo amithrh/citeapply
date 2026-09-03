@@ -1,12 +1,12 @@
 # CiteApply — Devpost submission
 
-Fill the three placeholders before submitting: `LIVE_URL`, `REPO_URL`,
-`VIDEO_URL`.
+The live URL and the repository are filled in. One placeholder is left:
+`VIDEO_URL`, the public YouTube link, which only the user can supply.
 
 | Field | Value |
 |---|---|
-| Live URL (Chrome with `chrome://flags/#enable-webmcp-testing`, or the ChatGPT in-app browser) | `LIVE_URL` |
-| Public repository (MIT `LICENSE` at root) | `REPO_URL` |
+| Live URL (Chrome with `chrome://flags/#enable-webmcp-testing`, or the ChatGPT in-app browser) | https://citeapply.vercel.app |
+| Public repository (MIT `LICENSE` at root) | https://github.com/amithrh/citeapply |
 | Demo video (public YouTube, under 3:00, with audio) | `VIDEO_URL` |
 
 ---
@@ -239,7 +239,7 @@ React 19 · Zod 4 · PostgreSQL 17 · `pg` · `pdfjs-dist` (runtime parsing) ·
 
 ## Submission form answers
 
-- **App status:** Working, deployed, publicly reachable at `LIVE_URL`.
+- **App status:** Working, deployed, publicly reachable at https://citeapply.vercel.app.
 - **Tested agent/client:** Google Chrome with `chrome://flags/#enable-webmcp-testing`
   enabled — last full client-side verification on Chrome 151.0.7922.175
   (transcript in `docs/verification/genuine-chrome-webmcp.md`); re-verification
@@ -258,8 +258,8 @@ React 19 · Zod 4 · PostgreSQL 17 · `pg` · `pdfjs-dist` (runtime parsing) ·
 
 ## Pre-submission checklist
 
-- [ ] Public repository pushed to `REPO_URL`, with the MIT `LICENSE` at the root
-- [ ] `LIVE_URL` reachable over HTTPS, `APP_ORIGIN` matching it exactly
+- [ ] Public repository pushed to https://github.com/amithrh/citeapply, with the MIT `LICENSE` at the root
+- [ ] https://citeapply.vercel.app reachable over HTTPS, `APP_ORIGIN` matching it exactly
 - [ ] Migrations applied against the production database
 - [ ] Both record sets completed end to end on the deployed URL, in real Chrome
 - [ ] YouTube video public at `VIDEO_URL`, under three minutes, with audio

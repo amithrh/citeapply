@@ -1,12 +1,12 @@
 # Judge testing guide
 
-**Where to run it.** There is no public deployment yet, so this guide is written
-against a local production build at `http://localhost:3100`. Build and start it
-exactly as `README.md` → *Run the production build* prescribes — the
+**Where to run it.** The app is live at <https://citeapply.vercel.app>; open that and skip to step 1.
+Every `http://localhost:3100` written below is the local equivalent — nothing
+in this guide depends on the origin. To run it locally instead, build and start
+it exactly as `README.md` → *Run the production build* prescribes: the
 `HOSTNAME=localhost` prefix and the `set -a; . ./.env.local; set +a` line are
-both required, and omitting either produces a page that cannot start a record set.
-If a live URL is published, substitute it for `http://localhost:3100`
-throughout; nothing below depends on the origin.
+both required, and omitting either produces a page that cannot start a record
+set.
 
 Everything below is synthetic. Nothing is submitted to any real program. Please
 do not type real personal or financial information — the portal says so on the

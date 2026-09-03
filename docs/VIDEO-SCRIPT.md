@@ -7,13 +7,12 @@
 - **One continuously recorded session on the records that disagree** in Chrome 152 with
   `chrome://flags/#enable-webmcp-testing` enabled. Do not stop recording until
   the receipt renders.
-- **Recording target.** No public deployment exists yet, so record against the
-  local production build at `http://localhost:3100`, started exactly as
-  `README.md` → *Run the production build* prescribes (the `HOSTNAME=localhost`
-  is required). That is the same styled standalone build a deployment would
-  serve — nothing in the demo depends on the origin. If a live URL is published
-  before recording, substitute it here and re-record; never narrate a URL that
-  is not on screen.
+- **Recording target.** Record against the live deployment at
+  `https://citeapply.vercel.app` — that is the URL a judge will open and the one
+  the narration names. Never narrate a URL that is not on screen. (The local
+  production build at `http://localhost:3100`, started exactly as `README.md` →
+  *Run the production build* prescribes, is byte-for-byte the same app if you
+  have to fall back to it.)
 - The **cold open is an excerpt from later in that same recording** — a genuine
   external-client tool result and a visible form mutation on screen by 0:10 —
   and must carry an on-screen label saying so.

@@ -23,10 +23,10 @@ and the server — not the tool descriptions — enforces that boundary.
    `--enable-features=WebMCPTesting`. (Last verified end-to-end on Chrome
    152.0.7977.66; see
    [docs/verification/genuine-chrome-webmcp.md](docs/verification/genuine-chrome-webmcp.md).)
-2. **Open the running app.** There is no public deployment yet, so build and
-   start it locally first — *Run the production build*, below, is four commands
-   and takes about a minute — then open `http://localhost:3100`. (If a live URL
-   is published, it goes here and the rest of this quick start is unchanged.)
+2. **Open the running app.** It is live at <https://citeapply.vercel.app> — nothing to install. (To run
+   it yourself instead, *Run the production build*, below, is four commands and
+   takes about a minute, and then the app is at `http://localhost:3100`; the
+   rest of this quick start is unchanged either way.)
 3. **Pick the records that disagree.** In *The records you will be working
    from*, click **Start with records that disagree**. This is the set that
    shows the whole point: two accepted sources disagree about income.
