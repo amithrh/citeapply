@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { IBM_Plex_Mono, Newsreader, Public_Sans } from "next/font/google";
 import type { ReactNode } from "react";
 
+import { SiteFooter, SiteHeader } from "../ui/site/shell.tsx";
+
 import "./globals.css";
 
 /*
@@ -55,7 +57,11 @@ export default function RootLayout({ children }: RootLayoutProps) {
       lang="en"
       className={`${publicSans.variable} ${newsreader.variable} ${plexMono.variable}`}
     >
-      <body>{children}</body>
+      <body>
+        <SiteHeader />
+        {children}
+        <SiteFooter />
+      </body>
     </html>
   );
 }

@@ -18,7 +18,18 @@
   --decide-soft: #fdf2e3;
   --quiet: #556674;
 
+  /*
+   * The office's own field. Everything the program says sits on a cool
+   * archival ground; the masthead and the footer are the dark board it is
+   * pinned to. Neither is a new colour — both are the seal, taken down.
+   */
+  --band: #0a2f33;
+  --band-ink: #cfe3e2;
+  --field: #e9eef0;
+  --edge: rgb(18 33 46 / 0.07);
+
   --measure: 47rem;
+  --measure-wide: 69rem;
   --step: 0.5rem;
 
   --sans: var(--font-public-sans), "Public Sans", system-ui, sans-serif;
@@ -38,18 +49,45 @@ html {
 
 body {
   margin: 0;
-  background: var(--paper);
+  /*
+   * Ruled archival stock: a 4rem rule barely darker than the ground, so the
+   * page has a surface without having a pattern. It is two gradients, no
+   * asset, and nothing to fetch under `default-src 'self'`.
+   */
+  background-color: var(--field);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgb(18 33 46 / 0.028) 0 1px,
+    transparent 1px 4rem
+  );
   color: var(--ink);
   font-family: var(--sans);
   font-size: 1rem;
   line-height: 1.55;
   font-variant-numeric: tabular-nums;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
+/* The filed sheet: every page's content is one document on the office ground. */
 main {
+  flex: 1 0 auto;
+  width: 100%;
   max-width: var(--measure);
-  margin: 0 auto;
-  padding: calc(var(--step) * 5) calc(var(--step) * 3) calc(var(--step) * 12);
+  margin: calc(var(--step) * 4) auto calc(var(--step) * 8);
+  padding: calc(var(--step) * 6) calc(var(--step) * 5) calc(var(--step) * 10);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-top: 3px solid var(--seal);
+  border-radius: 5px;
+  box-shadow: 0 1px 0 var(--edge), 0 14px 34px -26px rgb(10 47 51 / 0.5);
+}
+
+main.landing,
+main.agents,
+main.portal-wide {
+  max-width: var(--measure-wide);
 }
 
 /* ---- Masthead -------------------------------------------------------- */
@@ -351,7 +389,9 @@ button[aria-disabled="true"]:hover {
 }
 
 /* The two moments that commit something the applicant is responsible for. */
-section article button,
+/* The packet chooser now lives in the hero rather than a <section>, so the
+   primary treatment keys off the chooser itself. */
+.packets article button,
 #allow-assisted-access-button,
 button.primary {
   background: var(--seal);
@@ -359,7 +399,7 @@ button.primary {
   color: #fff;
 }
 
-section article button:hover,
+.packets article button:hover,
 #allow-assisted-access-button:hover,
 button.primary:hover {
   background: #0b5754;
@@ -1042,4 +1082,995 @@ dd ul[data-resolved] li:not([data-chosen])::after {
 .frozen .answer,
 .receipt .answer {
   font-size: 1.08rem;
+}
+
+/* ======================================================================== */
+/* Site shell: the masthead and the footer every route wears                 */
+/* ======================================================================== */
+
+.site-header {
+  background: var(--band);
+  color: #fff;
+  border-bottom: 3px solid var(--seal);
+}
+
+.site-header-inner,
+.site-footer-inner {
+  max-width: var(--measure-wide);
+  margin: 0 auto;
+  padding: 0 calc(var(--step) * 4);
+}
+
+.site-header-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(var(--step) * 2);
+  min-height: 4.5rem;
+  padding-top: calc(var(--step) * 1.5);
+  padding-bottom: calc(var(--step) * 1.5);
+}
+
+.mark {
+  width: 2rem;
+  height: 2rem;
+  flex: none;
+  color: #0f5c5b;
+}
+
+.wordmark {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--step) * 1.5);
+  color: inherit;
+  text-decoration: none;
+}
+
+.wordmark > span {
+  display: block;
+  line-height: 1.15;
+}
+
+.wordmark strong {
+  display: block;
+  font-family: var(--serif);
+  font-size: 1.12rem;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+}
+
+.wordmark-sub {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--band-ink);
+}
+
+.site-header nav ul {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: calc(var(--step) * 3);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.site-header nav li {
+  margin: 0;
+}
+
+.site-header nav a {
+  display: inline-block;
+  padding: 0.25rem 0;
+  color: var(--band-ink);
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+}
+
+.site-header nav a:hover {
+  color: #fff;
+  border-bottom-color: #7fb3b1;
+}
+
+.site-header a:focus-visible,
+.site-footer a:focus-visible {
+  outline: 2px solid #7fb3b1;
+  outline-offset: 3px;
+}
+
+.site-footer {
+  flex: none;
+  background: var(--band);
+  color: var(--band-ink);
+  border-top: 3px solid var(--seal);
+}
+
+.site-footer-inner {
+  padding-top: calc(var(--step) * 6);
+  padding-bottom: calc(var(--step) * 7);
+}
+
+.footer-disclaimer {
+  display: flex;
+  align-items: flex-start;
+  gap: calc(var(--step) * 2.5);
+  padding-bottom: calc(var(--step) * 4);
+  margin-bottom: calc(var(--step) * 4);
+  border-bottom: 1px solid rgb(255 255 255 / 0.16);
+}
+
+.footer-disclaimer p {
+  margin: 0;
+  max-width: 58ch;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: #e6f0ef;
+}
+
+.footer-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: calc(var(--step) * 4);
+}
+
+.footer-columns section {
+  margin: 0;
+}
+
+.site-footer h2 {
+  font-family: var(--sans);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #7fb3b1;
+  margin: 0 0 calc(var(--step) * 1.5);
+}
+
+.site-footer ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 0.88rem;
+  line-height: 1.65;
+}
+
+.site-footer li {
+  margin: 0 0 calc(var(--step) * 1);
+}
+
+.site-footer a {
+  color: #fff;
+  text-decoration-color: rgb(255 255 255 / 0.4);
+  text-underline-offset: 3px;
+}
+
+.footer-mono {
+  font-family: var(--mono);
+  font-size: 0.82em;
+  color: #fff;
+  word-break: break-word;
+}
+
+/* ======================================================================== */
+/* Landing                                                                   */
+/* ======================================================================== */
+
+.landing > header,
+.agents > header {
+  border-bottom: 2px solid var(--ink);
+  padding-bottom: calc(var(--step) * 4);
+  margin-bottom: calc(var(--step) * 7);
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  align-items: start;
+  gap: calc(var(--step) * 3) calc(var(--step) * 7);
+}
+
+/*
+ * The chooser sits inside the hero, spanning it, because the first thing the
+ * page asks of anyone is which of the two packets they want — and the whole
+ * demonstration is one click away from the headline.
+ */
+.hero .apply {
+  grid-column: 1 / -1;
+  margin-top: calc(var(--step) * 1);
+  padding-top: calc(var(--step) * 4);
+  border-top: 1px solid var(--rule);
+}
+
+.hero .apply h2 {
+  font-size: 1.5rem;
+  margin-bottom: calc(var(--step) * 1.5);
+}
+
+.hero-cycle {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--seal);
+}
+
+.hero h1 {
+  font-size: clamp(2.4rem, 1.4rem + 3.4vw, 3.6rem);
+  margin: calc(var(--step) * 1.5) 0 calc(var(--step) * 2);
+  max-width: 14ch;
+}
+
+.hero .stamp {
+  margin-bottom: calc(var(--step) * 2.5);
+}
+
+.hero-lead {
+  font-size: 1.04rem;
+  line-height: 1.7;
+  color: #2c3d4b;
+  max-width: 58ch;
+  margin: 0;
+}
+
+.hero-figure {
+  width: 100%;
+  height: auto;
+  max-width: 30rem;
+  justify-self: end;
+  margin-top: calc(var(--step) * -1);
+}
+
+.section-lead {
+  font-size: 0.98rem;
+  color: var(--quiet);
+  max-width: 62ch;
+  margin: calc(var(--step) * -1) 0 calc(var(--step) * 3);
+}
+
+.landing > section,
+.agents > section {
+  margin-bottom: calc(var(--step) * 9);
+  scroll-margin-top: calc(var(--step) * 3);
+}
+
+.landing > section > h2,
+.agents > section > h2 {
+  font-size: 1.65rem;
+  padding-bottom: calc(var(--step) * 1.5);
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: calc(var(--step) * 3);
+}
+
+/* ---- Apply ------------------------------------------------------------- */
+
+.apply-secondary {
+  margin: calc(var(--step) * 3) 0 0;
+}
+
+.apply-secondary a,
+.landing p a,
+.agents p a {
+  color: var(--seal);
+  font-weight: 600;
+  text-underline-offset: 3px;
+}
+
+/* ---- The program's own facts ------------------------------------------- */
+
+.facts {
+  border-top: 2px solid var(--ink);
+}
+
+.facts > div {
+  grid-template-columns: 11rem 1fr;
+  align-items: baseline;
+}
+
+.facts dt {
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: var(--ink);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.facts dd {
+  font-size: 0.98rem;
+  color: #2c3d4b;
+  max-width: 58ch;
+}
+
+/* ---- How it works: a genuine sequence, so it is numbered ---------------- */
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: calc(var(--step) * 4);
+  list-style: none;
+  counter-reset: step;
+  margin: 0;
+  padding: 0;
+}
+
+.steps > li {
+  counter-increment: step;
+  margin: 0;
+  padding-top: calc(var(--step) * 4);
+  border-top: 3px solid var(--seal);
+  position: relative;
+}
+
+.steps > li::before {
+  content: counter(step);
+  position: absolute;
+  top: calc(var(--step) * 1.25);
+  left: 0;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--seal);
+}
+
+.steps h3 {
+  font-family: var(--serif);
+  font-size: 1.12rem;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--ink);
+  margin: 0 0 var(--step);
+}
+
+.steps p {
+  font-size: 0.94rem;
+  color: var(--quiet);
+  margin: 0;
+}
+
+/* ---- With and without an assistant ------------------------------------- */
+
+.compare {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: calc(var(--step) * 4);
+}
+
+.compare-col {
+  margin: 0;
+  padding: calc(var(--step) * 3.5);
+  background: #fff;
+}
+
+/*
+ * Doing it by hand is not the lesser path — it is the whole application, and
+ * it wears the colour of the decisions it is made of. The assisted column
+ * wears the evidence teal, because that is all the assistant contributes.
+ */
+.compare-col.manual {
+  border-left: 4px solid var(--decide);
+}
+
+.compare-col.assisted {
+  border-left: 4px solid var(--seal);
+}
+
+.compare-col h3 {
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--ink);
+  margin: 0 0 calc(var(--step) * 2.5);
+}
+
+.compare-col ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: beat;
+}
+
+.compare-col li {
+  counter-increment: beat;
+  position: relative;
+  padding: 0 0 calc(var(--step) * 2) calc(var(--step) * 4.5);
+  font-size: 0.94rem;
+  line-height: 1.6;
+  color: #2c3d4b;
+  margin: 0;
+}
+
+/* A timeline, not a checklist: each beat is a stop on one thread. */
+.compare-col li::before {
+  content: "";
+  position: absolute;
+  left: calc(var(--step) * 1.4);
+  top: 0.55rem;
+  bottom: -0.15rem;
+  width: 1px;
+  background: var(--rule);
+}
+
+.compare-col li:last-child::before {
+  bottom: auto;
+  height: 0;
+}
+
+.compare-col li::after {
+  content: "";
+  position: absolute;
+  left: calc(var(--step) * 0.9);
+  top: 0.4rem;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 999px;
+  background: #fff;
+  border: 2px solid var(--seal);
+}
+
+.compare-col.manual li::after {
+  border-color: var(--decide);
+}
+
+.converge {
+  border-left: 3px solid var(--ink);
+  padding-left: calc(var(--step) * 2.5);
+  margin: calc(var(--step) * 4) 0 0;
+  font-size: 1rem;
+  line-height: 1.65;
+  max-width: 66ch;
+}
+
+/* ---- The six tools ------------------------------------------------------ */
+
+.tools {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  gap: calc(var(--step) * 3);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.tools > li {
+  margin: 0;
+  padding: calc(var(--step) * 3);
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-top: 3px solid var(--seal);
+  border-radius: 4px;
+}
+
+/* The two that can move the saved application are marked as such. */
+.tools > li[data-writes] {
+  border-top-color: var(--decide);
+}
+
+.tool-name {
+  margin: 0 0 calc(var(--step) * 1.5);
+}
+
+.tool-name code {
+  font-size: 0.86rem;
+  font-weight: 500;
+  color: var(--ink);
+  word-break: break-word;
+}
+
+.tool-hints {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--step);
+  margin: 0 0 calc(var(--step) * 1.5);
+}
+
+.tool-hints span {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+}
+
+.hint-read,
+.hint-own {
+  color: var(--seal);
+  background: var(--seal-soft);
+}
+
+.hint-write,
+.hint-untrusted {
+  color: var(--decide);
+  background: var(--decide-soft);
+}
+
+.tool-summary {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--quiet);
+}
+
+.tool-consent {
+  margin: calc(var(--step) * 1.5) 0 0;
+  padding-top: calc(var(--step) * 1.5);
+  border-top: 1px solid var(--rule);
+  font-size: 0.8rem;
+  color: var(--quiet);
+}
+
+/* ---- Try it with an agent ---------------------------------------------- */
+
+.quick-start {
+  background: var(--seal-soft);
+  border: 1px solid #bcd8d6;
+  border-left: 4px solid var(--seal);
+  border-radius: 4px;
+  padding: calc(var(--step) * 4);
+}
+
+.quick-start > h2 {
+  border-bottom-color: #bcd8d6;
+}
+
+.quick-start p {
+  font-size: 0.96rem;
+}
+
+.quick-start .prompts li {
+  color: #2c3d4b;
+}
+
+/* ---- Common questions --------------------------------------------------- */
+
+.faq {
+  border-top: 2px solid var(--ink);
+}
+
+.faq > div {
+  grid-template-columns: 18rem 1fr;
+}
+
+.faq dt {
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: var(--ink);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.faq dd {
+  font-size: 0.95rem;
+  color: var(--quiet);
+  max-width: 58ch;
+}
+
+/* ======================================================================== */
+/* For agents                                                                */
+/* ======================================================================== */
+
+.agents > header > p:first-child {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--seal);
+}
+
+.agents .stamp {
+  display: inline-block;
+  margin: calc(var(--step) * 2) 0 0;
+  padding: 0.15rem 0.5rem;
+  border: 1px solid var(--decide);
+  border-radius: 3px;
+  background: var(--decide-soft);
+  color: var(--decide);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.agents h1 {
+  margin-top: calc(var(--step) * 2);
+}
+
+.plain-list {
+  list-style: none;
+  padding: 0 0 0 calc(var(--step) * 2.5);
+  margin: 0 0 calc(var(--step) * 3);
+  border-left: 3px solid var(--rule);
+  max-width: 66ch;
+}
+
+.plain-list li {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #2c3d4b;
+  margin-bottom: calc(var(--step) * 1.5);
+}
+
+.quote {
+  font-family: var(--mono);
+  font-size: 0.85em;
+  color: var(--ink);
+}
+
+.refusal {
+  background: var(--ink);
+  color: #dfe9ef;
+  border-radius: 4px;
+  padding: calc(var(--step) * 2.5) calc(var(--step) * 3);
+  overflow-x: auto;
+  margin: 0 0 calc(var(--step) * 3);
+}
+
+.refusal code {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  line-height: 1.7;
+  white-space: pre;
+  word-break: normal;
+  color: inherit;
+}
+
+/* ======================================================================== */
+/* Application: the form, and a rail for everything about the assistant      */
+/* ======================================================================== */
+
+/*
+ * Three stages on one URL. The heading names the current one; this names all
+ * three, so the applicant can see what is behind them and what is still ahead
+ * before either one-way crossing.
+ */
+.stages {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: calc(var(--step) * 1.25);
+  list-style: none;
+  margin: calc(var(--step) * 2) 0 calc(var(--step) * 2);
+  padding: 0;
+  counter-reset: none;
+}
+
+.stages li {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--step) * 1.25);
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--quiet);
+}
+
+.stages li::before {
+  content: "";
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 999px;
+  border: 2px solid var(--rule);
+  background: #fff;
+}
+
+.stages li + li::before {
+  margin-left: calc(var(--step) * 1.25);
+}
+
+.stages li + li {
+  position: relative;
+  padding-left: calc(var(--step) * 2.5);
+}
+
+.stages li + li::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: calc(var(--step) * 2.25);
+  height: 1px;
+  background: var(--rule);
+}
+
+.stages li[data-state="done"] {
+  color: var(--seal);
+}
+
+.stages li[data-state="done"]::before {
+  background: var(--seal);
+  border-color: var(--seal);
+}
+
+.stages li[data-state="current"] {
+  color: var(--ink);
+}
+
+.stages li[data-state="current"]::before {
+  border-color: var(--seal);
+  box-shadow: inset 0 0 0 2px #fff, inset 0 0 0 6px var(--seal);
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 2.05fr) minmax(0, 19rem);
+  gap: calc(var(--step) * 6);
+  align-items: start;
+}
+
+/* The rail is the assistant's whole presence on this page: what it is allowed
+   to do, what it has done, and where it stops. The form stays the form. */
+.workspace-rail {
+  position: sticky;
+  top: calc(var(--step) * 3);
+  order: 2;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--step) * 3);
+  padding: calc(var(--step) * 3);
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  max-height: calc(100vh - var(--step) * 6);
+  overflow-y: auto;
+}
+
+.workspace-main {
+  order: 1;
+  min-width: 0;
+}
+
+.workspace-rail > section {
+  margin: 0;
+}
+
+.workspace-rail h2 {
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--quiet);
+  margin-bottom: var(--step);
+}
+
+.workspace-rail .activity-panel > p,
+.workspace-rail .boundary-columns ul {
+  font-size: 0.84rem;
+}
+
+.workspace-rail .boundary-columns {
+  grid-template-columns: 1fr;
+  gap: calc(var(--step) * 2);
+}
+
+.workspace-main > section {
+  padding: calc(var(--step) * 3.5);
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  margin-bottom: calc(var(--step) * 3);
+}
+
+.workspace-main dl > div:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+/* An answer is one filed row; the disputed one is the only one that is a card. */
+.workspace-main dl > div {
+  grid-template-columns: 11.5rem 1fr;
+  padding-left: calc(var(--step) * 1.5);
+  border-left: 3px solid transparent;
+  transition: border-color 160ms ease, background-color 160ms ease;
+}
+
+.workspace-main dl > div:has(dd ul) {
+  border-left-color: var(--seal);
+  background: rgb(15 110 107 / 0.03);
+}
+
+.workspace-main dl > div:has(.decide) {
+  border-left-color: var(--decide);
+  background: rgb(140 75 5 / 0.03);
+}
+
+@media (max-width: 62rem) {
+  .workspace {
+    grid-template-columns: 1fr;
+    gap: calc(var(--step) * 4);
+  }
+
+  .workspace-rail {
+    position: static;
+    order: 1;
+    max-height: none;
+  }
+
+  .workspace-main {
+    order: 2;
+  }
+
+  .workspace-rail .boundary-columns {
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  }
+}
+
+/* ======================================================================== */
+/* Narrow: 390px must stack, not shrink                                      */
+/* ======================================================================== */
+
+@media (max-width: 52rem) {
+  .hero {
+    grid-template-columns: 1fr;
+    gap: calc(var(--step) * 4);
+  }
+
+  .hero-figure {
+    justify-self: start;
+    max-width: 24rem;
+  }
+
+  .facts > div,
+  .faq > div {
+    grid-template-columns: 1fr;
+    gap: var(--step);
+  }
+}
+
+@media (max-width: 34rem) {
+  main {
+    margin: 0;
+    padding: calc(var(--step) * 4) calc(var(--step) * 2.5)
+      calc(var(--step) * 8);
+    border-left: none;
+    border-right: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .site-header-inner,
+  .site-footer-inner {
+    padding-left: calc(var(--step) * 2.5);
+    padding-right: calc(var(--step) * 2.5);
+  }
+
+  .site-header-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--step);
+  }
+
+  .site-header nav ul {
+    gap: calc(var(--step) * 2);
+  }
+
+  .footer-disclaimer {
+    flex-direction: column;
+    gap: calc(var(--step) * 2);
+  }
+
+  .workspace-main > section {
+    padding: calc(var(--step) * 2.5);
+  }
+
+  .workspace-rail {
+    padding: calc(var(--step) * 2.5);
+  }
+
+  .compare-col {
+    padding: calc(var(--step) * 2.5);
+  }
+
+  .stages li {
+    font-size: 0.7rem;
+  }
+
+  .landing > section > h2,
+  .agents > section > h2 {
+    font-size: 1.4rem;
+  }
+}
+
+/* ======================================================================== */
+/* Print: the shell is not part of the record                                */
+/* ======================================================================== */
+
+@media print {
+  body {
+    display: block;
+    background-image: none;
+  }
+
+  main {
+    margin: 0;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: #fff;
+  }
+}
+
+/* The hero illustration borrows the page's own faces rather than the browser's
+   default, since a CSS variable is not valid in an SVG presentation attribute. */
+.figure-label {
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.figure-stamp {
+  font-family: var(--sans);
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* Waiting is a state with a shape, not a sentence floating on an empty page. */
+.waiting {
+  display: block;
+  border-left: 3px solid var(--rule);
+  padding: calc(var(--step) * 2) 0 calc(var(--step) * 2)
+    calc(var(--step) * 2.5);
+  margin: 0;
+  color: var(--quiet);
+  max-width: 44ch;
+}
+
+.waiting strong {
+  display: block;
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  font-weight: 500;
+  color: var(--ink);
+  margin-bottom: 0.25rem;
+}
+
+/*
+ * The disputed row is the one line of the ledger that is not a ledger line.
+ * It drops the label column and takes the full width, because the applicant is
+ * not reading an answer here — they are reading two records and choosing one.
+ */
+.workspace-main dl > div:has(.decide) {
+  grid-template-columns: 1fr;
+  gap: var(--step);
+}
+
+.workspace-main dl > div:has(.decide) > dt {
+  font-size: 1rem;
+  color: var(--decide);
+  padding-top: 0;
+}
+
+/* At a phone width the ledger stops being two columns: the question sits above
+   its answer, and the answer's own controls get the full line. */
+@media (max-width: 40rem) {
+  .workspace-main dl > div {
+    grid-template-columns: 1fr;
+    gap: var(--step);
+  }
+
+  .workspace-main dl > div > dd > button,
+  .workspace-main dl > div > dd > label {
+    display: block;
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .workspace-main dl > div > dd > button {
+    text-align: left;
+  }
 }
