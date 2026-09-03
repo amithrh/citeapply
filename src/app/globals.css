@@ -14,7 +14,7 @@
   --rule: #d7e0e6;
   --seal: #0f6e6b;
   --seal-soft: #e4f0ef;
-  --decide: #a75a06;
+  --decide: #8c4b05;
   --decide-soft: #fdf2e3;
   --quiet: #556674;
 
@@ -888,8 +888,8 @@ dialog > div:last-child {
 }
 
 .packets > .interesting > button:hover {
-  background: #8c4b05;
-  border-color: #8c4b05;
+  background: #6f3c04;
+  border-color: #6f3c04;
 }
 
 /* The prompts are things to say, in order, so they are numbered. */
