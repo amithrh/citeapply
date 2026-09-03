@@ -1824,8 +1824,6 @@ dd ul[data-resolved] li:not([data-chosen])::after {
   background: var(--panel);
   border: 1px solid var(--rule);
   border-radius: 4px;
-  max-height: calc(100vh - var(--step) * 6);
-  overflow-y: auto;
 }
 
 .workspace-main {
@@ -2072,5 +2070,23 @@ dd ul[data-resolved] li:not([data-chosen])::after {
 
   .workspace-main dl > div > dd > button {
     text-align: left;
+  }
+}
+
+/*
+ * The rail is sticky, so the one part of it that grows without bound — the
+ * tool-call ledger — is the part that scrolls. Bounding the whole rail instead
+ * clipped "Where the assistant stops", which does not grow and should always
+ * be readable.
+ */
+.workspace-rail .activity {
+  max-height: 21rem;
+  overflow-y: auto;
+}
+
+@media (max-width: 62rem) {
+  .workspace-rail .activity {
+    max-height: none;
+    overflow-y: visible;
   }
 }
