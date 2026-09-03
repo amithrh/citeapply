@@ -8,6 +8,11 @@ it exactly as `README.md` → *Run the production build* prescribes: the
 both required, and omitting either produces a page that cannot start a record
 set.
 
+> **Known live defect (2026-09-03).** On the deployment, linking the income
+> statement's *Annual household income* line is refused by the evidence policy,
+> so neither record set reaches a receipt there yet. Until that is fixed, run the
+> local production build for a full end-to-end pass.
+
 Everything below is synthetic. Nothing is submitted to any real program. Please
 do not type real personal or financial information — the portal says so on the
 landing page too.

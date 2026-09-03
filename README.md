@@ -27,6 +27,11 @@ and the server — not the tool descriptions — enforces that boundary.
    it yourself instead, *Run the production build*, below, is four commands and
    takes about a minute, and then the app is at `http://localhost:3100`; the
    rest of this quick start is unchanged either way.)
+
+> **Known live defect (2026-09-03).** On the deployment, linking the income
+> statement's *Annual household income* line is refused by the evidence policy,
+> so neither record set reaches a receipt there yet. Until that is fixed, run the
+> local production build for a full end-to-end pass.
 3. **Pick the records that disagree.** In *The records you will be working
    from*, click **Start with records that disagree**. This is the set that
    shows the whole point: two accepted sources disagree about income.
