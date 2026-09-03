@@ -55,8 +55,18 @@ const nextConfig: NextConfig = {
   // pdfjs-dist resolves its own worker and standard-font assets through
   // import.meta at runtime; bundling it breaks that resolution.
   serverExternalPackages: ["pdfjs-dist", "pg"],
+  // Next traces only the one legacy entry module it can see statically, so the
+  // worker, the standard fonts and the package manifest are never copied and a
+  // standalone server fails every packet start with `document_unavailable`.
+  // The whole installed package is traced instead; it is the only runtime
+  // parser this application has.
   outputFileTracingIncludes: {
-    "/api/demo": ["./fixtures/packets/**/*.pdf"],
+    "/api/demo": [
+      "./fixtures/packets/**/*.pdf",
+      "./node_modules/pdfjs-dist/package.json",
+      "./node_modules/pdfjs-dist/legacy/build/**",
+      "./node_modules/pdfjs-dist/standard_fonts/**",
+    ],
   },
   async headers() {
     return [
