@@ -91,26 +91,21 @@ export default function LandingPage() {
         <p>
           <strong>Fictional demo · Synthetic data only</strong>
         </p>
-        <h1>Apply with synthetic records</h1>
+        <h1>The agent cites. You decide.</h1>
         <p>
-          CiteApply demonstrates how a participating scholarship portal can link
-          draft answers to source records, surface conflicts, and keep judgment
-          and submission in the applicant&apos;s visible control.
+          CiteApply is a scholarship application an assistant can help you fill
+          in, but only from three source records and only up to the point where
+          judgment starts. The page registers six WebMCP tools on itself, so an
+          agent in your browser works against the portal&apos;s own rules,
+          version checks and refusals instead of guessing at the form. It can
+          read requirements, cite evidence and bind answers; it can never
+          resolve a conflict between sources, declare your email, or submit —
+          those stay in the visible interface, with you.
         </p>
       </header>
 
-      <aside aria-labelledby="synthetic-data-warning">
-        <h2 id="synthetic-data-warning">
-          Keep real information out of this demo
-        </h2>
-        <p>
-          Do not enter real personal or financial information. This does not
-          submit a real scholarship application.
-        </p>
-      </aside>
-
       <section aria-labelledby="demo-paths-heading">
-        <h2 id="demo-paths-heading">Two bounded synthetic paths</h2>
+        <h2 id="demo-paths-heading">Start a synthetic application</h2>
         {error === null ? null : (
           <div role="alert">
             <p>{error}</p>
@@ -121,46 +116,76 @@ export default function LandingPage() {
             )}
           </div>
         )}
-        <article>
-          <h3>Supported packet</h3>
-          <p>
-            Three synthetic records agree, so the portal can accept supported
-            source links and show corroboration.
-          </p>
-          <button
-            type="button"
-            aria-busy={busy === "supported" || undefined}
-            onClick={() => start("supported")}
-          >
-            {busy === "supported" ? "Starting…" : "Start supported packet"}
-          </button>
-        </article>
-        <article>
-          <h3>Conflict packet</h3>
-          <p>
-            Two accepted income sources disagree, so the portal refuses to pick
-            a value and leaves the decision to the applicant.
-          </p>
-          <button
-            type="button"
-            aria-busy={busy === "conflict" || undefined}
-            onClick={() => start("conflict")}
-          >
-            {busy === "conflict" ? "Starting…" : "Start conflict packet"}
-          </button>
-        </article>
+        <div className="packets">
+          <article>
+            <h3>Supported packet</h3>
+            <p>
+              All three records agree, so every answer can be linked to a source
+              and corroborated.
+            </p>
+            <button
+              type="button"
+              aria-busy={busy === "supported" || undefined}
+              onClick={() => start("supported")}
+            >
+              {busy === "supported" ? "Starting…" : "Start supported packet"}
+            </button>
+          </article>
+          <article className="interesting">
+            <h3>Conflict packet</h3>
+            <p>
+              Two accepted records disagree about income. This is the
+              interesting one: the portal refuses to choose, and so does the
+              agent.
+            </p>
+            <button
+              type="button"
+              aria-busy={busy === "conflict" || undefined}
+              onClick={() => start("conflict")}
+            >
+              {busy === "conflict" ? "Starting…" : "Start conflict packet"}
+            </button>
+          </article>
+        </div>
       </section>
 
-      <section aria-labelledby="session-boundary-heading">
-        <h2 id="session-boundary-heading">
-          A time-bounded local demonstration
-        </h2>
+      <section aria-labelledby="agent-heading">
+        <h2 id="agent-heading">Try it with an agent</h2>
         <p>
-          A synthetic session lasts 60 minutes after it starts. Assisted access
-          is optional, and the complete application remains available through
-          visible manual controls.
+          Enable WebMCP in Chrome at{" "}
+          <code>chrome://flags/#enable-webmcp-testing</code>. If you launch
+          Chrome yourself, the same switch is{" "}
+          <code>--enable-features=WebMCPTesting</code>. Then start the Conflict
+          packet, allow assisted access on the application page, and ask your
+          assistant:
+        </p>
+        <ol className="prompts">
+          <li>
+            Read this application&apos;s requirements and evidence index, then
+            fill in every answer you can support from the records.
+          </li>
+          <li>
+            More questions just appeared. Re-read the active requirements and
+            bind those too.
+          </li>
+          <li>Now prepare the submission review.</li>
+        </ol>
+        <p>
+          Now ask it to pick an income figure. It comes back{" "}
+          <code>conflict_requires_human</code>, the saved application does not
+          move, and the choice stays on the page in front of you. That refusal
+          is the product working, not a failure.
         </p>
       </section>
+
+      <aside aria-labelledby="synthetic-data-warning">
+        <h2 id="synthetic-data-warning">Everything here is synthetic</h2>
+        <p>
+          The records, the applicant and the scholarship are invented, no real
+          application is submitted, and a session lasts 60 minutes — so please
+          keep real personal and financial information out of it.
+        </p>
+      </aside>
     </main>
   );
 }

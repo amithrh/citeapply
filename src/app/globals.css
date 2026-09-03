@@ -753,3 +753,63 @@ dialog > div:last-child {
     content: "";
   }
 }
+
+/* ---- Landing: two paths, and how to bring an agent ---------------------- */
+
+.packets {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  gap: calc(var(--step) * 2);
+}
+
+.packets > article {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0;
+}
+
+.packets > article > button {
+  margin: auto 0 0;
+}
+
+/* Ochre is the colour of a decision the portal will not make for you, so the
+   packet built around one wears it. */
+.packets > .interesting {
+  border-color: var(--decide);
+  border-top-width: 3px;
+}
+
+.packets > .interesting > button {
+  background: var(--decide);
+  border-color: var(--decide);
+}
+
+.packets > .interesting > button:hover {
+  background: #8c4b05;
+  border-color: #8c4b05;
+}
+
+/* The prompts are things to say, in order, so they are numbered. */
+.prompts {
+  margin: 0 0 calc(var(--step) * 2);
+  padding-left: calc(var(--step) * 3);
+  max-width: 62ch;
+}
+
+.prompts li {
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: var(--quiet);
+  margin-bottom: var(--step);
+}
+
+/* A flag or an error code is one token; it wraps as a unit or not at all. */
+section p code,
+section li code {
+  background: var(--panel);
+  border-radius: 3px;
+  padding: 0.1rem 0.3rem;
+  white-space: nowrap;
+  word-break: normal;
+}
