@@ -708,6 +708,59 @@ export default function ApplicationPage() {
         : "This page is current. Assisted access is off."
       : notice;
 
+  /**
+   * The tool-call ledger — refusals rendered exactly like acceptances, with the
+   * outcome badge and the versions the server returned. It is the most
+   * persuasive thing on the page and it used to sit at the very bottom, below
+   * the fold, so the moment an agent acted there was nothing on screen to see.
+   * On the draft it is now handed to ApplicationController as children, which
+   * places it directly beneath "Assisted access" and above the answers: the
+   * claim and its evidence, adjacent. On the frozen Review and the receipt —
+   * where there is no Assisted access section — it stays at the foot of the
+   * page, so the transcript still survives the whole journey.
+   */
+  const activityPanel = (
+    <section
+      className="activity-panel"
+      aria-labelledby="assisted-activity-heading"
+      data-print="hide"
+    >
+      <h2 id="assisted-activity-heading">Assisted activity</h2>
+      <p>
+        Every tool call this page answered, with the outcome the server
+        returned. A refusal is listed exactly like an acceptance.
+      </p>
+      {activity.length === 0 ? (
+        <p className="empty">
+          No assisted tool calls yet. Allow assisted access, then ask your
+          assistant to read this application.
+        </p>
+      ) : (
+        <ol className="activity">
+          {[...activity].reverse().map((entry) => (
+            <li key={entry.sequence} data-outcome={entry.outcome}>
+              <span className="line">
+                <code>{entry.tool}</code>
+                <strong className="badge">
+                  {outcomeLabel(entry.outcome)}
+                </strong>
+              </span>
+              <span className="meta">
+                <time dateTime={entry.at}>{activityTime(entry.at)}</time>
+                {entry.applicationRevision === null
+                  ? null
+                  : ` · revision ${entry.applicationRevision}`}
+                {entry.requirementsVersion === null
+                  ? null
+                  : ` · requirements v${entry.requirementsVersion}`}
+              </span>
+            </li>
+          ))}
+        </ol>
+      )}
+    </section>
+  );
+
   return (
     <main>
       <header>
@@ -846,7 +899,9 @@ export default function ApplicationPage() {
             key={assistance}
             initialAssistance={assistance}
             stale={stale}
-          />
+          >
+            {activityPanel}
+          </ApplicationController>
 
           <section className="boundary" aria-labelledby="boundary-heading">
             <h2 id="boundary-heading">Where the assistant stops</h2>
@@ -1118,45 +1173,7 @@ export default function ApplicationPage() {
         </>
       )}
 
-        <section
-          className="activity-panel"
-          aria-labelledby="assisted-activity-heading"
-          data-print="hide"
-        >
-          <h2 id="assisted-activity-heading">Assisted activity</h2>
-          <p>
-            Every tool call this page answered, with the outcome the server
-            returned. A refusal is listed exactly like an acceptance.
-          </p>
-          {activity.length === 0 ? (
-            <p className="empty">
-              No assisted tool calls yet. Allow assisted access, then ask your
-              assistant to read this application.
-            </p>
-          ) : (
-            <ol className="activity">
-              {[...activity].reverse().map((entry) => (
-                <li key={entry.sequence} data-outcome={entry.outcome}>
-                  <span className="line">
-                    <code>{entry.tool}</code>
-                    <strong className="badge">
-                      {outcomeLabel(entry.outcome)}
-                    </strong>
-                  </span>
-                  <span className="meta">
-                    <time dateTime={entry.at}>{activityTime(entry.at)}</time>
-                    {entry.applicationRevision === null
-                      ? null
-                      : ` · revision ${entry.applicationRevision}`}
-                    {entry.requirementsVersion === null
-                      ? null
-                      : ` · requirements v${entry.requirementsVersion}`}
-                  </span>
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
+      {stage === "draft" ? null : activityPanel}
     </main>
   );
 }
