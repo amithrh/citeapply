@@ -76,8 +76,13 @@ test("@journey the Conflict packet cannot reach Review until the applicant decid
     page.getByRole("heading", { name: "Review before submitting" }),
   ).toHaveCount(0);
 
+  // Both disagreeing records are quoted at the moment of choice, so the
+  // applicant reads the evidence before picking a source (D-5).
+  await expect(page.getByText("INR 540,000")).toBeVisible();
+  await expect(page.getByText("INR 480,000")).toBeVisible();
+
   // The applicant chooses a source and states a reason.
-  await page.getByRole("button", { name: /^Use income:/ }).click();
+  await page.getByRole("button", { name: "Use the Synthetic Income Statement" }).click();
   await expect(page.getByText("Nothing is blocking Review.")).toBeVisible();
 
   await page.getByRole("button", { name: "Prepare review" }).click();

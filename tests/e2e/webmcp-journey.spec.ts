@@ -199,7 +199,7 @@ for (const packet of ["supported", "conflict"] as const) {
 
       // 10 the applicant decides, in the visible UI only
       if (packet === "conflict") {
-        await page.getByRole("button", { name: /^Use income:/ }).click();
+        await page.getByRole("button", { name: "Use the Synthetic Income Statement" }).click();
       }
       await page.getByRole("button", { name: "I declare this is my address" }).click();
       await expect(page.getByText("Nothing is blocking Review.")).toBeVisible();

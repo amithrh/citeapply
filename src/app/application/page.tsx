@@ -40,6 +40,19 @@ const CONFLICT_REASONS = [
   },
 ] as const;
 
+/**
+ * One candidate source behind a disputed answer, as the applicant sees it:
+ * the record it came from and the words that record actually uses. Fetched
+ * through the page's own human read channel (`mode: "evidence_excerpt"`), so
+ * nothing here is added to, or reachable from, the assisted tool surface.
+ */
+type SourceExcerpt = Readonly<{
+  claimHandle: string;
+  title: string;
+  excerpt: string;
+  normalizedValue: string | number | boolean;
+}>;
+
 type ReceiptRecord = Readonly<{
   receiptId: string;
   submittedAt: string;
@@ -66,6 +79,11 @@ async function postJson(
 
 function fieldLabel(field: string): string {
   return field.replaceAll("_", " ");
+}
+
+/** The record's own title, so a candidate is named before it is chosen. */
+function documentTitle(draft: HumanDraftV1, code: string): string {
+  return draft.documents.find((document) => document.code === code)?.title ?? code;
 }
 
 /** Keeps the visible list bounded; a session cannot outgrow the panel. */
@@ -101,6 +119,11 @@ export default function ApplicationPage() {
   const [activity, setActivity] = useState<readonly AssistedActivityEntry[]>(
     [],
   );
+  const [excerpts, setExcerpts] = useState<
+    Readonly<Record<string, SourceExcerpt>>
+  >({});
+  const [excerptsPending, setExcerptsPending] = useState(false);
+  const [excerptsFailed, setExcerptsFailed] = useState(false);
 
   const adoptSnapshot = useCallback((next: HumanSnapshotV1) => {
     authorityRef.current = {
@@ -351,6 +374,68 @@ export default function ApplicationPage() {
       cancelled = true;
     };
   }, [submitted, receipt]);
+
+  /**
+   * The evidence an answer rests on belongs beside the answer, and the two
+   * disagreeing income excerpts belong at the moment the applicant chooses
+   * between them — not afterwards, in the frozen Review. These are read on the
+   * page's own capability through the existing human `evidence_excerpt` mode;
+   * no tool is added and the assisted surface is unchanged.
+   */
+  const wantedHandles =
+    snapshot === null || snapshot.stage !== "draft"
+      ? []
+      : snapshot.view.fields.flatMap((field) => {
+          if (field.status === "conflict") return [...field.claims];
+          if (field.status === "ready" && "bindings" in field) {
+            return field.bindings.map(({ claimHandle }) => claimHandle);
+          }
+          if (
+            field.status === "ready" &&
+            "resolution" in field &&
+            typeof field.resolution !== "string"
+          ) {
+            return [field.resolution.chosen.claimHandle];
+          }
+          return [];
+        });
+  const missingHandles = wantedHandles.filter(
+    (handle) => excerpts[handle] === undefined,
+  );
+  const missingKey = [...new Set(missingHandles)].sort().join(",");
+
+  useEffect(() => {
+    if (missingKey === "") {
+      setExcerptsPending(false);
+      return;
+    }
+    let cancelled = false;
+    setExcerptsPending(true);
+    void (async () => {
+      const loaded: Record<string, SourceExcerpt> = {};
+      let failed = false;
+      for (const claimHandle of missingKey.split(",")) {
+        const result = (await postJson(
+          "/api/application",
+          { mode: "evidence_excerpt", claimHandle },
+          authorityRef.current.pageCapability,
+        )) as { ok?: boolean; data?: { evidence?: SourceExcerpt } };
+        const evidence = result.data?.evidence;
+        if (result.ok === true && evidence !== undefined) {
+          loaded[claimHandle] = evidence;
+        } else {
+          failed = true;
+        }
+      }
+      if (cancelled) return;
+      setExcerpts((current) => ({ ...current, ...loaded }));
+      setExcerptsFailed(failed);
+      setExcerptsPending(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [missingKey]);
 
   const draft: HumanDraftV1 | null =
     snapshot !== null && snapshot.stage === "draft" ? snapshot.view : null;
@@ -604,9 +689,58 @@ export default function ApplicationPage() {
                     field.status === "conflict" ? (
                       <div className="decide">
                         <p>
-                          CiteApply will not choose between these. Pick the
-                          source you stand behind.
+                          CiteApply will not choose between these. Read both
+                          records and pick the source you stand behind.
                         </p>
+                        {excerptsPending ? (
+                          <p role="status" aria-live="polite">
+                            Loading both source excerpts…
+                          </p>
+                        ) : null}
+                        {excerptsFailed ? (
+                          <p role="alert">
+                            Some source excerpts could not be loaded. Reload the
+                            page to read them before choosing.
+                          </p>
+                        ) : null}
+                        <ul className="candidates">
+                          {draft.claims
+                            .filter(
+                              (claim) =>
+                                claim.kind === "annual_household_income",
+                            )
+                            .map((claim) => {
+                              const source = excerpts[claim.claimHandle];
+                              const title =
+                                source?.title ??
+                                documentTitle(draft, claim.document);
+                              return (
+                                <li key={claim.claimHandle}>
+                                  <p className="candidate-source">{title}</p>
+                                  <p className="candidate-excerpt">
+                                    {source === undefined
+                                      ? "Loading this record’s words…"
+                                      : `“${source.excerpt}”`}
+                                  </p>
+                                  <p className="candidate-value">
+                                    Reads as {String(claim.normalizedValue)}
+                                  </p>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      void runAction({
+                                        action: "resolve_income",
+                                        claimHandle: claim.claimHandle,
+                                        reason,
+                                      })
+                                    }
+                                  >
+                                    Use the {title}
+                                  </button>
+                                </li>
+                              );
+                            })}
+                        </ul>
                         <label>
                           <span>Why this source</span>
                           <select
@@ -620,26 +754,6 @@ export default function ApplicationPage() {
                             ))}
                           </select>
                         </label>
-                        {draft.claims
-                          .filter(
-                            (claim) => claim.kind === "annual_household_income",
-                          )
-                          .map((claim) => (
-                            <button
-                              key={claim.claimHandle}
-                              type="button"
-                              onClick={() =>
-                                void runAction({
-                                  action: "resolve_income",
-                                  claimHandle: claim.claimHandle,
-                                  reason,
-                                })
-                              }
-                            >
-                              Use {claim.document}:{" "}
-                              {String(claim.normalizedValue)}
-                            </button>
-                          ))}
                       </div>
                     ) : null}
                   </dd>

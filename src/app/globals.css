@@ -599,3 +599,64 @@ dialog > div:last-child {
   font-family: var(--mono);
   font-size: 0.75rem;
 }
+
+/* ---- Disputed sources, side by side at the moment of choice ------------- */
+
+/*
+ * The applicant cannot stand behind a number they have not read. Each
+ * candidate is the record itself — its name, its own words, and what those
+ * words amount to — so the choice is between two sources, not two integers.
+ */
+.candidates {
+  /* This list is a set of records, not the source tether under an answer, so
+     it opts out of the tether's rule and monospace. */
+  list-style: none;
+  border-left: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: calc(var(--step) * 2);
+  padding: 0;
+  margin: 0 0 calc(var(--step) * 3);
+}
+
+.candidates > li {
+  font-family: var(--sans);
+  font-size: 1rem;
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid var(--decide);
+  border-radius: 4px;
+  padding: calc(var(--step) * 2);
+  margin: 0;
+}
+
+.candidate-source {
+  font-family: var(--serif);
+  font-size: 1rem;
+  color: var(--ink);
+  margin: 0 0 var(--step);
+}
+
+.candidate-excerpt {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: var(--quiet);
+  border-left: 3px solid var(--decide);
+  padding-left: calc(var(--step) * 1.5);
+  margin: 0 0 var(--step);
+}
+
+.candidate-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0 0 calc(var(--step) * 1.5);
+}
+
+.candidates button {
+  margin: auto 0 0;
+  width: 100%;
+}
