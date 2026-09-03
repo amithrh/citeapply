@@ -27,3 +27,7 @@ test-results/
 .scratch/
 .vercel
 .env*
+
+# The raw demo-video take stays on disk, not in git.
+docs/video/raw/*.webm
+docs/video/composition/node_modules/

@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>CiteApply — demo</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      :root {
+        --teal: #0f6b6a;
+        --teal-deep: #084140;
+        --ochre: #8c4b05;
+        --ink: #10201f;
+        --paper: #f7f4ee;
+        --serif: "Newsreader", "Iowan Old Style", Georgia, "Times New Roman", serif;
+        --sans: "Public Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+        --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+      }
+      body {
+        margin: 0;
+        background: #000;
+      }
+      #root {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: var(--teal-deep);
+        font-family: var(--sans);
+      }
+      /* The recorded session, letterboxed so no page chrome is ever covered. */
+      video.shot {
+        position: absolute;
+        left: 168px;
+        top: 4px;
+        width: 1584px;
+        height: 990px;
+        object-fit: fill;
+        background: #fff;
+      }
+      /* Bottom band: captions live here, never over the page. */
+      .band {
+        position: absolute;
+        left: 0;
+        top: 996px;
+        width: 1920px;
+        height: 84px;
+        background: var(--teal-deep);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 40px;
+        box-sizing: border-box;
+      }
+      .band-note {
+        position: absolute;
+        right: 40px;
+        top: 1027px;
+        font-family: var(--mono);
+        font-size: 19px;
+        letter-spacing: 0.04em;
+        color: rgba(247, 244, 238, 0.95);
+        white-space: nowrap;
+      }
+      .lower-third {
+        position: absolute;
+        left: 40px;
+        top: 1006px;
+        display: flex;
+        align-items: baseline;
+        gap: 22px;
+        max-width: 1300px;
+      }
+      .lt-step {
+        font-family: var(--mono);
+        font-size: 20px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #7fd6d0;
+        white-space: nowrap;
+      }
+      .lt-text {
+        font-family: var(--serif);
+        font-size: 33px;
+        line-height: 1.1;
+        color: var(--paper);
+        white-space: nowrap;
+      }
+      .lt-text em {
+        font-style: normal;
+        font-family: var(--mono);
+        font-size: 27px;
+        color: #f0b070;
+      }
+      /* Persistent honesty labels */
+      .stamp {
+        position: absolute;
+        top: 26px;
+        left: 200px;
+        padding: 12px 20px;
+        background: rgba(140, 75, 5, 0.94);
+        color: #fff8ef;
+        font-family: var(--mono);
+        font-size: 22px;
+        letter-spacing: 0.05em;
+        border-radius: 4px;
+      }
+      .rate-tag {
+        position: absolute;
+        top: 26px;
+        right: 200px;
+        padding: 10px 18px;
+        background: rgba(16, 32, 31, 0.9);
+        border: 1px solid rgba(247, 244, 238, 0.5);
+        color: var(--paper);
+        font-family: var(--mono);
+        font-size: 21px;
+        letter-spacing: 0.06em;
+        border-radius: 4px;
+      }
+      /* Full-frame cards */
+      .card {
+        position: absolute;
+        inset: 0;
+        background: var(--teal-deep);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 0 150px;
+        box-sizing: border-box;
+        color: var(--paper);
+      }
+      .card .kicker {
+        font-family: var(--mono);
+        font-size: 24px;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: #f0b070;
+        margin: 0 0 30px;
+      }
+      .card h1 {
+        font-family: var(--serif);
+        font-size: 108px;
+        line-height: 1.02;
+        margin: 0;
+        font-weight: 500;
+      }
+      .card h2 {
+        font-family: var(--serif);
+        font-size: 60px;
+        line-height: 1.08;
+        margin: 0 0 34px;
+        font-weight: 500;
+      }
+      .card p.sub {
+        font-family: var(--sans);
+        font-size: 30px;
+        line-height: 1.4;
+        color: rgba(247, 244, 238, 0.78);
+        margin: 34px 0 0;
+        max-width: 1300px;
+      }
+      .tool-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px 48px;
+        margin: 10px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      .tool-grid li {
+        font-family: var(--mono);
+        font-size: 36px;
+        color: #7fd6d0;
+        padding: 14px 22px;
+        background: rgba(15, 107, 106, 0.42);
+        border-left: 5px solid #7fd6d0;
+      }
+      .card .source {
+        font-family: var(--mono);
+        font-size: 23px;
+        color: rgba(247, 244, 238, 0.6);
+        margin: 40px 0 0;
+      }
+      .end-urls {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        margin-top: 46px;
+      }
+      .end-urls span {
+        font-family: var(--mono);
+        font-size: 42px;
+        color: #7fd6d0;
+      }
+      .end-urls span.note {
+        font-size: 24px;
+        color: rgba(247, 244, 238, 0.6);
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-width="1920"
+      data-height="1080"
+      data-duration="166.4"
+    >
+      <!-- ========== 0:00 cold open — an excerpt from later in this same take ========== -->
+      <video
+        class="shot"
+        id="cold-open"
+        src="assets/seg-cold.mp4"
+        data-start="0"
+        data-duration="12"
+        data-track-index="0"
+        muted
+        playsinline
+      ></video>
+      <div class="stamp clip" data-start="0" data-duration="12" data-track-index="4">
+        Excerpt from 0:48 of this same recording
+      </div>
+
+      <!-- ========== 0:12 title card ========== -->
+      <section class="card clip" data-start="12" data-duration="5" data-track-index="3">
+        <p class="kicker" id="title-kicker">A WebMCP demonstration</p>
+        <h1 id="title-line">CiteApply — The agent cites.<br />You decide.</h1>
+      </section>
+
+      <!-- ========== the session, from the start ========== -->
+      <video
+        class="shot"
+        id="s2"
+        src="assets/seg-s2.mp4"
+        data-start="17"
+        data-duration="12.97"
+        data-track-index="0"
+        muted
+        playsinline
+      ></video>
+
+      <!-- the six tools this session really registered -->
+      <section class="card clip" data-start="29.97" data-duration="14.7" data-track-index="3">
+        <p class="kicker">Discovered before any consent was given</p>
+        <h2>document.modelContext.getTools()</h2>
+        <ul class="tool-grid">
+          <li>get_application_state</li>
+          <li>get_form_requirements</li>
+          <li>get_evidence_index</li>
+          <li>get_validation_issues</li>
+          <li>apply_evidence_backed_answers</li>
+          <li>prepare_submission_review</li>
+        </ul>
+        <p class="source">
+          Captured from the browser's own tool host during this recording · Chrome 152,
+          --enable-features=WebMCPTesting
+        </p>
+      </section>
+
+      <video
+        class="shot"
+        id="s4"
+        src="assets/seg-s4.mp4"
+        data-start="44.67"
+        data-duration="12.71"
+        data-track-index="0"
+        muted
+        playsinline
+      ></video>
+
+      <video
+        class="shot"
+        id="s5"
+        src="assets/seg-s5.mp4"
+        data-start="57.38"
+        data-duration="13.08"
+        data-track-index="0"
+        muted
+        playsinline
+      ></video>
+      <div class="rate-tag clip" data-start="57.38" data-duration="13.08" data-track-index="4">
+        sped up 2× · waiting compressed
+      </div>
+
+      <video
+        class="shot"
+        id="s6"
+        src="assets/seg-s6.mp4"
+        data-start="70.46"
+        data-duration="14.4"
+        data-track-index="0"
+        muted
+        playsinline
+      ></video>
+      <div class="rate-tag clip" data-start="70.46" data-duration="14.4" data-track-index="4">
+        slowed 0.55× · nothing cut
+      </div>
+
+      <video
+        class="shot"
+        id="s7"
+        src="assets/seg-s7.mp4"
+        data-start="84.86"
+        data-duration="20.07"
+        data-track-index="0"
+        muted
+        playsinline
+      ></video>
+
+      <video
+        class="shot"
+        id="s8"
+        src="assets/seg-s8.mp4"
+        data-start="104.93"
+        data-duration="19.29"
+        data-track-index="0"
+        muted
+        playsinline
+      ></video>
+
+      <video
+        class="shot"
+        id="s9"
+        src="assets/seg-s9.mp4"
+        data-start="124.22"
+        data-duration="14.49"
+        data-track-index="0"
+        muted
+        playsinline
+      ></video>
+
+      <video
+        class="shot"
+        id="s10"
+        src="assets/seg-s10.mp4"
+        data-start="138.71"
+        data-duration="17.66"
+        data-track-index="0"
+        muted
+        playsinline
+      ></video>
+
+      <!-- ========== end card ========== -->
+      <section class="card clip" data-start="156.37" data-duration="10.03" data-track-index="3">
+        <p class="kicker">The agent cites. You decide.</p>
+        <h2 id="end-head">CiteApply</h2>
+        <div class="end-urls">
+          <span id="end-url-1">https://citeapply.vercel.app</span>
+          <span id="end-url-2">github.com/amithrh/citeapply</span>
+          <span class="note"
+            >Synthetic records · a fictional program · WebMCP is a draft standard</span
+          >
+        </div>
+      </section>
+
+      <!-- ========== the bottom band and its captions ========== -->
+      <div class="band clip" data-start="0" data-duration="166.4" data-track-index="5"></div>
+      <div class="band-note clip" data-start="0" data-duration="166.4" data-track-index="6">
+        Synthetic data only · fictional program
+      </div>
+
+      <div class="lower-third clip" data-start="0.6" data-duration="11.4" data-track-index="6">
+        <span class="lt-step">Cold open</span>
+        <span class="lt-text"
+          >apply_evidence_backed_answers — <em>accepted</em>, four rows bound to cited lines</span
+        >
+      </div>
+      <div class="lower-third clip" data-start="17.4" data-duration="12.4" data-track-index="6">
+        <span class="lt-step">01 · Start</span>
+        <span class="lt-text">The record set that disagrees — six WebMCP tools register</span>
+      </div>
+      <div class="lower-third clip" data-start="45" data-duration="12.2" data-track-index="6">
+        <span class="lt-step">02 · Consent</span>
+        <span class="lt-text">A real disclosure — the page holds the capability, not the agent</span>
+      </div>
+      <div class="lower-third clip" data-start="57.7" data-duration="12.5" data-track-index="6">
+        <span class="lt-step">03 · The run</span>
+        <span class="lt-text"
+          >state, rules, evidence index, then one atomic write — <em>accepted</em></span
+        >
+      </div>
+      <div class="lower-third clip" data-start="70.8" data-duration="13.8" data-track-index="6">
+        <span class="lt-step">04 · Live rules</span>
+        <span class="lt-text"
+          >get_form_requirements — <em>accepted</em>: 6 required answers became 8</span
+        >
+      </div>
+      <div class="lower-third clip" data-start="85.2" data-duration="19.4" data-track-index="6">
+        <span class="lt-step">05 · The refusal</span>
+        <span class="lt-text"
+          >apply_evidence_backed_answers — <em>conflict_requires_human</em>, nothing written</span
+        >
+      </div>
+      <div class="lower-third clip" data-start="105.3" data-duration="18.6" data-track-index="6">
+        <span class="lt-step">06 · The human</span>
+        <span class="lt-text">Read both records, choose a reason, choose a source, declare the email</span>
+      </div>
+      <div class="lower-third clip" data-start="124.6" data-duration="13.8" data-track-index="6">
+        <span class="lt-step">07 · Frozen review</span>
+        <span class="lt-text">Every answer beside its exact excerpt — assisted access closes</span>
+      </div>
+      <div class="lower-third clip" data-start="139.1" data-duration="17" data-track-index="6">
+        <span class="lt-step">08 · Receipt</span>
+        <span class="lt-text">Same hash, same warning, the source chosen and the reason given</span>
+      </div>
+
+      <!-- ========== narration ========== -->
+      <audio id="a01" src="assets/n01.wav" data-start="0.4" data-duration="11.35" data-track-index="10" data-volume="1"></audio>
+      <audio id="a02" src="assets/n02.wav" data-start="17.2" data-duration="12.8" data-track-index="10" data-volume="1"></audio>
+      <audio id="a03" src="assets/n03.wav" data-start="30.1" data-duration="14.7" data-track-index="10" data-volume="1"></audio>
+      <audio id="a04" src="assets/n04.wav" data-start="44.8" data-duration="12.6" data-track-index="10" data-volume="1"></audio>
+      <audio id="a05" src="assets/n05.wav" data-start="57.5" data-duration="13.08" data-track-index="10" data-volume="1"></audio>
+      <audio id="a06" src="assets/n06.wav" data-start="70.6" data-duration="14.4" data-track-index="10" data-volume="1"></audio>
+      <audio id="a07" src="assets/n07.wav" data-start="85" data-duration="20.07" data-track-index="10" data-volume="1"></audio>
+      <audio id="a08" src="assets/n08.wav" data-start="105.1" data-duration="19.29" data-track-index="10" data-volume="1"></audio>
+      <audio id="a09" src="assets/n09.wav" data-start="124.4" data-duration="14.49" data-track-index="10" data-volume="1"></audio>
+      <audio id="a10" src="assets/n10.wav" data-start="138.9" data-duration="17.66" data-track-index="10" data-volume="1"></audio>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+
+      // Title card
+      tl.fromTo("#title-kicker", { y: 22, opacity: 0 }, { y: 0, opacity: 1, duration: 0.55, ease: "power3.out" }, 12.15);
+      tl.fromTo("#title-line", { y: 42, opacity: 0 }, { y: 0, opacity: 1, duration: 0.75, ease: "power3.out" }, 12.35);
+
+      // The six tools land one after another.
+      tl.fromTo(
+        ".tool-grid li",
+        { x: -26, opacity: 0 },
+        { x: 0, opacity: 1, duration: 0.4, stagger: 0.16, ease: "power2.out" },
+        30.5,
+      );
+
+      // Lower thirds settle in rather than snapping.
+      tl.fromTo(".lower-third", { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, stagger: 0, ease: "power2.out" }, 0.6);
+
+      // End card
+      tl.fromTo("#end-head", { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: "power3.out" }, 156.5);
+      tl.fromTo("#end-url-1", { opacity: 0 }, { opacity: 1, duration: 0.5 }, 157.0);
+      tl.fromTo("#end-url-2", { opacity: 0 }, { opacity: 1, duration: 0.5 }, 157.3);
+
+      tl.set({}, {}, 166.4);
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>
