@@ -566,41 +566,72 @@ export default function ApplicationPage() {
     };
   }, [adoptSnapshot, adoptProjection, recordActivity, reconcile]);
 
-  const runAction = useCallback(
-    async (action: Record<string, unknown>) => {
-      const current = authorityRef.current;
-      const result = (await postJson(
-        "/api/application/actions",
-        {
-          requestId: crypto.randomUUID(),
-          expectedPageEpoch: current.expectedPageEpoch,
-          expectedApplicationRevision: current.expectedApplicationRevision,
-          expectedRequirementsVersion: current.expectedRequirementsVersion,
-          ...action,
-        },
-        current.pageCapability,
-      )) as {
-        ok?: boolean;
-        data?: { consentCapability?: string; snapshot?: HumanSnapshotV1 };
-        error?: { code: string; message: string };
-      };
+  /**
+   * One action at a time.
+   *
+   * Every human action carries the coordinate the page last adopted, and the
+   * server refuses a coordinate it has already superseded. Reading
+   * `authorityRef.current`, awaiting the round trip and adopting the answer is
+   * therefore a critical section: two actions started inside one round trip
+   * both read the same revision, and the second is refused with `stale_state`.
+   * Locally the trip is a millisecond and the window never opens; over a real
+   * network it is hundreds, so any two ordinary interactions — saving an email
+   * and declaring it, then linking the next line — collide.
+   *
+   * Serializing the section closes the window without weakening the coordinate
+   * check: each action still sends the coordinate the server last confirmed,
+   * and it is now guaranteed to be the current one.
+   */
+  const actionQueueRef = useRef<Promise<unknown>>(Promise.resolve());
 
-      if (result.ok === true && result.data?.snapshot !== undefined) {
-        if (result.data.consentCapability !== undefined) {
-          authorityRef.current = {
-            ...authorityRef.current,
-            consentCapability: result.data.consentCapability,
-          };
-        }
-        adoptSnapshot(result.data.snapshot);
-        setProblem(null);
-      } else if (result.error !== undefined) {
-        noteOutcome(result.error.code);
-        setProblem(result.error.message);
-      }
-      return result;
+  const serializeAction = useCallback(
+    <T,>(work: () => Promise<T>): Promise<T> => {
+      const queued = actionQueueRef.current.then(work, work);
+      actionQueueRef.current = queued.then(
+        () => undefined,
+        () => undefined,
+      );
+      return queued;
     },
-    [adoptSnapshot, noteOutcome],
+    [],
+  );
+
+  const runAction = useCallback(
+    (action: Record<string, unknown>) =>
+      serializeAction(async () => {
+        const current = authorityRef.current;
+        const result = (await postJson(
+          "/api/application/actions",
+          {
+            requestId: crypto.randomUUID(),
+            expectedPageEpoch: current.expectedPageEpoch,
+            expectedApplicationRevision: current.expectedApplicationRevision,
+            expectedRequirementsVersion: current.expectedRequirementsVersion,
+            ...action,
+          },
+          current.pageCapability,
+        )) as {
+          ok?: boolean;
+          data?: { consentCapability?: string; snapshot?: HumanSnapshotV1 };
+          error?: { code: string; message: string };
+        };
+
+        if (result.ok === true && result.data?.snapshot !== undefined) {
+          if (result.data.consentCapability !== undefined) {
+            authorityRef.current = {
+              ...authorityRef.current,
+              consentCapability: result.data.consentCapability,
+            };
+          }
+          adoptSnapshot(result.data.snapshot);
+          setProblem(null);
+        } else if (result.error !== undefined) {
+          noteOutcome(result.error.code);
+          setProblem(result.error.message);
+        }
+        return result;
+      }),
+    [adoptSnapshot, noteOutcome, serializeAction],
   );
 
   /**
@@ -706,35 +737,36 @@ export default function ApplicationPage() {
     },
   };
 
-  const submit = async (review: HumanReviewV1) => {
-    const current = authorityRef.current;
-    const result = (await postJson(
-      "/api/submission",
-      {
-        mode: "submit",
-        intent: {
-          requestId: crypto.randomUUID(),
-          expectedPageEpoch: current.expectedPageEpoch,
-          expectedApplicationRevision: current.expectedApplicationRevision,
-          reviewId: review.reviewId,
-          reviewSourceRevision: review.sourceVersions.applicationRevision,
-          contentHash: review.contentHash,
+  const submit = async (review: HumanReviewV1) =>
+    serializeAction(async () => {
+      const current = authorityRef.current;
+      const result = (await postJson(
+        "/api/submission",
+        {
+          mode: "submit",
+          intent: {
+            requestId: crypto.randomUUID(),
+            expectedPageEpoch: current.expectedPageEpoch,
+            expectedApplicationRevision: current.expectedApplicationRevision,
+            reviewId: review.reviewId,
+            reviewSourceRevision: review.sourceVersions.applicationRevision,
+            contentHash: review.contentHash,
+          },
         },
-      },
-      current.pageCapability,
-    )) as {
-      ok?: boolean;
-      data?: { receipt: ReceiptRecord };
-      error?: { message: string };
-    };
+        current.pageCapability,
+      )) as {
+        ok?: boolean;
+        data?: { receipt: ReceiptRecord };
+        error?: { message: string };
+      };
 
-    if (result.ok === true && result.data !== undefined) {
-      setReceipt(result.data.receipt);
-      setProblem(null);
-    } else if (result.error !== undefined) {
-      setProblem(result.error.message);
-    }
-  };
+      if (result.ok === true && result.data !== undefined) {
+        setReceipt(result.data.receipt);
+        setProblem(null);
+      } else if (result.error !== undefined) {
+        setProblem(result.error.message);
+      }
+    });
 
   /**
    * Screen, file, and print are three presentations of one stored record.

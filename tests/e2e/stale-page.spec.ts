@@ -89,3 +89,54 @@ test("@journey a superseded tab stops claiming to be current", async ({
     second.getByText("This page is no longer current. Reload to continue."),
   ).toBeVisible();
 });
+
+/**
+ * The deployment defect this test locks down. Every human action carries the
+ * coordinate the page last adopted, and the server refuses one it has already
+ * superseded. Reading that coordinate, awaiting the round trip and adopting
+ * the answer is a critical section: two actions started inside one round trip
+ * read the same revision, and the second is refused `stale_state`.
+ *
+ * On localhost the round trip is a millisecond and the window never opens. On
+ * a real network it is hundreds, so an applicant who saves the email, declares
+ * it and links the next line at ordinary speed is refused for no reason they
+ * can see. Routing every action through one queue closes the window without
+ * weakening the coordinate check — so this pins a *deployment* latency into a
+ * local test, and asserts the third action is accepted.
+ */
+test("@journey actions started inside one slow round trip are not refused", async ({
+  page,
+}) => {
+  // A deployment's latency, made deterministic and local.
+  await page.route("**/api/application/actions", async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    await route.continue();
+  });
+
+  await page.goto("/");
+  await page
+    .getByRole("button", { name: "Start with records that agree" })
+    .click();
+  await expect(page.getByText("This page is current.")).toBeVisible();
+
+  // Three ordinary interactions, at ordinary speed: no wait between them.
+  await page.getByRole("button", { name: "Save email" }).click();
+  await page
+    .getByRole("button", { name: "I declare this is my address" })
+    .click();
+  const entry = page.locator('.entry[data-field="annual_household_income"]');
+  await entry.getByRole("textbox").fill("INR 480,000");
+  await entry
+    .getByLabel("Which record did you read it in?")
+    .selectOption("income");
+  await entry
+    .getByLabel("Which line in it says so?")
+    .selectOption({ label: "Annual household income" });
+  await entry.getByRole("button", { name: "Link this line" }).click();
+
+  // The third action was accepted: the entry is gone and the answer is saved.
+  await expect(
+    page.locator('.entry[data-field="annual_household_income"]'),
+  ).toHaveCount(0, { timeout: 15_000 });
+  await expect(page.getByText("The saved application changed.")).toHaveCount(0);
+});

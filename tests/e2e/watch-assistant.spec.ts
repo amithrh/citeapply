@@ -71,45 +71,64 @@ async function openDraft(
 }
 
 /**
- * Runs the demonstration and collects the outcome badge for every step, in
- * order, by polling the strip between steps. "Skip ahead" is pressed each time
- * so the run does not spend its scripted pauses in a test.
+ * Records every narrated step as the page renders it.
+ *
+ * Sampling the strip on a timer only works when the round trip is a
+ * millisecond: over a real network a step can arrive and be replaced between
+ * two polls, and the run then finishes with steps unseen. A MutationObserver
+ * installed before the run cannot miss one — each settled step is a DOM
+ * commit, and the recorder reads it there. The assertions on what it recorded
+ * are unchanged: nine steps, in order, with the outcome the server returned.
+ */
+async function recordSteps(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const seen: [string, string][] = [];
+    (globalThis as unknown as { __watchSeen: [string, string][] }).__watchSeen =
+      seen;
+    const record = () => {
+      const strip = document.querySelector(".watch-strip");
+      if (strip === null) return;
+      const progress = strip.querySelector(".watch-progress")?.textContent;
+      const step = /Step\s+(\d+)/u.exec(progress ?? "")?.[1];
+      if (step === undefined) return;
+      const tool = strip.querySelector(".watch-call code")?.textContent;
+      const badge = strip.querySelector(".watch-badge")?.textContent;
+      if (
+        typeof tool !== "string" ||
+        typeof badge !== "string" ||
+        badge === "calling…"
+      ) {
+        return;
+      }
+      // The step number is the key, not the tool name: four of the nine steps
+      // call the same tool and three of them succeed, so a run keyed on the
+      // badge alone would silently collapse them into one.
+      if (seen.length === Number(step) - 1) seen.push([tool, badge]);
+    };
+    new MutationObserver(record).observe(document.body, {
+      subtree: true,
+      childList: true,
+      characterData: true,
+      attributes: true,
+    });
+  });
+}
+
+/**
+ * Drives the run to its hand-off, pressing "Skip ahead" so it does not spend
+ * its scripted pauses in a test, and returns everything the recorder saw.
  */
 async function watch(
   page: Page,
 ): Promise<readonly (readonly [string, string])[]> {
-  const seen: [string, string][] = [];
-  for (let attempt = 0; attempt < 120; attempt += 1) {
-    // The step number is the key, not the tool name: four of the nine steps
-    // call the same tool and three of them succeed, so a run keyed on the
-    // badge alone would silently collapse them into one.
-    const progress = await page
-      .locator(".watch-progress")
-      .first()
-      .textContent()
-      .catch(() => null);
-    const index = Number(/Step\s+(\d+)/.exec(progress ?? "")?.[1] ?? "0");
-    const tool = await page
-      .locator(".watch-call code")
-      .first()
-      .textContent()
-      .catch(() => null);
-    const badge = await page
-      .locator(".watch-badge")
-      .first()
-      .textContent()
-      .catch(() => null);
-    if (
-      index > 0 &&
-      tool !== null &&
-      badge !== null &&
-      badge !== "calling…" &&
-      seen.length === index - 1
-    ) {
-      seen.push([tool, badge]);
-    }
+  for (let attempt = 0; attempt < 300; attempt += 1) {
+    const seen = await page.evaluate(
+      () =>
+        (globalThis as unknown as { __watchSeen: [string, string][] })
+          .__watchSeen,
+    );
     if ((await page.locator(".handoff").count()) > 0 && seen.length === 9) {
-      break;
+      return seen;
     }
     await page
       .getByRole("button", { name: "Skip ahead" })
@@ -117,7 +136,11 @@ async function watch(
       .catch(() => undefined);
     await page.waitForTimeout(120);
   }
-  return seen;
+  return await page.evaluate(
+    () =>
+      (globalThis as unknown as { __watchSeen: [string, string][] })
+        .__watchSeen,
+  );
 }
 
 async function assertRun(
@@ -135,6 +158,7 @@ async function assertRun(
   await expect(page.locator(".watch-strip")).toHaveCount(0);
   await expect(page.locator(".activity-panel li")).toHaveCount(0);
 
+  await recordSteps(page);
   await page
     .getByRole("button", { name: "Allow assisted access", exact: true })
     .click();
