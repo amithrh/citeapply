@@ -13,7 +13,10 @@ import {
   finalizeBootstrapChallenge,
   issueBootstrapChallenge,
 } from "../../../server/security/capabilities.ts";
-import { privateJsonResponse } from "../../../server/security/headers.ts";
+import {
+  infrastructureUnavailable,
+  privateJsonResponse,
+} from "../../../server/security/headers.ts";
 import { deriveKeyring, sha256 } from "../../../server/security/keys.ts";
 import {
   RequestOriginError,
@@ -100,7 +103,7 @@ async function currentReviewSnapshot(
   );
 }
 
-export async function POST(request: Request): Promise<Response> {
+async function handlePost(request: Request): Promise<Response> {
   const policy = loadOriginPolicy();
   try {
     assertAllowedMethod(request.method, ["POST"]);
@@ -281,4 +284,19 @@ export async function POST(request: Request): Promise<Response> {
     });
   }
   return privateJsonResponse({ ok: true, data: result.data });
+}
+
+/**
+ * Infrastructure failure boundary: an unreachable database must answer with a
+ * readable outcome, not a bare 500 with an empty body.
+ */
+export async function POST(request: Request): Promise<Response> {
+  try {
+    return await handlePost(request);
+  } catch {
+    return infrastructureUnavailable(
+      "CiteApply could not establish the latest state.",
+      "reload_current_application",
+    );
+  }
 }

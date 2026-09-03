@@ -3,7 +3,10 @@ import {
   StartTokenSchema,
 } from "../../../contracts/http.ts";
 import { getDatabasePool } from "../../../server/db/pool.ts";
-import { privateJsonResponse } from "../../../server/security/headers.ts";
+import {
+  infrastructureUnavailable,
+  privateJsonResponse,
+} from "../../../server/security/headers.ts";
 import { deriveKeyring } from "../../../server/security/keys.ts";
 import {
   RequestOriginError,
@@ -79,7 +82,7 @@ function throttled(retryAfterSeconds: number, atCapacity: boolean): Response {
   return response;
 }
 
-export async function GET(request: Request): Promise<Response> {
+async function handleGet(request: Request): Promise<Response> {
   const policy = loadOriginPolicy();
   try {
     assertAllowedMethod(request.method, ["GET"]);
@@ -106,7 +109,7 @@ export async function GET(request: Request): Promise<Response> {
   });
 }
 
-export async function POST(request: Request): Promise<Response> {
+async function handlePost(request: Request): Promise<Response> {
   const policy = loadOriginPolicy();
   try {
     assertAllowedMethod(request.method, ["POST"]);
@@ -190,4 +193,34 @@ export async function POST(request: Request): Promise<Response> {
     ),
   );
   return response;
+}
+
+/**
+ * Infrastructure failure boundary: an unreachable database must answer with a
+ * readable outcome, not a bare 500 with an empty body.
+ */
+export async function GET(request: Request): Promise<Response> {
+  try {
+    return await handleGet(request);
+  } catch {
+    return infrastructureUnavailable(
+      "CiteApply could not prepare a synthetic start.",
+      "return_to_packet_selection",
+    );
+  }
+}
+
+/**
+ * Infrastructure failure boundary: an unreachable database must answer with a
+ * readable outcome, not a bare 500 with an empty body.
+ */
+export async function POST(request: Request): Promise<Response> {
+  try {
+    return await handlePost(request);
+  } catch {
+    return infrastructureUnavailable(
+      "CiteApply could not start this synthetic application.",
+      "return_to_packet_selection",
+    );
+  }
 }

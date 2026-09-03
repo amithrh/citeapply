@@ -1,3 +1,5 @@
+import { randomBytes } from "node:crypto";
+
 const PRIVATE_NO_STORE = "private, no-store, max-age=0";
 
 export const API_SECURITY_HEADERS = Object.freeze({
@@ -46,5 +48,42 @@ export function privateJsonResponse(
   return withApiSecurityHeaders(
     response,
     productionHttps === undefined ? {} : { productionHttps },
+  );
+}
+
+const SUPPORT_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+
+/** A fresh, value-free reference so two failures are never conflated. */
+export function supportReference(): string {
+  const bytes = randomBytes(8);
+  let reference = "CA-";
+  for (const byte of bytes) {
+    reference += SUPPORT_ALPHABET[byte % SUPPORT_ALPHABET.length];
+  }
+  return reference;
+}
+
+/**
+ * The answer to an infrastructure failure — an unreachable database, a broken
+ * pool — which is otherwise a bare HTTP 500 with an empty body that no client
+ * can read. It carries the same `temporarily_unavailable` shape the rest of
+ * the product already uses, so the page can say something true and offer the
+ * one safe next step. It never reports an uncertain mutation as retry-safe.
+ */
+export function infrastructureUnavailable(
+  message: string,
+  safeAction: string,
+): Response {
+  return privateJsonResponse(
+    {
+      ok: false,
+      error: {
+        code: "temporarily_unavailable",
+        message,
+        supportReference: supportReference(),
+        safeActions: [safeAction],
+      },
+    },
+    { status: 503 },
   );
 }

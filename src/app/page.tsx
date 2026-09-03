@@ -4,6 +4,23 @@ import { useState } from "react";
 
 import type { PacketCode } from "../contracts/common.ts";
 
+type FailureBody = Readonly<{
+  ok?: boolean;
+  error?: { code?: string; message?: string };
+}>;
+
+/**
+ * Shows the server's own words when it managed to say something, so an outage
+ * reads as a temporary condition with a retry rather than a dead end.
+ */
+function refusalMessage(body: FailureBody, fallback: string): string {
+  const message = body.error?.message;
+  if (typeof message !== "string" || message.length === 0) return fallback;
+  return body.error?.code === "temporarily_unavailable"
+    ? `${message} This is a temporary problem. Try again in a moment.`
+    : message;
+}
+
 async function startSyntheticDemo(packet: PacketCode): Promise<string | null> {
   const issued = (await (
     await fetch("/api/demo", {
@@ -11,9 +28,12 @@ async function startSyntheticDemo(packet: PacketCode): Promise<string | null> {
       credentials: "same-origin",
       cache: "no-store",
     })
-  ).json()) as { ok?: boolean; data?: { startToken: unknown } };
+  ).json()) as { ok?: boolean; data?: { startToken: unknown } } & FailureBody;
   if (issued.ok !== true || issued.data === undefined) {
-    return "CiteApply could not prepare a synthetic start.";
+    return refusalMessage(
+      issued,
+      "CiteApply could not prepare a synthetic start.",
+    );
   }
 
   const started = (await (
@@ -29,10 +49,13 @@ async function startSyntheticDemo(packet: PacketCode): Promise<string | null> {
         requestId: crypto.randomUUID(),
       }),
     })
-  ).json()) as { ok?: boolean; data?: { destination: string } };
+  ).json()) as { ok?: boolean; data?: { destination: string } } & FailureBody;
 
   if (started.ok !== true || started.data === undefined) {
-    return "CiteApply could not start this synthetic demo.";
+    return refusalMessage(
+      started,
+      "CiteApply could not start this synthetic demo.",
+    );
   }
   window.location.assign(started.data.destination);
   return null;
@@ -41,10 +64,12 @@ async function startSyntheticDemo(packet: PacketCode): Promise<string | null> {
 export default function LandingPage() {
   const [busy, setBusy] = useState<PacketCode | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [lastPacket, setLastPacket] = useState<PacketCode | null>(null);
 
   const start = (packet: PacketCode) => {
     if (busy !== null) return;
     setBusy(packet);
+    setLastPacket(packet);
     setError(null);
     void startSyntheticDemo(packet)
       .then((message) => {
@@ -86,7 +111,16 @@ export default function LandingPage() {
 
       <section aria-labelledby="demo-paths-heading">
         <h2 id="demo-paths-heading">Two bounded synthetic paths</h2>
-        {error === null ? null : <p role="alert">{error}</p>}
+        {error === null ? null : (
+          <div role="alert">
+            <p>{error}</p>
+            {lastPacket === null ? null : (
+              <button type="button" onClick={() => start(lastPacket)}>
+                Try again
+              </button>
+            )}
+          </div>
+        )}
         <article>
           <h3>Supported packet</h3>
           <p>

@@ -3,7 +3,10 @@ import { lockApplicationBySessionDigest } from "../../../server/db/applications.
 import { getDatabasePool } from "../../../server/db/pool.ts";
 import { withReadCommittedTransaction } from "../../../server/db/transactions.ts";
 import { finalizeAuthority } from "../../../server/security/capabilities.ts";
-import { privateJsonResponse } from "../../../server/security/headers.ts";
+import {
+  infrastructureUnavailable,
+  privateJsonResponse,
+} from "../../../server/security/headers.ts";
 import { deriveKeyring } from "../../../server/security/keys.ts";
 import {
   RequestOriginError,
@@ -50,7 +53,7 @@ function failure(
  * Reads the accepted submission's receipt. Every mode returns the same stored
  * record and writes nothing, so exporting cannot alter what was accepted.
  */
-export async function POST(request: Request): Promise<Response> {
+async function handlePost(request: Request): Promise<Response> {
   const policy = loadOriginPolicy();
   try {
     assertAllowedMethod(request.method, ["POST"]);
@@ -173,5 +176,20 @@ export async function POST(request: Request): Promise<Response> {
           },
         },
       });
+  }
+}
+
+/**
+ * Infrastructure failure boundary: an unreachable database must answer with a
+ * readable outcome, not a bare 500 with an empty body.
+ */
+export async function POST(request: Request): Promise<Response> {
+  try {
+    return await handlePost(request);
+  } catch {
+    return infrastructureUnavailable(
+      "Your submission remains accepted, but the receipt could not be loaded.",
+      "load_receipt_again",
+    );
   }
 }

@@ -3,7 +3,10 @@ import { lockApplicationBySessionDigest } from "../../../server/db/applications.
 import { getDatabasePool } from "../../../server/db/pool.ts";
 import { withReadCommittedTransaction } from "../../../server/db/transactions.ts";
 import { finalizeAuthority } from "../../../server/security/capabilities.ts";
-import { privateJsonResponse } from "../../../server/security/headers.ts";
+import {
+  infrastructureUnavailable,
+  privateJsonResponse,
+} from "../../../server/security/headers.ts";
 import { deriveKeyring } from "../../../server/security/keys.ts";
 import {
   RequestOriginError,
@@ -51,7 +54,7 @@ function failure(
  * stage, requires the exact confirmed Review identity, source revision, and
  * content hash, and no WebMCP tool can reach it.
  */
-export async function POST(request: Request): Promise<Response> {
+async function handlePost(request: Request): Promise<Response> {
   const policy = loadOriginPolicy();
   try {
     assertAllowedMethod(request.method, ["POST"]);
@@ -175,5 +178,20 @@ export async function POST(request: Request): Promise<Response> {
           receipt: result.receipt,
         },
       });
+  }
+}
+
+/**
+ * Infrastructure failure boundary: an unreachable database must answer with a
+ * readable outcome, not a bare 500 with an empty body.
+ */
+export async function POST(request: Request): Promise<Response> {
+  try {
+    return await handlePost(request);
+  } catch {
+    return infrastructureUnavailable(
+      "CiteApply could not establish the latest state.",
+      "reload_current_application",
+    );
   }
 }
