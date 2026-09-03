@@ -241,6 +241,16 @@ export function createCiteApplyBridge(
       registered = false;
       status = "disposed";
       registrationLifetime.abort();
+      // A disposed bridge must not be handed back to a later mount. React
+      // StrictMode remounts the page component, and without this eviction the
+      // second mount received this dead bridge and registered no tools.
+      if (modelContext === undefined) {
+        if (unavailableBridgeByDispatch.get(dispatch) === bridge) {
+          unavailableBridgeByDispatch.delete(dispatch);
+        }
+      } else if (bridgeByModelContext.get(modelContext)?.bridge === bridge) {
+        bridgeByModelContext.delete(modelContext);
+      }
     },
     snapshot,
   });
