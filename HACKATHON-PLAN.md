@@ -130,3 +130,6 @@ User: deployment deferred. Local (http://localhost:3100, real Chrome) must be ex
 - Standalone start needs BOTH `.next/static` and `node_modules/pdfjs-dist` copied into `.next/standalone` until D-2 is fixed.
 - Playwright target is 16 passed + 1 documented skip (the genuine-client trace needs real ChatGPT capture files). 17/17 is not reachable by agents.
 - Phase 1 defect list is authoritative: `docs/evidence/phase1/REPORT.md` (D-1..D-12).
+
+## Working tree change (11:30 IST)
+`hackathon-final` is now checked out in the main repo `/Users/amitmishra/worksppace-central/webmcp`. Agents work THERE from now on. The scratchpad worktree is detached at the same commit; do not commit in it. Recovery-branch stash: `stash@{0}`.
