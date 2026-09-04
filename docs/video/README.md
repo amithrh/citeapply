@@ -1,6 +1,6 @@
 # The CiteApply demo video
 
-`citeapply-demo.mp4` — **2:55.5**, 1920×1080, H.264 / AAC. The shot list and
+`citeapply-demo.mp4` — **2:46.0**, 1920×1080, H.264 / AAC. The shot list and
 narration behind the recorded session are `docs/VIDEO-SCRIPT.md`; the recording
 rules it obeys are `docs/hackathon-build/scope.md` → *Demo Path*, with the one
 deliberate departure noted under **Opening** below.
@@ -70,17 +70,19 @@ duration.
 
 | Film time | Session time | Rate | On-screen label |
 |-----------|--------------|------|-----------------|
-| 1:00–1:15 | 0:24.7–0:51.5 | 1.87× faster | `sped up 1.9× · waiting compressed` |
-| 1:15–1:30 | 0:51.5–0:59.4 | 0.52× slower | `slowed 0.52× · nothing cut` |
-| 0:32–0:46 | 0:00–0:10.9 | 0.76× slower | — (slower than real time; nothing is hidden) |
-| 0:46–1:00 | 0:12.0–0:24.6 | 0.91× slower | — |
-| 1:30–1:51 | 0:59.4–1:19.5 | 0.97× slower | — |
-| 1:51–2:11 | 1:19.5–1:35.7 | 0.82× slower | — |
-| 2:11–2:26 | 1:35.7–1:50.2 | 0.92× slower | — |
-| 2:26–2:44 | 1:50.2–2:05.7 | 0.85× slower | — |
+| 0:59–1:05 | 0:24.7–0:38.7 | 2.52× faster | `sped up 2.5× · waiting compressed` |
+| 1:18–1:28 | 0:51.5–0:59.4 | 0.79× slower | `slowed 0.79× · nothing cut` |
+| 1:50–2:05 | 1:19.5–1:35.7 | 1.08× faster | `sped up 1.1×` |
+| 0:36–0:47 | 0:00–0:10.9 | 1.01× | — |
+| 0:47–0:59 | 0:12.0–0:24.6 | 1.00× | — |
+| 1:05–1:18 | 0:38.7–0:51.5 | 1.00× | — |
+| 1:28–1:50 | 0:59.4–1:19.5 | 0.91× slower | — |
+| 2:05–2:19 | 1:35.7–1:50.2 | 1.04× | — |
+| 2:19–2:35 | 1:50.2–2:05.7 | 0.97× slower | — |
 
-Every segment was re-timed when the narration changed voice, so each shot still
-runs exactly as long as the sentence spoken over it.
+Every segment is timed to the sentences spoken over it, so a beat's footage
+starts and ends with its narration. Only the three labelled shots depart from
+real time by more than 10%.
 
 One stretch of the session is not in the film
 at all: **0:10.9–0:12.0**, a one-second gap between the shot that ends on the
@@ -108,80 +110,109 @@ teal `#0f6b6a` / `#084140` and ochre `#8c4b05`; type is Newsreader / Public Sans
 
 ## Narration
 
-Real synthesised speech — **Kokoro-82M** (`kokoro-onnx`), voice `bf_emma`, speed
-It is driven through the HyperFrames TTS model files. It is not a human read and
-not a placeholder. One WAV per paragraph in `audio/` (`n00.wav`–`n10.wav`), with
-the exact text spoken in the matching `.txt`. Total speech in the current cut
-2:23. The speed is 1.16 rather than the 1.04 used for the earlier female read
-because `bm_george` speaks noticeably slower; at 1.16 he lands at a normal
-speaking pace and the film stays under 3:00. `n01.wav` (the cold open) and `n03.wav` (the redacted-read beat) were
-generated and are kept in `audio/`, but are **not** in the film.
+**Real TTS, not a placeholder.** Kokoro-82M (`kokoro-onnx`), voice **`am_adam`**,
+**speed 1.0** — no time-compression of the voice at all.
 
-`n00.wav` is the opening, written for this cut:
+### Choosing the voice
 
-> Hi, I'm Amit, and this is CiteApply, my entry for the WebMCP Challenge. The
-> problem: filling in a document-backed form like a scholarship application is
-> hard, not because of typing, but because of judgment. Which record proves each
-> answer? What if two records disagree? Today an AI assistant can guess values
-> into a form, and the website has no idea where they came from. CiteApply is a
-> scholarship portal that publishes six WebMCP tools of its own, so an agent can
-> cite answers from the applicant's records, and the site, not the model, decides
-> what is allowed. Let me show you.
+Four male Kokoro voices read the same intro paragraph at speed 1.0; the samples
+are kept in `audio/samples/`. Measured with an autocorrelation pitch track over
+voiced frames:
 
-The rest is the script's narration.
+| voice | median F0 | pitch variance | length |
+|-------|-----------|----------------|--------|
+| **am_adam** | **121.2 Hz** | **4.32 semitones** | 12.78 s |
+| bm_lewis | 99.8 Hz | 4.59 semitones | 14.31 s |
+| am_michael | 118.8 Hz | 3.78 semitones | 15.27 s |
+| bm_george | 141.2 Hz | 3.47 semitones | 14.25 s |
 
-The narration is the word-for-word text from `docs/VIDEO-SCRIPT.md`, with only
-the changes a speech synthesiser needs (code identifiers spoken as words,
-semicolons and em-dashes resolved into sentences):
+Pitch variance is the measurable stand-in for "character" — a flat read has low
+variance. `bm_lewis` scores highest but sits at 99.8 Hz, dark enough to muddy on
+laptop speakers; `am_adam` is within 0.3 semitones of it with a 21 Hz higher
+median, and reads the same text fastest at speed 1.0, which means it is not
+dragging. **`am_adam` was chosen**; `bm_lewis` is the runner-up.
 
-> That was a real WebMCP tool call, from the browser's own API, into a
-> scholarship portal that just changed in front of you. Nobody typed into that
-> form. Now here is the whole session, from the start.
->
-> CiteApply is a fictional aid portal running entirely on synthetic records. It
-> registers six WebMCP tools when the application page loads. Everything you'll
-> see the agent do goes through those six tools, and nothing else.
->
-> The agent can see the tools before I've allowed anything. Reading in redacted
-> mode tells it there's an application here and nothing else. The moment it asks
-> for protected data, the server refuses. Consent required. The refusal is the
-> server's, not the model's.
->
-> Consent is a real disclosure. It lists what the tools may receive, what they
-> will never receive, and what they can't do. And the capability it creates is
-> never handed to the agent. The page holds it and injects it on every call.
->
-> It reads the rules, then the evidence index, and there are already two income
-> claims that don't agree. It applies the bindings it's allowed to apply in a
-> single atomic call. All of them, or none. And the form you're looking at is
-> the thing that changed.
->
-> Answering one question changed which questions apply. Guardian name and
-> household size just became required. Watch the labels flip. This isn't a
-> static schema the agent memorised. It has to read the requirements again,
-> because the site's rules are live.
->
-> Here's the moment. The agent asks to fill in income. Two accepted sources
-> disagree. Five hundred and forty thousand on one, four hundred and eighty
-> thousand on the other. The website answers conflict requires human, and writes
-> nothing. It also refuses to declare my email address for me. The agent can
-> read exactly why it's blocked. It just can't clear the blockers itself.
->
-> So I decide, and I get to read both records before I do. Here is what each one
-> actually says. Notice the buttons are dead until I say why: the site will not
-> write a reason on my behalf. I pick the source I'm willing to stand behind, I
-> say why, and I declare my own contact address. Those two acts are mine. There
-> is no tool that can do either one.
->
-> The agent can ask the site to freeze the application, but the review only
-> appears here, in the page, and assisted access closes when it does. Every
-> answer sits beside the exact text it came from, including both figures that
-> disagreed. Submitting is mine too.
->
-> Same hash, same warning, and the record I chose, with the reason I gave for
-> choosing it, still named on a receipt I could defend. On screen, as a file, or
-> on paper. Synthetic records, a fictional program, and WebMCP is still a draft
-> standard. But the contract is real, and the website is the one enforcing it.
+### Pacing
+
+The script was cut by roughly a third — **355 words**, down from 520 — so it
+fits under 3:00 at natural pace instead of being sped up. Anything that merely
+restated what is on screen was dropped.
+
+The narration is **not one continuous read**. Each sentence is synthesised
+separately, trimmed of its leading and trailing near-silence, and reassembled
+with real gaps:
+
+- **0.75 s** between sentences inside a beat;
+- **1.7–2.4 s** of digital silence between beats;
+- **1.9 s** of silence immediately before the refusal beat, so it lands.
+
+The gaps are true silence (measured at the noise floor in the encoded MP4, vs
+−16.9 dBFS RMS for speech). One WAV per beat in `audio/` (`b0.wav`–`b8.wav`).
+
+### The script, as spoken
+
+**Opening (0:00–0:34)**
+
+> Hi, I'm Amit. This is CiteApply, my entry for the WebMCP Challenge.
+> Filling in a document-backed form is hard because of judgment, not typing.
+> Which record proves each answer? What if two records disagree?
+> Today an assistant guesses values into a form, and the website has no idea
+> where they came from.
+> CiteApply is a scholarship portal that publishes six WebMCP tools of its own.
+> Every answer cites the record line it came from, and the site, not the model,
+> decides what is allowed.
+> Let me show you.
+
+**Start (0:36)**
+
+> These are synthetic records that disagree with each other.
+> The page registers six tools when it loads, and everything the agent does goes
+> through those six.
+
+**Consent (0:47)**
+
+> Consent is a real disclosure: what the tools may receive, what they never
+> receive, what they cannot do.
+> And the capability it creates is never handed to the agent. The page holds it.
+
+**The atomic batch (1:06)**
+
+> It reads the rules, then the evidence index, then binds four answers in a
+> single atomic call.
+> All of them, or none.
+
+**The requirements flip (1:18)**
+
+> Answering one question changed which questions apply.
+> Guardian name and household size just became required, so the agent has to
+> read the requirements again.
+
+**The refusal (1:30)**
+
+> Here's the moment.
+> The agent asks to fill in income. Two accepted records disagree: five hundred
+> and forty thousand, and four hundred and eighty thousand.
+> The website answers conflict requires human, and writes nothing.
+> The agent can read exactly why it is blocked. It cannot clear the block itself.
+
+**The human decides (1:51)**
+
+> So I decide, and I read both records first.
+> The buttons stay dead until I say why: the site will not write a reason on my
+> behalf.
+> I choose a source, and I declare my own address. No tool can do either.
+
+**The frozen review (2:06)**
+
+> The agent can ask the site to freeze the application, but the review appears
+> only here, and assisted access closes when it does.
+> Every answer sits beside the exact text it came from.
+
+**The receipt (2:19)**
+
+> Same hash, same warning, the record I chose and the reason I gave.
+> Synthetic records, a fictional program, and WebMCP is still a draft standard.
+> But the contract is real, and the website is the one enforcing it.
 
 ## Where the film departs from the shot list
 
