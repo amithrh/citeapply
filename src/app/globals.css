@@ -1244,6 +1244,18 @@ dialog > div:last-child {
   color: #fff;
 }
 
+/* Said plainly, in the strip, when the browser's own host could not be used. */
+.watch-host-notice {
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--band-ink);
+  margin: 0;
+  padding: calc(var(--step) * 1.5) calc(var(--step) * 2);
+  border: 1px solid var(--rule);
+  border-radius: 0.4rem;
+  max-width: 44rem;
+}
+
 /* Always on screen while the client runs, and again on the panel it leaves. */
 .watch-honesty {
   font-size: 0.78rem;

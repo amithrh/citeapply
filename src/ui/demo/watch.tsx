@@ -5,6 +5,18 @@ import type { DemoStepReport, DemoSummary, DemoTally } from "./client.ts";
 export const HONESTY_LABEL =
   "Scripted demonstration client. Every call is a real WebMCP tool call, validated by the server; nothing is simulated.";
 
+/**
+ * The same label, with the route named when the browser's own WebMCP host
+ * could not be used. The calls are no less real — they go through the tools
+ * this page registered, over the same dispatcher and the same server — but a
+ * watcher should not be left believing the browser is driving when it is not.
+ */
+export function honestyLabel(viaPageTools: boolean): string {
+  return viaPageTools
+    ? `${HONESTY_LABEL} These calls are going via the page's own registered tools, because this browser's WebMCP host did not answer.`
+    : HONESTY_LABEL;
+}
+
 function outcomeWord(code: string): string {
   return code === "ok" ? "accepted" : code.replaceAll("_", " ");
 }
@@ -15,6 +27,8 @@ export type NarrationStripProps = Readonly<{
   finished: boolean;
   onSkip: () => void;
   onStop: () => void;
+  /** Why the browser's host was set aside, when it was. */
+  hostNotice?: string | null;
 }>;
 
 /**
@@ -30,6 +44,7 @@ export function NarrationStrip({
   finished,
   onSkip,
   onStop,
+  hostNotice = null,
 }: NarrationStripProps) {
   return (
     <section
@@ -72,6 +87,13 @@ export function NarrationStrip({
         )}
       </p>
 
+      {hostNotice === null ? null : (
+        <p className="watch-host-notice" role="status">
+          WebMCP host detected but not usable; using the page&rsquo;s own tools
+          ({hostNotice}).
+        </p>
+      )}
+
       <p className="watch-counter">
         <span>
           <b>{tally.toolCalls}</b> tool calls
@@ -95,7 +117,7 @@ export function NarrationStrip({
         </div>
       )}
 
-      <p className="watch-honesty">{HONESTY_LABEL}</p>
+      <p className="watch-honesty">{honestyLabel(hostNotice !== null)}</p>
     </section>
   );
 }
@@ -121,6 +143,8 @@ export type HandoffPanelProps = Readonly<{
   summary: DemoSummary;
   shape: SessionShape;
   byHand: ByHandColumn;
+  /** Why the browser's host was set aside, when it was. */
+  hostNotice?: string | null;
 }>;
 
 /**
@@ -130,7 +154,12 @@ export type HandoffPanelProps = Readonly<{
  * through the six registered tools. Nothing here is an average, a benchmark,
  * or a claim about time.
  */
-export function HandoffPanel({ summary, shape, byHand }: HandoffPanelProps) {
+export function HandoffPanel({
+  summary,
+  shape,
+  byHand,
+  hostNotice = null,
+}: HandoffPanelProps) {
   return (
     <section
       className="handoff"
@@ -220,7 +249,7 @@ export function HandoffPanel({ summary, shape, byHand }: HandoffPanelProps) {
           </dl>
         </div>
       </div>
-      <p className="watch-honesty">{HONESTY_LABEL}</p>
+      <p className="watch-honesty">{honestyLabel(hostNotice !== null)}</p>
     </section>
   );
 }

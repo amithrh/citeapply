@@ -26,8 +26,8 @@ import {
   type DemoTally,
 } from "../../ui/demo/client.ts";
 import {
-  hostRegisteredTools,
-  invokeOver,
+  discoverHostTools,
+  resilientInvoke,
   prefersReducedMotion,
   WATCH_REQUEST_KEY,
   type RegisteredTool,
@@ -364,8 +364,8 @@ export default function ApplicationPage() {
    * descriptor layer built) — the client is given nothing else, so there is
    * nothing else it can call.
    */
-  const demoToolsRef = useRef<readonly RegisteredTool[] | null>(null);
-  const demoThroughRef = useRef<"host" | "page">("page");
+  const demoHostToolsRef = useRef<readonly RegisteredTool[] | null>(null);
+  const demoPageToolsRef = useRef<readonly RegisteredTool[] | null>(null);
   const demoAbortRef = useRef<AbortController | null>(null);
   const demoSkipRef = useRef<(() => void) | null>(null);
   const [watchRunning, setWatchRunning] = useState(false);
@@ -379,6 +379,14 @@ export default function ApplicationPage() {
   const [watchSummary, setWatchSummary] = useState<DemoSummary | null>(null);
   const [watchHighlight, setWatchHighlight] = useState<readonly string[]>([]);
   const [watchProblem, setWatchProblem] = useState<string | null>(null);
+  /**
+   * Set when this browser exposes a WebMCP host the page could not use — it
+   * never described the six tools, or a call through it timed out, threw, or
+   * answered in a shape this page cannot read. The run continues through the
+   * page's own registered tools, and both the status line and the strip say so
+   * rather than letting a watcher believe the host is driving.
+   */
+  const [hostUnusable, setHostUnusable] = useState<string | null>(null);
   /** True once the client has its six tool objects, by either route. */
   const [demoReady, setDemoReady] = useState(false);
 
@@ -527,35 +535,38 @@ export default function ApplicationPage() {
 
       /*
        * The scripted demonstration client gets its tools here and nowhere
-       * else. With a WebMCP host present it receives exactly what that host
-       * hands any client — the objects `getTools()` returns — and calls them
-       * through `executeTool`. Without a host there is nothing to route
-       * through, so the page materializes the same descriptors the bridge
-       * would have registered, over this same dispatcher: same endpoint, same
-       * injected headers, same closed input schemas, same server validation.
-       * Either way the client holds six tool objects and no other reach into
-       * this application.
+       * else. With a usable WebMCP host present it receives exactly what that
+       * host hands any client — the objects `getTools()` returns — and calls
+       * them through `executeTool`. Where there is no host, or the host will
+       * not answer, the page uses the same descriptors the bridge would have
+       * registered, over this same dispatcher: same endpoint, same injected
+       * headers, same closed input schemas, same server validation. Either way
+       * the client holds six tool objects and no other reach into this
+       * application.
+       *
+       * Both routes are built up front, so a host that stops answering
+       * mid-run has somewhere to fall back to without another round trip.
        */
-      const hosted = await hostRegisteredTools();
+      const pageTools = materializeModelContextTools(dispatch, {
+        captureInvocation: () => ({ generation: 0 }),
+        isInvocationCurrent: () => true,
+        inactiveResult: () =>
+          BridgeInactiveFailureSchema.parse({
+            ok: false,
+            error: {
+              code: "assistance_unavailable",
+              message: "Assisted access is not active on this page.",
+              safeActions: ["use_visible_application"],
+            },
+          }),
+      }) as readonly RegisteredTool[];
+      demoPageToolsRef.current = pageTools;
+
+      const hosted = await discoverHostTools();
       if (cancelled) return;
-      if (hosted !== null && hosted.length > 0) {
-        demoToolsRef.current = hosted;
-        demoThroughRef.current = "host";
-      } else {
-        demoToolsRef.current = materializeModelContextTools(dispatch, {
-          captureInvocation: () => ({ generation: 0 }),
-          isInvocationCurrent: () => true,
-          inactiveResult: () =>
-            BridgeInactiveFailureSchema.parse({
-              ok: false,
-              error: {
-                code: "assistance_unavailable",
-                message: "Assisted access is not active on this page.",
-                safeActions: ["use_visible_application"],
-              },
-            }),
-        }) as readonly RegisteredTool[];
-        demoThroughRef.current = "page";
+      demoHostToolsRef.current = hosted.tools;
+      if (hosted.present && hosted.tools === null) {
+        setHostUnusable(hosted.reason ?? "the host did not answer");
       }
       setDemoReady(true);
     };
@@ -658,8 +669,8 @@ export default function ApplicationPage() {
   );
 
   const runWatch = useCallback(async () => {
-    const tools = demoToolsRef.current;
-    if (tools === null || tools.length === 0) {
+    const pageTools = demoPageToolsRef.current;
+    if (pageTools === null || pageTools.length === 0) {
       setWatchProblem(
         "This page has not finished registering its tools. Try again in a moment.",
       );
@@ -678,7 +689,24 @@ export default function ApplicationPage() {
 
     try {
       await runDemo({
-        invoke: invokeOver(tools, demoThroughRef.current),
+        invoke: resilientInvoke({
+          hostTools: demoHostToolsRef.current,
+          pageTools,
+          onFallback: ({ tool, reason }) => {
+            demoHostToolsRef.current = null;
+            setHostUnusable(reason);
+            recordActivity({
+              // Negative sequences never collide with the server's own, which
+              // count up from one. This entry is the page reporting on itself.
+              sequence: -Date.now(),
+              tool: tool as AssistedActivityEntry["tool"],
+              outcome: "client_error",
+              at: new Date().toISOString(),
+              applicationRevision: null,
+              requirementsVersion: null,
+            });
+          },
+        }),
         observer: {
           onStep: setWatchStep,
           onTally: setWatchTally,
@@ -701,7 +729,7 @@ export default function ApplicationPage() {
       if (demoAbortRef.current === controller) demoAbortRef.current = null;
       setWatchRunning(false);
     }
-  }, [waitFor]);
+  }, [waitFor, recordActivity]);
 
   const stopWatch = useCallback(() => {
     demoAbortRef.current?.abort();
@@ -1173,6 +1201,9 @@ export default function ApplicationPage() {
         </ol>
         <p role="status" aria-live="polite" data-stale={stale || undefined}>
           {statusLine} WebMCP: {bridgeStatus}.
+          {hostUnusable === null
+            ? null
+            : " WebMCP host detected but not usable; using the page's own tools."}
         </p>
         {stale ? (
           <p className="stale-recovery" data-print="hide">
@@ -1315,6 +1346,7 @@ export default function ApplicationPage() {
               finished={!watchRunning}
               onSkip={() => demoSkipRef.current?.()}
               onStop={stopWatch}
+              hostNotice={hostUnusable}
             />
           )}
           {watchSummary === null || sessionShape === null ? null : (
@@ -1322,6 +1354,7 @@ export default function ApplicationPage() {
               summary={watchSummary}
               shape={sessionShape}
               byHand={byHand}
+              hostNotice={hostUnusable}
             />
           )}
           <div className="workspace">

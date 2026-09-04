@@ -183,7 +183,10 @@ async function assertRun(
   const counter = await page.locator(".watch-counter").innerText();
   const calls = Number(/(\d+)\s*tool calls/.exec(counter)?.[1] ?? "-1");
   expect(calls).toBeGreaterThan(0);
-  await expect(page.locator(".activity-panel li")).toHaveCount(calls);
+  // Client-side failures are listed too, and they are not tool calls.
+  await expect(
+    page.locator('.activity-panel li:not([data-outcome="client_error"])'),
+  ).toHaveCount(calls);
 
   // The hand-off, with the honesty label on it.
   await expect(page.locator(".handoff")).toBeVisible();
@@ -287,3 +290,77 @@ test("@watch the demonstration client holds the six registered tools and nothing
     "This client holds no tool named fetch",
   );
 });
+
+
+/**
+ * Hosts that are not Chrome's.
+ *
+ * The judging environment is an in-app browser that exposes a
+ * `document.modelContext` of its own, and its contract is not the one this
+ * page was written against: a call can hang forever, throw for the shape of
+ * its arguments, or answer with an object where Chrome answers with JSON. Each
+ * shim below is one of those, installed before the page loads so the page sees
+ * a host exactly as it would in that browser.
+ *
+ * The demonstration must survive all three: nine steps, the same outcomes,
+ * the refusal still on the conflicting income — reached through the page's own
+ * registered tools, and said so on screen rather than silently.
+ */
+const HOST_SHIMS = {
+  "never resolves": () => {
+    const held: { name: string }[] = [];
+    (document as unknown as { modelContext: unknown }).modelContext = {
+      registerTool: (tool: { name: string }) => {
+        held.push(tool);
+      },
+      getTools: () => Promise.resolve(held),
+      executeTool: () => new Promise(() => undefined),
+    };
+  },
+  "throws a TypeError": () => {
+    const held: { name: string }[] = [];
+    (document as unknown as { modelContext: unknown }).modelContext = {
+      registerTool: (tool: { name: string }) => {
+        held.push(tool);
+      },
+      getTools: () => Promise.resolve(held),
+      executeTool: () => {
+        throw new TypeError("executeTool is not a function of this shape");
+      },
+    };
+  },
+  "expects a name and an object": () => {
+    const held: { name: string }[] = [];
+    (document as unknown as { modelContext: unknown }).modelContext = {
+      registerTool: (tool: { name: string }) => {
+        held.push(tool);
+      },
+      getTools: () => Promise.resolve(held),
+      executeTool: (first: unknown) => {
+        if (typeof first !== "string") {
+          throw new TypeError("executeTool: argument 1 must be a tool name");
+        }
+        // Answers with an object rather than JSON, and with a shape this page
+        // cannot read as a tool result — so it must fall back to its own tools.
+        return Promise.resolve({ result: "done" });
+      },
+    };
+  },
+} as const;
+
+for (const [shape, shim] of Object.entries(HOST_SHIMS)) {
+  test(`@watch the journey completes where the browser's WebMCP host ${shape}`, async ({
+    page,
+  }) => {
+    test.slow();
+    await page.addInitScript(shim);
+    await openDraft(page, "conflict");
+    await assertRun(page, "conflict");
+    // And the page said which route it took, rather than claiming the host.
+    await expect(
+      page
+        .getByText("WebMCP host detected but not usable; using the page")
+        .first(),
+    ).toBeVisible();
+  });
+}

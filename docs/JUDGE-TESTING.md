@@ -385,7 +385,21 @@ revocation.
      fallback state, not a failure. **Expected:** the entire application remains
      completable with the visible controls — follow A10 and A11 by hand and reach
      the receipt.
-4. **Expected either way:** no step ever lets the assistant declare the email,
+4. **“Watch an assistant fill this in” in this browser.** Some in-app browsers
+   expose a `document.modelContext` whose `getTools`/`executeTool` contract is
+   not Chrome's — a call can hang, throw, or answer in a shape this page cannot
+   read. The page no longer waits on such a host. Discovery is bounded at 3 s
+   and each host call at 6 s; the first failure moves the rest of the run onto
+   the tools this page registered itself, over the same dispatcher, the same
+   endpoint and the same server validation.
+   - **Expected:** the nine steps still run to the hand-off, the income is still
+     refused with `conflict_requires_human`, and the strip and the status line
+     both read **“WebMCP host detected but not usable; using the page’s own
+     tools”**, with the reason named. The honesty label adds: *these calls are
+     going via the page’s own registered tools*.
+   - The **Assisted activity** ledger lists the give-up as a `client_error`
+     entry. It is not a tool call and is not counted as one.
+5. **Expected either way:** no step ever lets the assistant declare the email,
    resolve the income conflict, submit, or read the receipt.
 
 ---
