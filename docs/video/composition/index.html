@@ -40,6 +40,7 @@
       }
       /* Bottom band: captions live here, never over the page. */
       .band {
+        z-index: 1;
         position: absolute;
         left: 0;
         top: 996px;
@@ -53,6 +54,7 @@
         box-sizing: border-box;
       }
       .band-note {
+        z-index: 2;
         position: absolute;
         right: 40px;
         top: 1027px;
@@ -63,6 +65,7 @@
         white-space: nowrap;
       }
       .lower-third {
+        z-index: 2;
         position: absolute;
         left: 40px;
         top: 1006px;
@@ -94,6 +97,7 @@
       }
       /* Persistent honesty labels */
       .stamp {
+        z-index: 3;
         position: absolute;
         top: 26px;
         left: 200px;
@@ -236,42 +240,49 @@
       data-start="0"
       data-width="1920"
       data-height="1080"
-      data-duration="166"
+      data-duration="161"
     >
-      <!-- ========== 0:00 who, what, and the problem ========== -->
-      <section class="card clip" data-start="0" data-duration="36" data-track-index="3">
+      <!-- ========== 0:00 the product, refusing, from later in this same session ========== -->
+      <video class="shot" id="cold" src="assets/seg-cold.mp4" data-start="0" data-duration="7" data-track-index="0" muted playsinline></video>
+      <div class="stamp clip" id="cold-stamp" data-start="0" data-duration="7" data-track-index="4">From later in this same session</div>
+      <div class="lower-third clip" id="lt0" data-start="0.4" data-duration="6.6" data-track-index="6">
+        <span class="lt-step">Live</span>
+        <span class="lt-text">apply_evidence_backed_answers — <em>conflict_requires_human</em></span>
+      </div>
+
+      <!-- ========== 0:07 who, what, and the problem ========== -->
+      <section class="card clip" data-start="7" data-duration="24" data-track-index="3">
         <p class="kicker" id="intro-kicker">Team: Amit Mishra (solo) · The WebMCP Challenge</p>
         <h1 id="intro-title">CiteApply</h1>
         <p class="sub" id="intro-sub">The agent cites. You decide.</p>
         <ul class="problem" id="intro-problem">
-          <li><strong>The problem</strong> — a document-backed form is hard because of judgment, not typing. Which record proves each answer? What if two records disagree?</li>
-          <li><strong>Today</strong> — an assistant guesses values into a form, and the website has no idea where they came from.</li>
-          <li><strong>CiteApply</strong> — a scholarship portal that publishes six WebMCP tools of its own. Every answer cites the record line it came from, and the site, not the model, decides what is allowed.</li>
+          <li><strong>Not typing — judgment.</strong> Which record proves each answer? What if two records disagree?</li>
+          <li><strong>Six WebMCP tools, published by the site.</strong> An agent can cite answers; the site, not the model, decides what is allowed.</li>
         </ul>
       </section>
 
       <!-- ========== the session, from the start, one continuous take ========== -->
-      <video class="shot" id="s2" src="assets/seg-s2.mp4" data-start="36" data-duration="10.833" data-track-index="0" muted playsinline></video>
-      <video class="shot" id="s4" src="assets/seg-s4.mp4" data-start="46.833" data-duration="12.6" data-track-index="0" muted playsinline></video>
+      <video class="shot" id="s2" src="assets/seg-s2.mp4" data-start="31.0" data-duration="10.833" data-track-index="0" muted playsinline></video>
+      <video class="shot" id="s4" src="assets/seg-s4.mp4" data-start="41.833" data-duration="12.6" data-track-index="0" muted playsinline></video>
 
-      <video class="shot" id="bridge" src="assets/seg-bridge.mp4" data-start="59.433" data-duration="5.567" data-track-index="0" muted playsinline></video>
-      <div class="rate-tag clip" id="tag-bridge" data-start="59.433" data-duration="5.567" data-track-index="4">sped up 2.5× · waiting compressed</div>
+      <video class="shot" id="bridge" src="assets/seg-bridge.mp4" data-start="54.433" data-duration="5.567" data-track-index="0" muted playsinline></video>
+      <div class="rate-tag clip" id="tag-bridge" data-start="54.433" data-duration="5.567" data-track-index="4">sped up 2.5× · waiting compressed</div>
 
-      <video class="shot" id="s5" src="assets/seg-s5.mp4" data-start="65" data-duration="12.8" data-track-index="0" muted playsinline></video>
+      <video class="shot" id="s5" src="assets/seg-s5.mp4" data-start="60.0" data-duration="12.8" data-track-index="0" muted playsinline></video>
 
-      <video class="shot" id="s6" src="assets/seg-s6.mp4" data-start="77.8" data-duration="10.033" data-track-index="0" muted playsinline></video>
-      <div class="rate-tag clip" id="tag-s6" data-start="77.8" data-duration="10.033" data-track-index="4">slowed 0.79× · nothing cut</div>
+      <video class="shot" id="s6" src="assets/seg-s6.mp4" data-start="72.8" data-duration="10.033" data-track-index="0" muted playsinline></video>
+      <div class="rate-tag clip" id="tag-s6" data-start="72.8" data-duration="10.033" data-track-index="4">slowed 0.79× · nothing cut</div>
 
-      <video class="shot" id="s7" src="assets/seg-s7.mp4" data-start="87.833" data-duration="22" data-track-index="0" muted playsinline></video>
+      <video class="shot" id="s7" src="assets/seg-s7.mp4" data-start="82.833" data-duration="22" data-track-index="0" muted playsinline></video>
 
-      <video class="shot" id="s8" src="assets/seg-s8.mp4" data-start="109.833" data-duration="15" data-track-index="0" muted playsinline></video>
-      <div class="rate-tag clip" id="tag-s8" data-start="109.833" data-duration="15" data-track-index="4">sped up 1.1×</div>
+      <video class="shot" id="s8" src="assets/seg-s8.mp4" data-start="104.833" data-duration="15" data-track-index="0" muted playsinline></video>
+      <div class="rate-tag clip" id="tag-s8" data-start="104.833" data-duration="15" data-track-index="4">sped up 1.1×</div>
 
-      <video class="shot" id="s9" src="assets/seg-s9.mp4" data-start="124.833" data-duration="14" data-track-index="0" muted playsinline></video>
-      <video class="shot" id="s10" src="assets/seg-s10.mp4" data-start="138.833" data-duration="16" data-track-index="0" muted playsinline></video>
+      <video class="shot" id="s9" src="assets/seg-s9.mp4" data-start="119.833" data-duration="14" data-track-index="0" muted playsinline></video>
+      <video class="shot" id="s10" src="assets/seg-s10.mp4" data-start="133.833" data-duration="16" data-track-index="0" muted playsinline></video>
 
       <!-- ========== end card ========== -->
-      <section class="card clip" data-start="154.833" data-duration="11.167" data-track-index="3">
+      <section class="card clip" data-start="149.833" data-duration="11.167" data-track-index="3">
         <p class="kicker">The agent cites. You decide.</p>
         <h2 id="end-head">CiteApply — Team: Amit Mishra</h2>
         <div class="end-urls">
@@ -282,65 +293,66 @@
       </section>
 
       <!-- ========== band and captions ========== -->
-      <div class="band clip" id="band" data-start="0" data-duration="166" data-track-index="5"></div>
-      <div class="band-note clip" id="band-note" data-start="0" data-duration="166" data-track-index="6">Synthetic data only · fictional program</div>
+      <div class="band clip" id="band" data-start="0" data-duration="161" data-track-index="5"></div>
+      <div class="band-note clip" id="band-note" data-start="0" data-duration="161" data-track-index="6">Synthetic data only · fictional program</div>
 
-      <div class="lower-third clip" id="lt1" data-start="36.3" data-duration="10.3" data-track-index="6">
+      <div class="lower-third clip" id="lt1" data-start="31.3" data-duration="10.3" data-track-index="6">
         <span class="lt-step">01 · Start</span>
         <span class="lt-text">The record set that disagrees — six WebMCP tools register</span>
       </div>
-      <div class="lower-third clip" id="lt2" data-start="47.1" data-duration="12.1" data-track-index="6">
+      <div class="lower-third clip" id="lt2" data-start="42.1" data-duration="12.1" data-track-index="6">
         <span class="lt-step">02 · Consent</span>
         <span class="lt-text">A real disclosure — the page holds the capability, not the agent</span>
       </div>
-      <div class="lower-third clip" id="lt3" data-start="65.3" data-duration="12.2" data-track-index="6">
+      <div class="lower-third clip" id="lt3" data-start="60.3" data-duration="12.2" data-track-index="6">
         <span class="lt-step">03 · The run</span>
         <span class="lt-text">state, rules, evidence index, then one atomic write — <em>accepted</em></span>
       </div>
-      <div class="lower-third clip" id="lt4" data-start="78.1" data-duration="9.4" data-track-index="6">
+      <div class="lower-third clip" id="lt4" data-start="73.1" data-duration="9.4" data-track-index="6">
         <span class="lt-step">04 · Live rules</span>
         <span class="lt-text">get_form_requirements — <em>accepted</em>: 6 required answers became 8</span>
       </div>
-      <div class="lower-third clip" id="lt5" data-start="88.1" data-duration="21.4" data-track-index="6">
+      <div class="lower-third clip" id="lt5" data-start="83.1" data-duration="21.4" data-track-index="6">
         <span class="lt-step">05 · The refusal</span>
         <span class="lt-text">apply_evidence_backed_answers — <em>conflict_requires_human</em>, nothing written</span>
       </div>
-      <div class="lower-third clip" id="lt6" data-start="110.1" data-duration="14.4" data-track-index="6">
+      <div class="lower-third clip" id="lt6" data-start="105.1" data-duration="14.4" data-track-index="6">
         <span class="lt-step">06 · The human</span>
         <span class="lt-text">Read both records, choose a reason, choose a source, declare the email</span>
       </div>
-      <div class="lower-third clip" id="lt7" data-start="125.1" data-duration="13.4" data-track-index="6">
+      <div class="lower-third clip" id="lt7" data-start="120.1" data-duration="13.4" data-track-index="6">
         <span class="lt-step">07 · Frozen review</span>
         <span class="lt-text">Every answer beside its exact excerpt — assisted access closes</span>
       </div>
-      <div class="lower-third clip" id="lt8" data-start="139.1" data-duration="15.4" data-track-index="6">
+      <div class="lower-third clip" id="lt8" data-start="134.1" data-duration="15.4" data-track-index="6">
         <span class="lt-step">08 · Receipt</span>
         <span class="lt-text">Same hash, same warning, the source chosen and the reason given</span>
       </div>
 
       <!-- ========== narration: one file per beat, sentences spaced 0.75s apart ========== -->
-      <audio id="a0" src="assets/b0.wav" data-start="0.5" data-duration="33.81" data-track-index="10" data-volume="1"></audio>
-      <audio id="a1" src="assets/b1.wav" data-start="36" data-duration="9.04" data-track-index="10" data-volume="1"></audio>
-      <audio id="a2" src="assets/b2.wav" data-start="46.8" data-duration="10.88" data-track-index="10" data-volume="1"></audio>
-      <audio id="a3" src="assets/b3.wav" data-start="66.3" data-duration="7.47" data-track-index="10" data-volume="1"></audio>
-      <audio id="a4" src="assets/b4.wav" data-start="78" data-duration="9.93" data-track-index="10" data-volume="1"></audio>
-      <audio id="a5" src="assets/b5.wav" data-start="89.9" data-duration="19.23" data-track-index="10" data-volume="1"></audio>
-      <audio id="a6" src="assets/b6.wav" data-start="111.5" data-duration="12.92" data-track-index="10" data-volume="1"></audio>
-      <audio id="a7" src="assets/b7.wav" data-start="126.5" data-duration="11.06" data-track-index="10" data-volume="1"></audio>
-      <audio id="a8" src="assets/b8.wav" data-start="139.5" data-duration="13.78" data-track-index="10" data-volume="1"></audio>
+      <audio id="acold" src="assets/bcold.wav" data-start="1.4" data-duration="3.55" data-track-index="10" data-volume="1"></audio>
+      <audio id="a0" src="assets/b0.wav" data-start="7.8" data-duration="21.97" data-track-index="10" data-volume="1"></audio>
+      <audio id="a1" src="assets/b1.wav" data-start="31.0" data-duration="9.04" data-track-index="10" data-volume="1"></audio>
+      <audio id="a2" src="assets/b2.wav" data-start="41.8" data-duration="10.88" data-track-index="10" data-volume="1"></audio>
+      <audio id="a3" src="assets/b3.wav" data-start="61.3" data-duration="7.47" data-track-index="10" data-volume="1"></audio>
+      <audio id="a4" src="assets/b4.wav" data-start="73.0" data-duration="9.93" data-track-index="10" data-volume="1"></audio>
+      <audio id="a5" src="assets/b5.wav" data-start="84.9" data-duration="19.23" data-track-index="10" data-volume="1"></audio>
+      <audio id="a6" src="assets/b6.wav" data-start="106.5" data-duration="12.92" data-track-index="10" data-volume="1"></audio>
+      <audio id="a7" src="assets/b7.wav" data-start="121.5" data-duration="11.06" data-track-index="10" data-volume="1"></audio>
+      <audio id="a8" src="assets/b8.wav" data-start="134.5" data-duration="13.78" data-track-index="10" data-volume="1"></audio>
     </div>
 
     <script>
       const tl = gsap.timeline({ paused: true });
-      tl.fromTo("#intro-kicker", { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 0.2);
-      tl.fromTo("#intro-title", { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7, ease: "power3.out" }, 0.45);
-      tl.fromTo("#intro-sub", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: "power3.out" }, 1.0);
-      tl.fromTo("#intro-problem li", { x: -30, opacity: 0 }, { x: 0, opacity: 1, duration: 0.55, stagger: 6.2, ease: "power2.out" }, 7.0);
-      tl.fromTo(".lower-third", { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, ease: "power2.out" }, 36.3);
-      tl.fromTo("#end-head", { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: "power3.out" }, 155.0);
-      tl.fromTo("#end-url-1", { opacity: 0 }, { opacity: 1, duration: 0.5 }, 155.4);
-      tl.fromTo("#end-url-2", { opacity: 0 }, { opacity: 1, duration: 0.5 }, 155.7);
-      tl.set({}, {}, 166);
+      tl.fromTo("#intro-kicker", { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 7.2);
+      tl.fromTo("#intro-title", { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7, ease: "power3.out" }, 7.45);
+      tl.fromTo("#intro-sub", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: "power3.out" }, 8.0);
+      tl.fromTo("#intro-problem li", { x: -30, opacity: 0 }, { x: 0, opacity: 1, duration: 0.55, stagger: 7.0, ease: "power2.out" }, 12.0);
+      tl.fromTo(".lower-third", { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, ease: "power2.out" }, 0.4);
+      tl.fromTo("#end-head", { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: "power3.out" }, 150.0);
+      tl.fromTo("#end-url-1", { opacity: 0 }, { opacity: 1, duration: 0.5 }, 150.4);
+      tl.fromTo("#end-url-2", { opacity: 0 }, { opacity: 1, duration: 0.5 }, 150.7);
+      tl.set({}, {}, 161);
       window.__timelines["main"] = tl;
     </script>
   </body>

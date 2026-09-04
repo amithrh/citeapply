@@ -1,27 +1,30 @@
 # The CiteApply demo video
 
-`citeapply-demo.mp4` — **2:46.0**, 1920×1080, H.264 / AAC. The shot list and
+`citeapply-demo.mp4` — **2:41.0**, 1920×1080, H.264 / AAC. The shot list and
 narration behind the recorded session are `docs/VIDEO-SCRIPT.md`; the recording
 rules it obeys are `docs/hackathon-build/scope.md` → *Demo Path*, with the one
 deliberate departure noted under **Opening** below.
 
-## Opening (0:00–0:32)
+## Opening (0:00–0:31)
 
-The film now opens on a spoken title card: **CiteApply**, *The agent cites. You
-decide.*, **Team: Amit Mishra (solo) · The WebMCP Challenge**, and the problem
-statement — who, what and why before any footage.
+Devpost asks to see the project working in the first 15 seconds, so **the
+product is on screen at 0:00** — no title card in front of it.
 
-**The cold-open excerpt was cut to make room for it.** `scope.md` asks for a
-labelled same-session excerpt showing a genuine tool result by 0:10; that beat
-and its narration ("That was a real WebMCP tool call…") were dropped so the
-introduction could lead and the film could still finish under 3:00. The
-excerpt's material is not lost — it is the same `apply_evidence_backed_answers`
-mutation, seen in its true chronological place at 1:00. The narration paragraph
-about the six tools and redacted reads ("CiteApply is a fictional aid portal…"
-is kept; "The agent can see the tools before I've allowed anything…" and the
-tool-name card were dropped) is now covered by the opening instead.
+- **0:00–0:07 — cold open.** The live refusal landing: the
+  `CONFLICT REQUIRES HUMAN` badge on `apply_evidence_backed_answers`, the
+  counter reading *1 refusals*, and the income row underneath still unresolved
+  with both disagreeing figures. Labelled on screen for the whole seven seconds:
+  **"From later in this same session."** One narrated line over it.
+- **0:07–0:31 — the introduction.** Team, project, and the problem, on the
+  title card, ~60 spoken words.
+- **0:31 onward — the session, chronologically,** from the landing page.
 
-## The session
+The cold open is an excerpt from **0:58.6 of the same continuous take**, and the
+same footage is shown again in its chronological place at 1:23. It is the
+excerpt `scope.md` → *Demo Path* asks for: a genuine external-client result on
+screen well before 0:10, carrying a label that says where it came from.
+
+## The session## The session
 
 The recorded session is unchanged by the re-cut.
 
@@ -70,15 +73,16 @@ duration.
 
 | Film time | Session time | Rate | On-screen label |
 |-----------|--------------|------|-----------------|
-| 0:59–1:05 | 0:24.7–0:38.7 | 2.52× faster | `sped up 2.5× · waiting compressed` |
-| 1:18–1:28 | 0:51.5–0:59.4 | 0.79× slower | `slowed 0.79× · nothing cut` |
-| 1:50–2:05 | 1:19.5–1:35.7 | 1.08× faster | `sped up 1.1×` |
-| 0:36–0:47 | 0:00–0:10.9 | 1.01× | — |
-| 0:47–0:59 | 0:12.0–0:24.6 | 1.00× | — |
-| 1:05–1:18 | 0:38.7–0:51.5 | 1.00× | — |
-| 1:28–1:50 | 0:59.4–1:19.5 | 0.91× slower | — |
-| 2:05–2:19 | 1:35.7–1:50.2 | 1.04× | — |
-| 2:19–2:35 | 1:50.2–2:05.7 | 0.97× slower | — |
+| 0:00–0:07 | 0:58.6–1:05.6 | 1.00× | `From later in this same session` |
+| 0:54–1:00 | 0:24.7–0:38.7 | 2.52× faster | `sped up 2.5× · waiting compressed` |
+| 1:13–1:23 | 0:51.5–0:59.4 | 0.79× slower | `slowed 0.79× · nothing cut` |
+| 1:45–2:00 | 1:19.5–1:35.7 | 1.08× faster | `sped up 1.1×` |
+| 0:31–0:42 | 0:00–0:10.9 | 1.01× | — |
+| 0:42–0:54 | 0:12.0–0:24.6 | 1.00× | — |
+| 1:00–1:13 | 0:38.7–0:51.5 | 1.00× | — |
+| 1:23–1:45 | 0:59.4–1:19.5 | 0.91× slower | — |
+| 2:00–2:14 | 1:35.7–1:50.2 | 1.04× | — |
+| 2:14–2:30 | 1:50.2–2:05.7 | 0.97× slower | — |
 
 Every segment is timed to the sentences spoken over it, so a beat's footage
 starts and ends with its narration. Only the three labelled shots depart from
@@ -134,7 +138,7 @@ dragging. **`am_adam` was chosen**; `bm_lewis` is the runner-up.
 
 ### Pacing
 
-The script was cut by roughly a third — **355 words**, down from 520 — so it
+The script was cut by roughly a third — **352 words** — so it
 fits under 3:00 at natural pace instead of being sped up. Anything that merely
 restated what is on screen was dropped.
 
@@ -151,43 +155,44 @@ The gaps are true silence (measured at the noise floor in the encoded MP4, vs
 
 ### The script, as spoken
 
-**Opening (0:00–0:34)**
+**Cold open (0:00)**
 
-> Hi, I'm Amit. This is CiteApply, my entry for the WebMCP Challenge.
-> Filling in a document-backed form is hard because of judgment, not typing.
-> Which record proves each answer? What if two records disagree?
-> Today an assistant guesses values into a form, and the website has no idea
-> where they came from.
-> CiteApply is a scholarship portal that publishes six WebMCP tools of its own.
-> Every answer cites the record line it came from, and the site, not the model,
-> decides what is allowed.
-> Let me show you.
+> This is a website refusing an AI agent, and being right to.
 
-**Start (0:36)**
+**Introduction (0:07)**
+
+> I'm Amit, and this is CiteApply, my entry for the WebMCP Challenge.
+> Filling a scholarship form isn't hard because of typing; it's hard because of
+> judgment: which record proves each answer, and what if two records disagree.
+> CiteApply publishes six WebMCP tools, so an agent can cite answers and the
+> site, not the model, decides what's allowed.
+
+
+**Start (0:31)**
 
 > These are synthetic records that disagree with each other.
 > The page registers six tools when it loads, and everything the agent does goes
 > through those six.
 
-**Consent (0:47)**
+**Consent (0:42)**
 
 > Consent is a real disclosure: what the tools may receive, what they never
 > receive, what they cannot do.
 > And the capability it creates is never handed to the agent. The page holds it.
 
-**The atomic batch (1:06)**
+**The atomic batch (1:01)**
 
 > It reads the rules, then the evidence index, then binds four answers in a
 > single atomic call.
 > All of them, or none.
 
-**The requirements flip (1:18)**
+**The requirements flip (1:13)**
 
 > Answering one question changed which questions apply.
 > Guardian name and household size just became required, so the agent has to
 > read the requirements again.
 
-**The refusal (1:30)**
+**The refusal (1:25)**
 
 > Here's the moment.
 > The agent asks to fill in income. Two accepted records disagree: five hundred
@@ -195,20 +200,20 @@ The gaps are true silence (measured at the noise floor in the encoded MP4, vs
 > The website answers conflict requires human, and writes nothing.
 > The agent can read exactly why it is blocked. It cannot clear the block itself.
 
-**The human decides (1:51)**
+**The human decides (1:46)**
 
 > So I decide, and I read both records first.
 > The buttons stay dead until I say why: the site will not write a reason on my
 > behalf.
 > I choose a source, and I declare my own address. No tool can do either.
 
-**The frozen review (2:06)**
+**The frozen review (2:01)**
 
 > The agent can ask the site to freeze the application, but the review appears
 > only here, and assisted access closes when it does.
 > Every answer sits beside the exact text it came from.
 
-**The receipt (2:19)**
+**The receipt (2:14)**
 
 > Same hash, same warning, the record I chose and the reason I gave.
 > Synthetic records, a fictional program, and WebMCP is still a draft standard.
