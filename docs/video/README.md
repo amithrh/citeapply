@@ -1,6 +1,6 @@
 # The CiteApply demo video
 
-`citeapply-demo.mp4` — **2:48.0**, 1920×1080, H.264 / AAC. The shot list and
+`citeapply-demo.mp4` — **2:55.5**, 1920×1080, H.264 / AAC. The shot list and
 narration behind the recorded session are `docs/VIDEO-SCRIPT.md`; the recording
 rules it obeys are `docs/hackathon-build/scope.md` → *Demo Path*, with the one
 deliberate departure noted under **Opening** below.
@@ -70,13 +70,19 @@ duration.
 
 | Film time | Session time | Rate | On-screen label |
 |-----------|--------------|------|-----------------|
-| 0:58–1:11 | 0:24.7–0:51.5 | 2.05× faster | `sped up 2× · waiting compressed` |
-| 1:11–1:25 | 0:51.5–0:59.4 | 0.55× slower | `slowed 0.55× · nothing cut` |
-| 0:32–0:45 | 0:00–0:10.9 | 0.84× slower | — (slower than real time; nothing is hidden) |
-| 1:45–2:05 | 1:19.5–1:35.7 | 0.84× slower | — |
-| 2:19–2:37 | 1:50.2–2:05.7 | 0.88× slower | — |
+| 1:00–1:15 | 0:24.7–0:51.5 | 1.87× faster | `sped up 1.9× · waiting compressed` |
+| 1:15–1:30 | 0:51.5–0:59.4 | 0.52× slower | `slowed 0.52× · nothing cut` |
+| 0:32–0:46 | 0:00–0:10.9 | 0.76× slower | — (slower than real time; nothing is hidden) |
+| 0:46–1:00 | 0:12.0–0:24.6 | 0.91× slower | — |
+| 1:30–1:51 | 0:59.4–1:19.5 | 0.97× slower | — |
+| 1:51–2:11 | 1:19.5–1:35.7 | 0.82× slower | — |
+| 2:11–2:26 | 1:35.7–1:50.2 | 0.92× slower | — |
+| 2:26–2:44 | 1:50.2–2:05.7 | 0.85× slower | — |
 
-All other footage plays at 1.0×. One stretch of the session is not in the film
+Every segment was re-timed when the narration changed voice, so each shot still
+runs exactly as long as the sentence spoken over it.
+
+One stretch of the session is not in the film
 at all: **0:10.9–0:12.0**, a one-second gap between the shot that ends on the
 loaded application page and the shot that opens on the consent disclosure.
 Nothing happens in it. A discreet `Synthetic data only · fictional program`
@@ -103,10 +109,12 @@ teal `#0f6b6a` / `#084140` and ochre `#8c4b05`; type is Newsreader / Public Sans
 ## Narration
 
 Real synthesised speech — **Kokoro-82M** (`kokoro-onnx`), voice `bf_emma`, speed
-1.04, driven through the HyperFrames TTS model files. It is not a human read and
+It is driven through the HyperFrames TTS model files. It is not a human read and
 not a placeholder. One WAV per paragraph in `audio/` (`n00.wav`–`n10.wav`), with
 the exact text spoken in the matching `.txt`. Total speech in the current cut
-2:26. `n01.wav` (the cold open) and `n03.wav` (the redacted-read beat) were
+2:23. The speed is 1.16 rather than the 1.04 used for the earlier female read
+because `bm_george` speaks noticeably slower; at 1.16 he lands at a normal
+speaking pace and the film stays under 3:00. `n01.wav` (the cold open) and `n03.wav` (the redacted-read beat) were
 generated and are kept in `audio/`, but are **not** in the film.
 
 `n00.wav` is the opening, written for this cut:
