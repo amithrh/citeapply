@@ -246,7 +246,7 @@ React 19 · Zod 4 · PostgreSQL 17 · `pg` · `pdfjs-dist` (runtime parsing) ·
   against Chrome 152 pending. Calls were scripted against the browser's WebMCP
   API rather than chosen by an autonomous model; that limitation is stated in
   the repo rather than papered over.
-- **AI tools used:** Claude Code (Claude Opus 5) for implementation, review, and
+- **AI tools used:** AI coding assistants for implementation, review, and
   documentation, under the entrant's direction. Codex was used earlier during
   planning.
 - **What was learned:** _(entrant's own words — the honest version is about the

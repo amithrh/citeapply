@@ -164,7 +164,7 @@ show the receipt carrying the same hash and the same warning.
   and if a genuine external WebMCP client could not be obtained, say so plainly
   and point at the registration tests instead. Do not imply verification that
   did not happen.)_
-- **AI tools used:** Claude Code (Claude Opus 5) for implementation, review, and
+- **AI tools used:** AI coding assistants for implementation, review, and
   documentation, under the entrant's direction. Codex was used earlier during
   planning.
 - **What was learned:** _(entrant's own words — the honest version is likely

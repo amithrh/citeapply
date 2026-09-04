@@ -20,7 +20,7 @@ DETAIL: auth_permission_dialog: /opt/homebrew/Cellar/node@24/24.20.0/bin/node is
 (`/Users/amitmishra/Library/Application Support/Postgres/var-16/postgresql.log`)
 
 This is **not a product defect** — it is why the four `@journey` Playwright specs failed for
-Fable too, and the "missing `APP_ORIGIN`" diagnosis in HACKATHON-PLAN.md is wrong: I exported
+the orchestrator too, and the "missing `APP_ORIGIN`" diagnosis in HACKATHON-PLAN.md is wrong: I exported
 `APP_ORIGIN=http://localhost:3100` and they still failed. Docker is not running on this Mac, so
 I started a throwaway Homebrew PostgreSQL 17.9 cluster on **port 5433** (datadir
 `…/scratchpad/pgdata`, user `citeapply`, socket dir `/tmp/ca-sock`, `LC_ALL=C`) and applied all
@@ -214,7 +214,7 @@ README/DEPLOYING docs should carry the two `cp -R` lines (static **and** `pdfjs-
   preserved every saved answer. But the reload **loses assisted consent**, which is not the same
   as "keeps state".
 - **Mobile widths, print output, dark mode.** Not looked at.
-- **Screenshots of the hand-driven Claude-in-Chrome session.** Those ran in the user's own Chrome
+- **Screenshots of the hand-driven browser-extension session.** Those ran in the user's own Chrome
   profile and the MCP screenshot tool did not write to a path I could reach; the 21 PNGs here are
   the same journey re-driven through **the same Chrome 152 binary** via Playwright
   `channel: "chrome"` with `--enable-features=WebMCPTesting`. `tool-log.md` is verbatim from that
